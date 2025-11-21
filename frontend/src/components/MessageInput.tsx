@@ -11,7 +11,7 @@ interface MessageInputProps {
 const MessageInput: React.FC<MessageInputProps> = ({ roomId, currentUserId }) => {
     const [message, setMessage] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const addOptimisticMessage = useMessageStore((state) => state.addOptimisticMessage);
     const confirmMessage = useMessageStore((state) => state.confirmMessage);
@@ -52,7 +52,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ roomId, currentUserId }) =>
         };
 
         // Add optimistic message immediately (shown to user right away)
-        addOptimisticMessage(roomId, optimisticMessage);
+        addOptimisticMessage(optimisticMessage);
 
         // Clear input
         setMessage('');
@@ -104,8 +104,8 @@ const MessageInput: React.FC<MessageInputProps> = ({ roomId, currentUserId }) =>
                 onClick={handleSendMessage}
                 disabled={!message.trim()}
                 className={`px-6 py-3 rounded-full font-medium transition-all ${message.trim()
-                        ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
             >
                 Send

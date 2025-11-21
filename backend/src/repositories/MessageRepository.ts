@@ -150,7 +150,7 @@ export class MessageRepository {
     ): Promise<void> {
         if (recipientIds.length === 0) return;
 
-        const values = recipientIds.map((id, idx) =>
+        const values = recipientIds.map((_id, idx) =>
             `($1, $${idx + 2})`
         ).join(', ');
 

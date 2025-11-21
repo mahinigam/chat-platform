@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging in development
 if (process.env.NODE_ENV === 'development') {
-    app.use((req, res, next) => {
+    app.use((req, _res, next) => {
         console.log(`${req.method} ${req.path}`);
         next();
     });
@@ -45,28 +45,26 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/rooms', roomRoutes);
 
 // Health check endpoint
-app.get('/health', async (req: Request, res: Response) => {
+app.get('/health', async (_req: Request, res: Response) => {
     try {
         const dbHealthy = await Database.healthCheck();
         const redisHealthy = await RedisService.healthCheck();
 
-        if (!dbHealthy || !redisHealthy) {
-            return res.status(503).json({
-                status: 'unhealthy',
-                database: dbHealthy,
-                redis: redisHealthy,
-            });
-        }
+        const status = dbHealthy && redisHealthy ? 'healthy' : 'unhealthy';
+        const statusCode = dbHealthy && redisHealthy ? 200 : 503;
 
-        res.json({
-            status: 'healthy',
-            database: true,
-            redis: true,
-            serverInstance: process.env.SERVER_INSTANCE_ID || 'unknown',
-            uptime: process.uptime(),
+        return res.status(statusCode).json({
+            status,
+            timestamp: new Date().toISOString(),
+            services: {
+                database: dbHealthy ? 'up' : 'down',
+                redis: redisHealthy ? 'up' : 'down',
+            },
+            server: process.env.SERVER_INSTANCE_ID || 'unknown',
         });
     } catch (error) {
-        res.status(503).json({
+        console.error('Health check error:', error);
+        return res.status(503).json({
             status: 'unhealthy',
             error: 'Health check failed',
         });
@@ -74,12 +72,12 @@ app.get('/health', async (req: Request, res: Response) => {
 });
 
 // 404 handler
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: 'Not found' });
 });
 
 // Error handler
-app.use((err: Error, req: Request, res: Response, next: any) => {
+app.use((err: Error, _req: Request, res: Response, _next: any) => {
     console.error('Error:', err);
     res.status(500).json({
         error: process.env.NODE_ENV === 'production'

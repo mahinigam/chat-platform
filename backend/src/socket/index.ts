@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { Server as HTTPServer } from 'http';
-import { redisPubClient, redisSubClient, RedisService } from '../config/redis';
+import { redisPubClient, redisSubClient } from '../config/redis';
 import { authMiddleware } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rateLimiter';
 import messageHandler from './handlers/messageHandler';

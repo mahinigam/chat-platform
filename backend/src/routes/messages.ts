@@ -4,10 +4,11 @@ import { MessageRepository } from '../repositories/MessageRepository';
 const router = Router();
 
 // Simple auth middleware for REST API (can be extracted to shared middleware)
-const authMiddleware = (req: Request, res: Response, next: any) => {
+const authMiddleware = (req: Request, res: Response, next: any): void => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
     }
     // JWT verification would go here
     next();

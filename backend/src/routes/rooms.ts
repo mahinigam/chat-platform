@@ -3,19 +3,21 @@ import { RoomRepository } from '../repositories/RoomRepository';
 
 const router = Router();
 
-// Simple auth middleware
-const authMiddleware = (req: Request, res: Response, next: any) => {
+// Simple auth middleware for REST API
+const authMiddleware = (req: Request, res: Response, next: any): void => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
     }
+    // JWT verification would go here
     next();
 };
 
 /**
  * Get all rooms for authenticated user
  */
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', authMiddleware, async (_req: Request, res: Response) => {
     try {
         // In production, extract userId from JWT
         const userId = 1; // Placeholder

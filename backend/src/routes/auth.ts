@@ -43,18 +43,18 @@ router.post('/register', async (req: Request, res: Response) => {
         // Generate JWT
         const token = jwt.sign(
             { userId: user.id, username: user.username },
-            process.env.JWT_SECRET!,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+            process.env.JWT_SECRET as string,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
         );
 
-        res.status(201).json({
+        return res.status(201).json({
             user,
             token,
         });
 
     } catch (error) {
         console.error('Register error:', error);
-        res.status(500).json({ error: 'Registration failed' });
+        return res.status(500).json({ error: 'Registration failed' });
     }
 });
 
@@ -90,11 +90,11 @@ router.post('/login', async (req: Request, res: Response) => {
         // Generate JWT
         const token = jwt.sign(
             { userId: user.id, username: user.username },
-            process.env.JWT_SECRET!,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+            process.env.JWT_SECRET as string,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
         );
 
-        res.json({
+        return res.json({
             user: {
                 id: user.id,
                 username: user.username,
@@ -107,7 +107,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Login failed' });
+        return res.status(500).json({ error: 'Login failed' });
     }
 });
 

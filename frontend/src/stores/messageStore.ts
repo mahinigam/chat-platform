@@ -19,32 +19,35 @@ export interface Message {
 
 interface MessageState {
     messages: Record<number, Message[]>; // roomId -> messages
+    hasMore: Record<number, boolean>; // roomId -> hasMore
     typingUsers: Record<number, Set<number>>; // roomId -> Set of userIds
 
     // Actions
-    addOptimisticMessage: (roomId: number, message: Message) => void;
+    addOptimisticMessage: (message: Message) => void;
     confirmMessage: (tempId: string, serverMessage: Message) => void;
     markMessageFailed: (tempId: string, error: string) => void;
     addMessage: (roomId: number, message: Message) => void;
     updateMessageStatus: (messageId: string, status: string, userId: number) => void;
     loadMessages: (roomId: number, messages: Message[], append?: boolean) => void;
     setTyping: (roomId: number, userId: number, isTyping: boolean) => void;
+    setHasMore: (roomId: number, hasMore: boolean) => void;
 }
 
-export const useMessageStore = create<MessageState>((set, get) => ({
+export const useMessageStore = create<MessageState>((set) => ({
     messages: {},
+    hasMore: {},
     typingUsers: {},
 
     /**
      * Add optimistic message (shown immediately before server confirmation)
      */
-    addOptimisticMessage: (roomId, message) => {
+    addOptimisticMessage: (message) => {
         set((state) => ({
             messages: {
                 ...state.messages,
-                [roomId]: [
-                    ...(state.messages[roomId] || []),
-                    { ...message, status: 'sending' },
+                [message.room_id]: [
+                    message,
+                    ...(state.messages[message.room_id] || []),
                 ],
             },
         }));
@@ -61,7 +64,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
             const updatedMessages = roomMessages.map((msg) =>
                 msg.tempId === tempId
-                    ? { ...serverMessage, status: 'sent' }
+                    ? { ...serverMessage, status: 'sent' as const }
                     : msg
             );
 
@@ -86,7 +89,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             for (const roomId in newMessages) {
                 newMessages[roomId] = newMessages[roomId].map((msg) =>
                     msg.tempId === tempId
-                        ? { ...msg, status: 'failed', error }
+                        ? { ...msg, status: 'failed' as const, error }
                         : msg
                 );
             }
@@ -109,7 +112,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             return {
                 messages: {
                     ...state.messages,
-                    [roomId]: [...roomMessages, { ...message, status: 'delivered' }],
+                    [roomId]: [message, ...roomMessages],
                 },
             };
         });
@@ -118,7 +121,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     /**
      * Update message status (delivered/read receipts)
      */
-    updateMessageStatus: (messageId, status, userId) => {
+    updateMessageStatus: (messageId, status, _userId) => {
         set((state) => {
             const { messages } = state;
             const newMessages = { ...messages };
@@ -127,7 +130,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             for (const roomId in newMessages) {
                 newMessages[roomId] = newMessages[roomId].map((msg) =>
                     msg.id === messageId
-                        ? { ...msg, status: status as any }
+                        ? { ...msg, status: status as Message['status'] }
                         : msg
                 );
             }
@@ -144,7 +147,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             messages: {
                 ...state.messages,
                 [roomId]: append
-                    ? [...messages, ...(state.messages[roomId] || [])]
+                    ? [...(state.messages[roomId] || []), ...messages]
                     : messages,
             },
         }));
@@ -170,6 +173,18 @@ export const useMessageStore = create<MessageState>((set, get) => ({
                 },
             };
         });
+    },
+
+    /**
+     * Set hasMore flag for pagination
+     */
+    setHasMore: (roomId, hasMore) => {
+        set((state) => ({
+            hasMore: {
+                ...state.hasMore,
+                [roomId]: hasMore,
+            },
+        }));
     },
 }));
 

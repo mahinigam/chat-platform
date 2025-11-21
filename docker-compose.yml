@@ -11,13 +11,13 @@ services:
       POSTGRES_DB: chat_platform
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,14 +31,14 @@ services:
     image: redis:7-alpine
     container_name: chat_redis
     command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
-      timeout:  5s
+      timeout: 5s
       retries: 5
     networks:
       - chat_network
@@ -76,10 +76,10 @@ services:
       - chat_network
     # Note: Don't expose ports directly - use nginx load balancer
 
-  # ============================================
-  # NGINX Load Balancer (for backend instances)
-  # Enables horizontal scaling demonstration
-  # ============================================
+    # ============================================
+    # NGINX Load Balancer (for backend instances)
+    # Enables horizontal scaling demonstration
+    # ============================================
   nginx:
     image: nginx:alpine
     container_name: chat_nginx
@@ -110,6 +110,7 @@ volumes:
   postgres_data:
   redis_data:
 
+
 networks:
   chat_network:
     driver: bridge
@@ -117,7 +118,7 @@ networks:
 # ============================================
 # Usage Instructions
 # ============================================
-# 
+#
 # Start all services:
 #   docker-compose up -d
 #
