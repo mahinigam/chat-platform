@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .message-bubble {
+    @apply px-4 py-2 rounded-2xl max-w-xs break-words;
+  }
+  
+  .message-sent {
+    @apply bg-primary-500 text-white rounded-br-sm;
+  }
+  
+  .message-received {
+    @apply bg-gray-200 text-gray-900 rounded-bl-sm;
+  }
+
+  .typing-indicator {
+    @apply flex space-x-1 p-3 bg-gray-200 rounded-2xl w-16;
+  }
+
+  .typing-dot {
+    @apply w-2 h-2 bg-gray-500 rounded-full animate-bounce;
+  }
+}
