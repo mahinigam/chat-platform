@@ -301,11 +301,11 @@ sequenceDiagram
 
 | State | Icon | Meaning | Database |
 |-------|------|---------|----------|
-| **Sending** | ⏱️ | Client-side only, not confirmed | Not yet in DB |
-| **Sent** | ✓ | Server received and saved | `messages` table |
-| **Delivered** | ✓✓ | Recipient received | `delivered_at` IS NOT NULL |
-| **Read** | ✓✓ (blue) | Recipient read the message | `read_at` IS NOT NULL |
-| **Failed** | ⚠️ | Send failed, retry available | Client-side only |
+| **Sending** | (clock) | Client-side only, not confirmed | Not yet in DB |
+| **Sent** | (check) | Server received and saved | `messages` table |
+| **Delivered** | (double-check) | Recipient received | `delivered_at` IS NOT NULL |
+| **Read** | (blue-check) | Recipient read the message | `read_at` IS NOT NULL |
+| **Failed** | (alert) | Send failed, retry available | Client-side only |
 
 ### Offline Message Delivery
 
@@ -362,7 +362,7 @@ graph TD
     H --> I[Offline messages fetched<br/>in batches of 50 on-demand]
     I --> J[Strategy 5:<br/>DB Connection Pooling]
     J --> K[Max 50 connections per instance<br/>prevents DB overload]
-    K --> L[✅ Graceful Reconnection]
+    K --> L[Graceful Reconnection]
 
     style A fill:#ff6b6b
     style L fill:#51cf66
@@ -581,12 +581,12 @@ MONITOR  # In production, use redis-cli --stat
 
 This architecture demonstrates **industry best practices** for building high-scale real-time applications:
 
-✅ **Horizontal Scaling**: Redis Adapter enables unlimited server instances  
-✅ **Write-Optimized Database**: Composite indexes and UUID IDs  
-✅ **Thundering Herd Protection**: Multi-layered rate limiting and backoff  
-✅ **Optimistic UI**: Instant user feedback with server confirmation  
-✅ **Efficient Pagination**: Cursor-based, not offset-based  
-✅ **Real-Time Features**: Typing indicators, presence, read receipts  
-✅ **Production-Ready**: Docker, health checks, graceful shutdown  
+- **Horizontal Scaling**: Redis Adapter enables unlimited server instances
+- **Write-Optimized Database**: Composite indexes and UUID IDs
+- **Thundering Herd Protection**: Multi-layered rate limiting and backoff
+- **Optimistic UI**: Instant user feedback with server confirmation
+- **Efficient Pagination**: Cursor-based, not offset-based
+- **Real-Time Features**: Typing indicators, presence, read receipts
+- **Production-Ready**: Docker, health checks, graceful shutdown  
 
 **Handles 10,000 concurrent connections with room to scale to 100,000+**

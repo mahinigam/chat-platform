@@ -101,7 +101,7 @@ async function startServer() {
         if (!dbHealthy) {
             throw new Error('Database connection failed');
         }
-        console.log('✓ Database connected');
+        console.log('Database connected');
 
         // Test Redis connection
         const redisHealthy = await RedisService.healthCheck();
@@ -111,7 +111,7 @@ async function startServer() {
 
         httpServer.listen(PORT, () => {
             console.log('='.repeat(50));
-            console.log('🚀 High-Scale Chat Server Started');
+            console.log('High-Scale Chat Server Started');
             console.log('='.repeat(50));
             console.log(`Server: http://localhost:${PORT}`);
             console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);

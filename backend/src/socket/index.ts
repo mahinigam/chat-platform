@@ -37,7 +37,7 @@ export function initializeSocket(httpServer: HTTPServer): Server {
     // the message goes through Redis Pub/Sub
     io.adapter(createAdapter(redisPubClient, redisSubClient));
 
-    console.log('✓ Socket.io Redis Adapter initialized - Horizontal scaling enabled');
+    console.log('Socket.io Redis Adapter initialized - Horizontal scaling enabled');
 
     // ============================================
     // Middleware Stack
@@ -56,7 +56,7 @@ export function initializeSocket(httpServer: HTTPServer): Server {
         const authSocket = socket as AuthenticatedSocket;
         const { userId, username } = authSocket;
 
-        console.log(`✓ User connected: ${username} (ID: ${userId}, Socket: ${socket.id})`);
+        console.log(`User connected: ${username} (ID: ${userId}, Socket: ${socket.id})`);
 
         try {
             // Track user session and mark as online
@@ -98,7 +98,7 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             // Disconnection Handler
             // ============================================
             socket.on('disconnect', async (reason) => {
-                console.log(`✗ User disconnected: ${username} (Reason: ${reason})`);
+                console.log(`User disconnected: ${username} (Reason: ${reason})`);
                 await presenceHandler.handleDisconnection(authSocket, reason);
             });
 

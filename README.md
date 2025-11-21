@@ -2,23 +2,23 @@
 
 A production-grade, horizontally scalable real-time chat application built to handle **10,000+ concurrent WebSocket connections**.
 
-## 🚀 Features
+## Features
 
 ### Core Functionality
-- ✅ **Real-Time Messaging**: Bi-directional communication using WebSockets (Socket.io)
-- ✅ **Room Architecture**: Support for 1-on-1 DMs and Group Chats
-- ✅ **Message Status**: Sent → Delivered → Read receipts (WhatsApp-style)
-- ✅ **Offline Support**: Messages queued in DB and delivered on reconnection
+- **Real-Time Messaging**: Bi-directional communication using WebSockets (Socket.io)
+- **Room Architecture**: Support for 1-on-1 DMs and Group Chats
+- **Message Status**: Sent → Delivered → Read receipts (WhatsApp-style)
+- **Offline Support**: Messages queued in DB and delivered on reconnection
 
 ### Advanced "Standout" Features
-- ✅ **Horizontal Scaling**: Multiple server instances with Redis Adapter for cross-server communication
-- ✅ **Optimistic UI Updates**: Messages appear instantly before server confirmation
-- ✅ **Typing Indicators**: Debounced "User is typing..." with auto-stop
-- ✅ **Cursor-Based Pagination**: Infinite scroll loading 50 messages at a time
-- ✅ **Thundering Herd Protection**: Rate limiting, exponential backoff, jittered reconnection
-- ✅ **Production-Ready**: Docker containers, health checks, graceful shutdown
+- **Horizontal Scaling**: Multiple server instances with Redis Adapter for cross-server communication
+- **Optimistic UI Updates**: Messages appear instantly before server confirmation
+- **Typing Indicators**: Debounced "User is typing..." with auto-stop
+- **Cursor-Based Pagination**: Infinite scroll loading 50 messages at a time
+- **Thundering Herd Protection**: Rate limiting, exponential backoff, jittered reconnection
+- **Production-Ready**: Docker containers, health checks, graceful shutdown
 
-## 📊 Architecture Highlights
+## Architecture Highlights
 
 - **Backend**: Node.js + TypeScript + Express + Socket.io
 - **Frontend**: React + TypeScript + Tailwind CSS + Zustand
@@ -27,7 +27,7 @@ A production-grade, horizontally scalable real-time chat application built to ha
 - **Load Balancer**: NGINX with sticky sessions for WebSocket support
 - **Containers**: Docker Compose for multi-service orchestration
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 chat_platform/
@@ -65,7 +65,7 @@ chat_platform/
 └── README.md
 ```
 
-## 🚦 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -122,7 +122,7 @@ docker-compose down
 docker-compose down -v
 ```
 
-## 🛠️ Local Development
+## Local Development
 
 ### Backend
 
@@ -150,7 +150,7 @@ psql -h localhost -U postgres -d chat_platform
 \i database/schema.sql
 ```
 
-## 📖 Documentation
+## Documentation
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: Comprehensive architecture guide with:
   - System overview and diagrams
@@ -160,7 +160,7 @@ psql -h localhost -U postgres -d chat_platform
   - Thundering herd mitigation strategies
   - Performance metrics and bottleneck analysis
 
-## 🎯 Key Technical Decisions
+## Key Technical Decisions
 
 ### 1. Horizontal Scaling with Redis Adapter
 
@@ -186,9 +186,9 @@ addOptimisticMessage(message);
 // Send to server
 socket.emit('message:send', message, (response) => {
   if (response.success) {
-    confirmMessage(response.message); // Update to "sent" ✓
+    confirmMessage(response.message); // Update to "sent"
   } else {
-    markMessageFailed(response.error); // Show error ⚠️
+    markMessageFailed(response.error); // Show error
   }
 });
 ```
@@ -217,7 +217,7 @@ When 10,000 users reconnect after server restart:
 
 Result: **Graceful reconnection over ~25 seconds instead of instant crash**
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 ### Single Server Instance
 - Max concurrent connections: ~2,500
@@ -241,7 +241,7 @@ Result: **Graceful reconnection over ~25 seconds instead of instant crash**
 - Memory: ~100MB for 10k sessions
 - Throughput: 50,000 ops/sec
 
-## 🔒 Security Features
+## Security Features
 
 - JWT authentication for WebSocket and REST API
 - Rate limiting (connection + message)
@@ -250,7 +250,7 @@ Result: **Graceful reconnection over ~25 seconds instead of instant crash**
 - Helmet.js security headers
 - CORS configuration
 
-## 🧪 Testing
+## Testing
 
 ### Manual Testing
 
@@ -271,7 +271,7 @@ artillery run load-test.yml
 # Simulates 10,000 concurrent connections
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Production Checklist
 
@@ -298,7 +298,7 @@ artillery run load-test.yml
 - Memorystore for Redis
 - Cloud Load Balancing
 
-## 📝 API Documentation
+## API Documentation
 
 ### WebSocket Events
 
@@ -329,7 +329,7 @@ POST   /api/rooms             - Create new room
 GET    /api/messages/room/:id - Get messages (cursor pagination)
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -337,11 +337,11 @@ GET    /api/messages/room/:id - Get messages (cursor pagination)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with industry best practices from:
 - WhatsApp's real-time architecture
@@ -350,4 +350,4 @@ Built with industry best practices from:
 
 ---
 
-**Built to impress. Scaled to perform. Ready for production. 🚀**
+**Built to impress. Scaled to perform. Ready for production.**

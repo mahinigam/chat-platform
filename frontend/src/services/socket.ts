@@ -29,12 +29,12 @@ class SocketService {
 
         // Connection event handlers
         this.socket.on('connect', () => {
-            console.log('✓ WebSocket connected:', this.socket?.id);
+            console.log('WebSocket connected:', this.socket?.id);
             this.reconnectAttempts = 0;
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log('✗ WebSocket disconnected:', reason);
+            console.log('WebSocket disconnected:', reason);
         });
 
         this.socket.on('connect_error', (error) => {
@@ -52,7 +52,7 @@ class SocketService {
         });
 
         this.socket.on('reconnect', (attemptNumber) => {
-            console.log(`✓ Reconnected after ${attemptNumber} attempts`);
+            console.log(`Reconnected after ${attemptNumber} attempts`);
         });
 
         this.socket.on('reconnect_failed', () => {

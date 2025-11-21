@@ -43,7 +43,7 @@ class PresenceHandler {
             // Broadcast user online status to their contacts
             await this.broadcastPresence(socket, 'online');
 
-            console.log(`✓ Presence initialized for user ${username} on ${serverInstanceId}`);
+            console.log(`Presence initialized for user ${username} on ${serverInstanceId}`);
 
         } catch (error) {
             console.error('Error handling connection:', error);
@@ -91,7 +91,7 @@ class PresenceHandler {
                 await this.broadcastPresence(socket, 'offline');
             }
 
-            console.log(`✗ User ${userId} disconnected (${reason}). Still online: ${isStillOnline}`);
+            console.log(`User ${userId} disconnected (${reason}). Still online: ${isStillOnline}`);
 
         } catch (error) {
             console.error('Error handling disconnection:', error);
@@ -126,7 +126,7 @@ class PresenceHandler {
                 socket.join(`room:${room.id}`);
             }
 
-            console.log(`✓ User ${userId} joined ${rooms.length} rooms`);
+            console.log(`User ${userId} joined ${rooms.length} rooms`);
 
         } catch (error) {
             console.error('Error joining user rooms:', error);
@@ -148,7 +148,7 @@ class PresenceHandler {
                 return;
             }
 
-            console.log(`📬 Delivering ${offlineMessages.length} offline messages to user ${userId}`);
+            console.log(`Delivering ${offlineMessages.length} offline messages to user ${userId}`);
 
             // Deliver in batches of 50 to prevent overwhelming the client
             const BATCH_SIZE = 50;

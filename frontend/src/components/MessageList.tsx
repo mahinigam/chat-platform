@@ -48,20 +48,20 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId }) =>
                                 {isSent && (
                                     <span className="text-xs">
                                         {message.status === 'sending' && (
-                                            <span className="text-gray-400">⏱️</span>
+                                            <span className="text-gray-400">(sending)</span>
                                         )}
                                         {message.status === 'sent' && (
-                                            <span className="text-gray-500">✓</span>
+                                            <span className="text-gray-500">(sent)</span>
                                         )}
                                         {message.status === 'delivered' && (
-                                            <span className="text-gray-600">✓✓</span>
+                                            <span className="text-gray-600">(delivered)</span>
                                         )}
                                         {message.status === 'read' && (
-                                            <span className="text-primary-500">✓✓</span>
+                                            <span className="text-primary-500">(read)</span>
                                         )}
                                         {message.status === 'failed' && (
                                             <span className="text-red-500" title={message.error}>
-                                                ⚠️
+                                                (failed)
                                             </span>
                                         )}
                                     </span>
