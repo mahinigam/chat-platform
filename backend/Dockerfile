@@ -29,6 +29,9 @@ RUN npm ci --only=production
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
+# Copy seed script
+COPY seed_room.js ./seed_room.js
+
 # Expose port
 EXPOSE 3000
 

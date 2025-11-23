@@ -15,15 +15,20 @@ config:
     socketio:
       transports: ["websocket"]
       upgrade: false
+      autoConnect: false
       query:
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQsInVzZXJuYW1lIjoibG9hZHRlc3R1c2VyIiwiaWF0IjoxNzYzNzQyNTExLCJleHAiOjE3NjQzNDczMTF9.qbCHDQZAOZH1Iw5FsxsHyjIc2i5XvmzHgOnJxayeMS0"
+        token: "{{ token }}"
   processor: "./load-test-processor.js"
-
 scenarios:
   - name: "Chat Flow"
     engine: "socketio"
-    # beforeScenario: "beforeScenario"
+    beforeScenario: "beforeScenario"
     flow:
+      # connect explicitly after beforeScenario sets `token` and include token in handshake auth
+      - socketio:
+          connect:
+            auth:
+              token: "{{ token }}"
       # 1. Connect (handled automatically by engine)
       - think: 1
       
