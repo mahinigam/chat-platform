@@ -91,24 +91,26 @@ const MessageInput: React.FC<MessageInputProps> = ({ roomId, currentUserId }) =>
     };
 
     return (
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 w-full">
             <input
                 type="text"
                 value={message}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Type message..."
+                className="flex-1 px-6 py-3.5 bg-transparent text-white placeholder-gray-700 focus:placeholder-gray-500 focus:outline-none font-body text-sm tracking-wide"
             />
             <button
                 onClick={handleSendMessage}
                 disabled={!message.trim()}
-                className={`px-6 py-3 rounded-full font-medium transition-all ${message.trim()
-                    ? 'bg-primary-500 text-white hover:bg-primary-600 active:scale-95'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                className={`p-3.5 rounded-full transition-all duration-500 flex items-center justify-center ${message.trim()
+                    ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-white/15 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transform hover:scale-110'
+                    : 'bg-white/[0.02] text-gray-700 cursor-not-allowed'
                     }`}
             >
-                Send
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                    <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                </svg>
             </button>
         </div>
     );

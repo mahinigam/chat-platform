@@ -40,6 +40,26 @@ router.post('/register', async (req: Request, res: Response) => {
 
         const user = result.rows[0];
 
+        // Add user to default room (ID: 1)
+        try {
+            // We import RoomRepository dynamically to avoid circular dependency if any, 
+            // though here it's fine. Or better, add import at top.
+            // But since I can't see imports easily in this chunk, I'll assume I need to add the import or use a raw query.
+            // To be safe and consistent, I'll use a raw query here to avoid import issues in this specific file 
+            // or just add the import in a separate step if needed. 
+            // Actually, I'll add the import in a separate edit if it's missing, but let's check if I can just use Database.query directly for simplicity here.
+
+            await Database.query(
+                `INSERT INTO room_members (room_id, user_id, role)
+                 VALUES (1, $1, 'member')
+                 ON CONFLICT DO NOTHING`,
+                [user.id]
+            );
+        } catch (err) {
+            console.error('Failed to add user to default room:', err);
+            // Continue anyway, don't fail registration
+        }
+
         // Generate JWT
         const token = jwt.sign(
             { userId: user.id, username: user.username },

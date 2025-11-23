@@ -85,7 +85,7 @@ export class RoomRepository {
      */
     static async getUserRooms(userId: number): Promise<any[]> {
         const result = await Database.query(
-            `SELECT DISTINCT r.*, 
+            `SELECT r.*, 
               m_last.content as last_message_content,
               m_last.created_at as last_message_at,
               u_last.username as last_sender_username

@@ -2,6 +2,8 @@
   "dependencies": {
     "artillery": "^2.0.27",
     "axios": "^1.13.2",
+    "pg": "^8.16.3",
+    "socket.io-client": "^4.8.1",
     "uuid": "^13.0.0"
   }
 }

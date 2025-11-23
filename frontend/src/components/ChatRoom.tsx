@@ -133,24 +133,30 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, currentUserId }) => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-white">
+        <div className="flex flex-col h-full relative bg-black">
             {/* Header */}
-            <div className="bg-primary-600 text-white px-6 py-4 shadow-md">
-                <h2 className="text-xl font-semibold">Chat Room #{roomId}</h2>
+            <div className="glass-panel border-b border-white/5 px-6 py-5 z-10 flex justify-between items-center backdrop-blur-2xl bg-black/20">
+                <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)] animate-pulse"></div>
+                    <h2 className="text-lg font-heading text-white/90 tracking-widest uppercase text-xs">
+                        General
+                    </h2>
+                </div>
+                <div className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">Room #{roomId}</div>
             </div>
 
             {/* Message List */}
             <div
                 ref={messageListRef}
-                className="flex-1 overflow-y-auto px-4 py-6 space-y-4"
+                className="flex-1 overflow-y-auto px-6 py-8 space-y-6 scroll-smooth"
             >
                 {/* Load more trigger */}
                 {hasMore && (
-                    <div ref={loadMoreRef} className="text-center py-2">
+                    <div ref={loadMoreRef} className="text-center py-4">
                         {isLoadingMore ? (
-                            <span className="text-gray-500">Loading more messages...</span>
+                            <div className="inline-block w-5 h-5 border border-white/10 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <span className="text-gray-400 text-sm">Scroll up to load more</span>
+                            <span className="text-gray-700 text-[10px] uppercase tracking-[0.2em] opacity-40">↑ History</span>
                         )}
                     </div>
                 )}
@@ -158,12 +164,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, currentUserId }) => {
                 <MessageList messages={messages} currentUserId={currentUserId} />
 
                 {/* Typing Indicator */}
-                {typingUsers.size > 0 && <TypingIndicator />}
+                {typingUsers.size > 0 && (
+                    <div className="animate-fade-in">
+                        <TypingIndicator />
+                    </div>
+                )}
             </div>
 
             {/* Message Input */}
-            <div className="border-t border-gray-200 px-4 py-4 bg-gray-50">
-                <MessageInput roomId={roomId} currentUserId={currentUserId} />
+            <div className="p-6 relative z-20 border-t border-white/5">
+                <div className="glass-panel rounded-full p-1.5 bg-white/[0.02] backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.02)]">
+                    <MessageInput roomId={roomId} currentUserId={currentUserId} />
+                </div>
             </div>
         </div>
     );
