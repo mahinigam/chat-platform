@@ -1,6 +1,5 @@
 import React from 'react';
 import { Message } from '../stores/messageStore';
-import { formatDistanceToNow } from 'date-fns';
 
 interface MessageListProps {
     messages: Message[];
@@ -16,56 +15,62 @@ const MessageList: React.FC<MessageListProps> = ({ messages, currentUserId }) =>
                 return (
                     <div
                         key={message.id || message.tempId}
-                        className={`flex ${isSent ? 'justify-end' : 'justify-start'} mb-6 group`}
+                        className={`flex ${isSent ? 'justify-end' : 'justify-start'} mb-2 group px-2`}
                     >
-                        <div className={`flex flex-col ${isSent ? 'items-end' : 'items-start'} max-w-xs md:max-w-md`}>
-                            {/* Sender name for received messages */}
-                            {!isSent && (
-                                <span className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 px-2 font-medium">
-                                    {message.sender_username || 'Unknown'}
-                                </span>
-                            )}
-
+                        <div className={`flex flex-col ${isSent ? 'items-end' : 'items-start'} max-w-[460px]`}>
                             {/* Message bubble */}
                             <div
                                 className={`message-bubble ${isSent ? 'message-sent' : 'message-received'
-                                    } transition-transform duration-200 hover:scale-[1.02]`}
+                                    } text-left`}
                             >
-                                <p className="text-sm leading-relaxed font-body">{message.content}</p>
-                            </div>
+                                {/* Sender name for received messages in groups */}
+                                {!isSent && (
+                                    <div className="text-[13px] font-medium text-telegram-primary mb-1 cursor-pointer hover:underline">
+                                        {message.sender_username || 'Unknown'}
+                                    </div>
+                                )}
 
-                            {/* Message status and timestamp */}
-                            <div className="flex items-center space-x-2 mt-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className="text-[10px] text-gray-500">
-                                    {message.created_at
-                                        ? formatDistanceToNow(new Date(message.created_at), {
-                                            addSuffix: true,
-                                        })
-                                        : 'Just now'}
+                                <span className="text-[15px] text-black whitespace-pre-wrap leading-snug">
+                                    {message.content}
+                                    {/* Spacer for timestamp */}
+                                    <span className="inline-block w-12"></span>
                                 </span>
 
-                                {/* Status indicator for sent messages */}
-                                {isSent && (
-                                    <span className="text-[10px]">
-                                        {message.status === 'sending' && (
-                                            <span className="text-gray-500 italic">sending...</span>
-                                        )}
-                                        {message.status === 'sent' && (
-                                            <span className="text-gray-400">sent</span>
-                                        )}
-                                        {message.status === 'delivered' && (
-                                            <span className="text-gray-300">delivered</span>
-                                        )}
-                                        {message.status === 'read' && (
-                                            <span className="text-primary-400 font-medium">read</span>
-                                        )}
-                                        {message.status === 'failed' && (
-                                            <span className="text-red-400 font-medium" title={message.error}>
-                                                failed
-                                            </span>
-                                        )}
+                                {/* Timestamp & Status (Inside Bubble, Bottom Right) */}
+                                <div className={`float-right flex items-center space-x-1 ml-2 mt-1 select-none ${isSent ? 'text-[#59a648]' : 'text-[#a0a0a0]'
+                                    }`}>
+                                    <span className="text-[11px]">
+                                        {message.created_at
+                                            ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                            : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
-                                )}
+
+                                    {/* Status indicator for sent messages */}
+                                    {isSent && (
+                                        <span className="text-[14px]">
+                                            {message.status === 'sending' && (
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 animate-pulse">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            )}
+                                            {(message.status === 'sent' || message.status === 'delivered') && (
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                            )}
+                                            {message.status === 'read' && (
+                                                <div className="flex -space-x-1.5">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5 text-[#53b33e]">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                    </svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5 text-[#53b33e]">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

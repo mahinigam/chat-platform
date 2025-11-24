@@ -6,56 +6,54 @@
 
 @layer base {
   body {
-    @apply bg-black text-gray-100 font-body antialiased overflow-hidden selection:bg-primary-500/30;
-    /* Deep space/liquid background base */
-    background: #000000;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-heading tracking-wide;
+    @apply bg-white text-gray-900 font-sans antialiased overflow-hidden;
   }
 }
 
 @layer components {
-  .glass-panel {
-    /* Enhanced Liquid Glass: More blur, less opacity, subtle border */
-    @apply bg-white/[0.03] backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_32px_0_rgba(0, 0, 0, 0.36)];
-  }
 
-  .glass-input {
-    @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.1] text-white placeholder-gray-500 focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/50 focus:bg-white/[0.05] transition-all duration-500 rounded-2xl;
-  }
-
-  .glass-button {
-    @apply bg-white/[0.05] backdrop-blur-xl border border-white/[0.1] text-white font-medium tracking-wider hover:bg-white/[0.1] hover:border-white/[0.2] hover:shadow-[0_0_20px_rgba(255, 255, 255, 0.1)] active:scale-95 transition-all duration-300 rounded-2xl;
-  }
-
+  /* Telegram Message Bubbles */
   .message-bubble {
-    @apply px-4 py-2 rounded-2xl max-w-xs md:max-w-md break-words shadow-lg backdrop-blur-sm;
+    @apply px-3 py-1.5 rounded-lg max-w-[460px] break-words shadow-sm relative text-[15px] leading-snug;
   }
 
   .message-sent {
-    @apply bg-primary-600/80 text-white rounded-br-sm border border-primary-500/30;
+    @apply bg-telegram-sent text-black rounded-tr-none;
   }
 
   .message-received {
-    @apply bg-dark-glass text-gray-100 rounded-bl-sm border border-dark-border;
+    @apply bg-telegram-received text-black rounded-tl-none;
   }
 
-  .typing-indicator {
-    @apply flex space-x-1 p-3 bg-dark-glass rounded-2xl w-16 border border-dark-border;
+  /* Tail for Sent Messages */
+  .message-sent::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: -8px;
+    width: 12px;
+    height: 20px;
+    background-color: #eeffde;
+    border-bottom-left-radius: 15px;
+    z-index: 0;
+    clip-path: polygon(0 0, 0% 100%, 100% 100%);
   }
 
-  .typing-dot {
-    @apply w-2 h-2 bg-gray-400 rounded-full animate-bounce;
+  /* Tail for Received Messages */
+  .message-received::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -8px;
+    width: 12px;
+    height: 20px;
+    background-color: #ffffff;
+    border-bottom-right-radius: 15px;
+    z-index: 0;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
   }
 
-  /* Custom Scrollbar */
+  /* Custom Scrollbar (Telegram Web style) */
   ::-webkit-scrollbar {
     width: 6px;
   }
@@ -65,6 +63,6 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+    @apply bg-black/20 rounded-full hover:bg-black/30 transition-colors;
   }
 }

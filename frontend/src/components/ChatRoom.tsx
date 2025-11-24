@@ -135,14 +135,28 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, currentUserId }) => {
     return (
         <div className="flex flex-col h-full relative bg-black">
             {/* Header */}
-            <div className="glass-panel border-b border-white/5 px-6 py-5 z-10 flex justify-between items-center backdrop-blur-2xl bg-black/20">
+            <div className="bg-white border-b border-telegram-border px-4 py-2 z-10 flex justify-between items-center shadow-sm">
                 <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)] animate-pulse"></div>
-                    <h2 className="text-lg font-heading text-white/90 tracking-widest uppercase text-xs">
-                        General
-                    </h2>
+                    <div className="w-10 h-10 rounded-full bg-telegram-primary text-white flex items-center justify-center font-bold text-lg">
+                        #
+                    </div>
+                    <div>
+                        <h2 className="text-md font-bold text-black leading-tight">
+                            General
+                        </h2>
+                        <div className="text-xs text-telegram-gray">
+                            1,234 members, 50 online
+                        </div>
+                    </div>
                 </div>
-                <div className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">Room #{roomId}</div>
+                <div className="flex items-center space-x-4 text-telegram-gray">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 cursor-pointer hover:text-telegram-primary">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 cursor-pointer hover:text-telegram-primary">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                    </svg>
+                </div>
             </div>
 
             {/* Message List */}
@@ -172,8 +186,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, currentUserId }) => {
             </div>
 
             {/* Message Input */}
-            <div className="p-6 relative z-20 border-t border-white/5">
-                <div className="glass-panel rounded-full p-1.5 bg-white/[0.02] backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.02)]">
+            <div className="p-4 relative z-20 bg-white border-t border-telegram-border">
+                <div className="max-w-4xl mx-auto">
                     <MessageInput roomId={roomId} currentUserId={currentUserId} />
                 </div>
             </div>

@@ -91,24 +91,31 @@ const MessageInput: React.FC<MessageInputProps> = ({ roomId, currentUserId }) =>
     };
 
     return (
-        <div className="flex items-center space-x-3 w-full">
-            <input
-                type="text"
-                value={message}
-                onChange={handleChange}
-                onKeyPress={handleKeyPress}
-                placeholder="Type message..."
-                className="flex-1 px-6 py-3.5 bg-transparent text-white placeholder-gray-700 focus:placeholder-gray-500 focus:outline-none font-body text-sm tracking-wide"
-            />
+        <div className="flex items-end space-x-2 w-full">
+            <button className="p-3 text-telegram-gray hover:text-telegram-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 2.25c.538.538.812 1.226.812 1.987 0 .76-.274 1.447-.812 1.987l-.94.94m-4.125 7.625l-2.578-2.578m0 0L3.75 20.25" />
+                </svg>
+            </button>
+            <div className="flex-1 bg-white">
+                <input
+                    type="text"
+                    value={message}
+                    onChange={handleChange}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Write a message..."
+                    className="w-full px-0 py-3 bg-transparent text-black placeholder-gray-400 focus:outline-none font-sans text-[15px]"
+                />
+            </div>
             <button
                 onClick={handleSendMessage}
                 disabled={!message.trim()}
-                className={`p-3.5 rounded-full transition-all duration-500 flex items-center justify-center ${message.trim()
-                    ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-white/15 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transform hover:scale-110'
-                    : 'bg-white/[0.02] text-gray-700 cursor-not-allowed'
+                className={`p-3 transition-all duration-200 flex items-center justify-center rounded-full ${message.trim()
+                    ? 'text-telegram-primary hover:bg-telegram-primary/10'
+                    : 'text-telegram-primary/50 cursor-default'
                     }`}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
                     <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
                 </svg>
             </button>

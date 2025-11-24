@@ -4,97 +4,149 @@ const axios = require('axios');
 const API_URL = 'http://localhost:3000/api';
 const SOCKET_URL = 'http://localhost:3000';
 
+// Helper to create a client
+async function createClient(name) {
+    const username = `user_${name}_${Date.now()}`;
+    const email = `${username}@example.com`;
+    const password = 'password123';
+
+    console.log(`[${name}] Registering...`);
+    try {
+        await axios.post(`${API_URL}/auth/register`, {
+            username,
+            email,
+            password,
+            displayName: `${name} User`
+        });
+    } catch (e) {
+        // Ignore if exists
+    }
+
+    console.log(`[${name}] Logging in...`);
+    const loginRes = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password
+    });
+
+    const token = loginRes.data.token;
+    const user = loginRes.data.user;
+
+    const socket = io(SOCKET_URL, {
+        auth: { token },
+        transports: ['websocket'],
+        reconnection: false
+    });
+
+    await new Promise((resolve, reject) => {
+        socket.on('connect', resolve);
+        socket.on('connect_error', reject);
+    });
+
+    console.log(`[${name}] Connected (Socket ID: ${socket.id})`);
+
+    return { socket, token, user };
+}
+
 async function verify() {
     try {
-        console.log('1. Registering user...');
-        const username = `testuser_${Date.now()}`;
-        const email = `${username}@example.com`;
-        const password = 'password123';
+        console.log('--- STARTING MULTI-USER VERIFICATION ---');
 
-        try {
-            await axios.post(`${API_URL}/auth/register`, {
-                username,
-                email,
-                password,
-                displayName: 'Test User'
-            });
-        } catch (e) {
-            // Ignore if already exists (unlikely with timestamp)
-            console.log('User might already exist');
-        }
+        // 1. Setup Users
+        const clientA = await createClient('Alice');
+        const clientB = await createClient('Bob');
 
-        console.log('2. Logging in...');
-        const loginRes = await axios.post(`${API_URL}/auth/login`, {
-            email,
-            password
+        // 2. Alice creates a room
+        console.log('\n--- ROOM CREATION ---');
+        const roomRes = await axios.post(`${API_URL}/rooms`, {
+            roomType: 'group',
+            name: `Chat Room ${Date.now()}`,
+            members: [clientB.user.id] // Add Bob to the room
+        }, {
+            headers: { Authorization: `Bearer ${clientA.token}` }
         });
+        const roomId = roomRes.data.room.id;
+        console.log(`Alice created Room ${roomId} with Bob (ID: ${clientB.user.id})`);
 
-        const { token, user } = loginRes.data;
-        console.log('   Login successful. Token received.');
+        // 3. Both join room
+        console.log('\n--- JOINING ROOM ---');
+        clientA.socket.emit('room:join', { roomId });
+        clientB.socket.emit('room:join', { roomId });
+        await new Promise(r => setTimeout(r, 500)); // Wait for joins
 
-        console.log('3. Connecting to Socket.io...');
-        const socket = io(SOCKET_URL, {
-            auth: { token },
-            transports: ['websocket'],
-            reconnection: false
-        });
+        // 4. Test Typing Indicators
+        console.log('\n--- TESTING TYPING INDICATORS ---');
+        const typingPromise = new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Typing indicator timeout')), 5000);
 
-        await new Promise((resolve, reject) => {
-            socket.on('connect', () => {
-                console.log('   Socket connected:', socket.id);
-                resolve();
-            });
-            socket.on('connect_error', (err) => {
-                reject(new Error(`Socket connection failed: ${err.message}`));
-            });
-            setTimeout(() => reject(new Error('Socket timeout')), 5000);
-        });
-
-        console.log('3.5. Creating Room via API...');
-        let roomId;
-        try {
-            const roomRes = await axios.post(`${API_URL}/rooms`, {
-                roomType: 'group',
-                name: 'Test Room ' + Date.now()
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            roomId = roomRes.data.room.id;
-            console.log('   Room created:', roomId);
-        } catch (e) {
-            console.error('   Failed to create room:', e.response?.data || e.message);
-            throw e;
-        }
-
-        console.log(`4. Joining Room ${roomId}...`);
-        socket.emit('room:join', { roomId });
-        await new Promise(r => setTimeout(r, 1000));
-
-        console.log('5. Sending Message...');
-        await new Promise((resolve, reject) => {
-            socket.emit('message:send', {
-                roomId: roomId,
-                content: 'Hello World from Script',
-                tempId: 'temp-' + Date.now()
-            }, (response) => {
-                if (response.success) {
-                    console.log('   Message acknowledged by server:', response.message.id);
+            clientB.socket.on('typing:start', (data) => {
+                if (data.roomId == roomId && data.userId == clientA.user.id) { // Note: loose equality for ID types
+                    clearTimeout(timeout);
+                    console.log('✓ Bob received: Alice is typing');
                     resolve();
-                } else {
-                    reject(new Error('Message send failed: ' + response.error));
                 }
             });
         });
-        console.log('6. Verification Complete: SUCCESS');
 
-        socket.disconnect();
+        console.log('Alice starts typing...');
+        clientA.socket.emit('typing:start', { roomId });
+        await typingPromise;
+
+        // 5. Test Messaging (Alice -> Bob)
+        console.log('\n--- TESTING MESSAGING (Alice -> Bob) ---');
+        const messageContent = `Hello Bob! ${Date.now()}`;
+
+        const receivePromise = new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Message receive timeout')), 5000);
+
+            clientB.socket.on('message:new', (msg) => {
+                if (msg.content === messageContent) {
+                    clearTimeout(timeout);
+                    console.log(`✓ Bob received message: "${msg.content}"`);
+                    resolve(msg);
+                }
+            });
+        });
+
+        console.log(`Alice sending: "${messageContent}"`);
+        clientA.socket.emit('message:send', {
+            roomId,
+            content: messageContent,
+            tempId: 'temp-' + Date.now()
+        }, (ack) => {
+            if (ack.success) console.log('✓ Alice received server acknowledgment');
+            else console.error('Alice failed to send:', ack);
+        });
+
+        const receivedMsg = await receivePromise;
+
+        // 6. Test Read Receipts
+        console.log('\n--- TESTING READ RECEIPTS ---');
+        const readPromise = new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Read receipt timeout')), 5000);
+
+            clientA.socket.on('message:status', (data) => {
+                if (data.messageId === receivedMsg.id && data.status === 'read') {
+                    clearTimeout(timeout);
+                    console.log('✓ Alice received: Bob read the message');
+                    resolve();
+                }
+            });
+        });
+
+        console.log('Bob marking message as read...');
+        clientB.socket.emit('message:read', {
+            messageId: receivedMsg.id,
+            roomId
+        });
+        await readPromise;
+
+        console.log('\n--- VERIFICATION SUCCESSFUL ---');
+        clientA.socket.disconnect();
+        clientB.socket.disconnect();
         process.exit(0);
 
     } catch (error) {
-        console.error('Verification FAILED:', error.message);
-        if (error.response) {
-            console.error('API Response:', error.response.data);
-        }
+        console.error('\n❌ VERIFICATION FAILED:', error.message);
         process.exit(1);
     }
 }
