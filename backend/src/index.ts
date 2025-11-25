@@ -23,7 +23,9 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet()); // Security headers
 app.use(compression()); // Compress responses
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: process.env.NODE_ENV === 'development'
+        ? (origin, callback) => callback(null, true) // Allow any origin in dev
+        : (process.env.CORS_ORIGIN || 'http://localhost:5173'),
     credentials: true,
 }));
 app.use(express.json());

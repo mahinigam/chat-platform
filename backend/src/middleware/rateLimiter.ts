@@ -46,7 +46,7 @@ export const rateLimitMiddleware = async (
         const ipRateLimitKey = `connection:ratelimit:ip:${ip}`;
         const ipRateLimit = await RedisService.checkRateLimit(
             ipRateLimitKey,
-            20, // Max 20 connections per IP per second
+            process.env.NODE_ENV === 'development' ? 1000 : 20, // Max connections per IP per second
             1000
         );
 

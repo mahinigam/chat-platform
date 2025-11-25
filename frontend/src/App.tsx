@@ -12,32 +12,32 @@ import axios from 'axios';
 import './index.css';
 
 interface Room {
-  id: string;
-  name: string;
-  avatar?: string;
-  unread: number;
-  snippet?: string;
-  timestamp?: string;
-  isOnline?: boolean;
-}
-
-interface Message {
-  id: string;
-  roomId: string;
-  sender: {
     id: string;
     name: string;
     avatar?: string;
-  };
-  content: string;
-  timestamp: Date | string;
-  status?: 'sent' | 'delivered' | 'read';
-  isOwn: boolean;
-  reactions?: Array<{
-    emoji: string;
-    count: number;
-    by: string[];
-  }>;
+    unread: number;
+    snippet?: string;
+    timestamp?: string;
+    isOnline?: boolean;
+}
+
+interface Message {
+    id: string;
+    roomId: string;
+    sender: {
+        id: string;
+        name: string;
+        avatar?: string;
+    };
+    content: string;
+    timestamp: Date | string;
+    status?: 'sent' | 'delivered' | 'read';
+    isOwn: boolean;
+    reactions?: Array<{
+        emoji: string;
+        count: number;
+        by: string[];
+    }>;
 }
 
 function App() {
@@ -101,6 +101,11 @@ function App() {
         // Connect to WebSocket with real token
         const socket = socketService.connect(token);
 
+        if (socket.connected) {
+            setIsConnected(true);
+            console.log('Already connected to chat server');
+        }
+
         socket.on('connect', () => {
             setIsConnected(true);
             clearTimeout(timeoutId);
@@ -139,7 +144,7 @@ function App() {
             clearTimeout(timeoutId);
             socketService.disconnect();
         };
-    }, [token, isConnected]);
+    }, [token]);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -165,8 +170,8 @@ function App() {
             success('Login successful!');
         } catch (err: any) {
             console.error('Auth error:', err);
-            const errorMsg = err.response?.data?.error 
-                || err.message 
+            const errorMsg = err.response?.data?.error
+                || err.message
                 || 'Authentication failed. Is the backend running?';
             setError(errorMsg);
         }
@@ -182,33 +187,33 @@ function App() {
 
     const handleSendMessage = useCallback(
         async (content: string) => {
-          if (!selectedRoomId) return;
-          try {
-            // Send message via API
-            const response = await axios.post(
-              `${API_URL}/messages`,
-              { roomId: selectedRoomId, content },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            success('Message sent');
-            // Add to local messages
-            const newMessage: Message = {
-              id: response.data.id,
-              roomId: selectedRoomId,
-              sender: { id: currentUser.id, name: currentUser.username },
-              content,
-              timestamp: new Date(),
-              status: 'sent',
-              isOwn: true,
-            };
-            setMessages((prev) => [...prev, newMessage]);
-          } catch (err) {
-            errorToast('Failed to send message');
-            console.error(err);
-          }
+            if (!selectedRoomId) return;
+            try {
+                // Send message via API
+                const response = await axios.post(
+                    `${API_URL}/messages`,
+                    { roomId: selectedRoomId, content },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                success('Message sent');
+                // Add to local messages
+                const newMessage: Message = {
+                    id: response.data.id,
+                    roomId: selectedRoomId,
+                    sender: { id: currentUser.id, name: currentUser.username },
+                    content,
+                    timestamp: new Date(),
+                    status: 'sent',
+                    isOwn: true,
+                };
+                setMessages((prev) => [...prev, newMessage]);
+            } catch (err) {
+                errorToast('Failed to send message');
+                console.error(err);
+            }
         },
         [selectedRoomId, token, currentUser, API_URL, success, errorToast]
-      );
+    );
 
     const handleRoomSelect = useCallback((roomId: string) => {
         setSelectedRoomId(roomId);
