@@ -1,0 +1,201 @@
+import React, { useEffect, useRef } from 'react';
+import { cn, createFocusTrap, focusElement } from '../utils/theme';
+
+interface ModalProps {
+  isOpen: boolean;
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  onConfirm?: () => void;
+  confirmText?: string;
+  cancelText?: string;
+  isDestructive?: boolean;
+  className?: string;
+  contentClassName?: string;
+}
+
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  title,
+  children,
+  onClose,
+  onConfirm,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  isDestructive = false,
+  className,
+  contentClassName,
+}) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Handle focus trap
+  useEffect(() => {
+    if (!isOpen || !contentRef.current) return;
+
+    const { firstElement, lastElement } = createFocusTrap(contentRef.current);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            (lastElement as HTMLElement)?.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            (firstElement as HTMLElement)?.focus();
+          }
+        }
+      }
+    };
+
+    const handleBackdropClick = (e: MouseEvent) => {
+      if (e.target === modalRef.current) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    modalRef.current?.addEventListener('click', handleBackdropClick);
+
+    focusElement(firstElement as HTMLElement, 100);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      modalRef.current?.removeEventListener('click', handleBackdropClick);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      ref={modalRef}
+      className={cn(
+        'fixed inset-0 z-50',
+        'bg-mono-bg/80 backdrop-blur-glass',
+        'flex items-center justify-center',
+        'p-4 animate-fade-up'
+      )}
+      role="presentation"
+      aria-hidden="false"
+      onClick={(e) => e.target === modalRef.current && onClose()}
+    >
+      {/* Modal Content */}
+      <div
+        ref={contentRef}
+        className={cn(
+          'relative w-full max-w-md',
+          'rounded-glass',
+          'bg-mono-surface border border-mono-glass-border',
+          'shadow-glass',
+          'animate-fade-up',
+          className
+        )}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-mono-glass-border">
+          <h2
+            id="modal-title"
+            className="text-base font-semibold text-mono-text"
+          >
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className={cn(
+              'p-2 rounded-glass',
+              'bg-mono-surface-2 hover:bg-mono-surface/60',
+              'border border-transparent hover:border-mono-glass-border',
+              'text-mono-muted hover:text-mono-text',
+              'transition-all duration-fast ease-glass',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
+              'active:scale-95',
+              'min-h-[36px] min-w-[36px] flex items-center justify-center'
+            )}
+            aria-label="Close modal"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div
+          id="modal-description"
+          className={cn(
+            'px-6 py-4',
+            'text-sm text-mono-text',
+            contentClassName
+          )}
+        >
+          {children}
+        </div>
+
+        {/* Footer */}
+        {onConfirm && (
+          <div className="flex gap-2 px-6 py-4 border-t border-mono-glass-border justify-end">
+            <button
+              onClick={onClose}
+              className={cn(
+                'px-4 py-2 rounded-glass text-sm',
+                'bg-mono-surface-2 hover:bg-mono-surface/60',
+                'border border-mono-glass-border hover:border-mono-glass-highlight',
+                'text-mono-muted hover:text-mono-text',
+                'transition-all duration-fast ease-glass',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
+                'active:scale-95 hover:translate-y-[-1px]',
+                'min-h-[40px]'
+              )}
+            >
+              {cancelText}
+            </button>
+
+            {onConfirm && (
+              <button
+                onClick={onConfirm}
+                className={cn(
+                  'px-4 py-2 rounded-glass text-sm font-medium',
+                  'transition-all duration-fast ease-glass',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
+                  'active:scale-95 hover:translate-y-[-1px]',
+                  'min-h-[40px]',
+                  isDestructive
+                    ? 'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 text-red-300 hover:text-red-200'
+                    : 'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-highlight hover:border-mono-glass-highlight/80 text-mono-text'
+                )}
+              >
+                {confirmText}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Modal;
