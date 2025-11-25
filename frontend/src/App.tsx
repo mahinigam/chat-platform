@@ -148,10 +148,13 @@ function App() {
         try {
             const endpoint = isRegistering ? '/auth/register' : '/auth/login';
             const payload = isRegistering
-                ? { username, password, email: `${username}@example.com` }
-                : { email: `${username}@example.com`, password }; // Using username as email prefix for simplicity in demo
+                ? { username, password, email: `${username}@example.com`, displayName: username }
+                : { email: `${username}@example.com`, password };
 
-            const response = await axios.post(`${API_URL}${endpoint}`, payload);
+            console.log('Auth request:', { endpoint, payload, apiUrl: API_URL });
+            const response = await axios.post(`${API_URL}${endpoint}`, payload, {
+                timeout: 5000,
+            });
 
             const newToken = response.data.token;
             const user = response.data.user;
@@ -159,9 +162,13 @@ function App() {
             localStorage.setItem('token', newToken);
             setToken(newToken);
             setCurrentUser(user);
+            success('Login successful!');
         } catch (err: any) {
             console.error('Auth error:', err);
-            setError(err.response?.data?.error || 'Authentication failed');
+            const errorMsg = err.response?.data?.error 
+                || err.message 
+                || 'Authentication failed. Is the backend running?';
+            setError(errorMsg);
         }
     };
 
