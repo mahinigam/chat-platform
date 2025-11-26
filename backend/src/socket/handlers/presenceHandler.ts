@@ -19,17 +19,27 @@ class PresenceHandler {
             const serverInstanceId = process.env.SERVER_INSTANCE_ID || 'unknown';
 
             // Store session in database
-            await Database.query(
-                `INSERT INTO user_sessions (user_id, socket_id, server_instance, user_agent, ip_address)
-         VALUES ($1, $2, $3, $4, $5)`,
-                [
-                    userId,
-                    socket.id,
-                    serverInstanceId,
-                    socket.handshake.headers['user-agent'],
-                    socket.handshake.address,
-                ]
-            );
+            try {
+                await Database.query(
+                    `INSERT INTO user_sessions (user_id, socket_id, server_instance, user_agent, ip_address)
+             VALUES ($1, $2, $3, $4, $5)`,
+                    [
+                        userId,
+                        socket.id,
+                        serverInstanceId,
+                        socket.handshake.headers['user-agent'],
+                        socket.handshake.address,
+                    ]
+                );
+            } catch (dbError: any) {
+                // Handle case where user ID doesn't exist (e.g. old token, fresh DB)
+                if (dbError.code === '23503') {
+                    console.error(`User ${userId} not found in database. Forcing logout.`);
+                    socket.emit('auth_error', { message: 'User not found. Please log in again.' });
+                    throw new Error('User not found');
+                }
+                throw dbError;
+            }
 
             // Mark user as online in Redis
             await RedisService.setUserOnline(userId, socket.id);

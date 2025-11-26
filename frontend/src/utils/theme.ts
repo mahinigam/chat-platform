@@ -46,11 +46,13 @@ export const getAriaLabel = (sender: string, time: string, text: string): string
   return `Message from ${sender} at ${time}: ${text}`;
 };
 
-export const getStatusAriaLabel = (status: 'sent' | 'delivered' | 'read'): string => {
+export const getStatusAriaLabel = (status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed'): string => {
   const labels = {
+    sending: 'Sending message',
     sent: 'Message sent',
     delivered: 'Message delivered',
     read: 'Message read',
+    failed: 'Message failed to send',
   };
   return labels[status];
 };

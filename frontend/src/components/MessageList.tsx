@@ -12,7 +12,7 @@ interface Message {
   };
   content: string;
   timestamp: Date | string;
-  status?: 'sent' | 'delivered' | 'read';
+  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   isOwn: boolean;
   reactions?: Array<{
     emoji: string;

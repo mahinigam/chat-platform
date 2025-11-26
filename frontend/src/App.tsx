@@ -12,27 +12,29 @@ import axios from 'axios';
 import './index.css';
 
 interface Room {
-    id: string;
+    id: number;
     name: string;
-    avatar?: string;
-    unread: number;
-    snippet?: string;
-    timestamp?: string;
-    isOnline?: boolean;
+    room_type: 'direct' | 'group';
+    last_message_content?: string;
+    last_message_at?: string;
+    last_sender_username?: string;
+    isOnline?: boolean; // Derived from presence
+    unread?: number; // TODO: Implement unread count
 }
 
 interface Message {
     id: string;
-    roomId: string;
+    roomId: number;
     sender: {
-        id: string;
+        id: number;
         name: string;
         avatar?: string;
     };
     content: string;
     timestamp: Date | string;
-    status?: 'sent' | 'delivered' | 'read';
+    status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
     isOwn: boolean;
+    tempId?: string;
     reactions?: Array<{
         emoji: string;
         count: number;
@@ -51,46 +53,24 @@ function App() {
     const [password, setPassword] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
     const [error, setError] = useState('');
-    const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+
+    // Data state
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
+    // UI state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
 
-    // Mock rooms data
-    const mockRooms: Room[] = [
-        {
-            id: 'room-1',
-            name: 'Design Team',
-            unread: 3,
-            snippet: 'Let me review the designs...',
-            timestamp: '2:45 PM',
-            isOnline: true,
-        },
-        {
-            id: 'room-2',
-            name: 'Frontend Dev',
-            unread: 0,
-            snippet: 'Great work on the component refactor!',
-            timestamp: 'Yesterday',
-            isOnline: true,
-        },
-        {
-            id: 'room-3',
-            name: 'General',
-            unread: 12,
-            snippet: 'Anyone free for a quick sync?',
-            timestamp: '10:30 AM',
-            isOnline: false,
-        },
-    ];
-
     const API_URL = import.meta.env.VITE_API_URL || `http://localhost:3000/api`;
 
+    // Socket connection
     useEffect(() => {
         if (!token) return;
 
-        // Connection timeout safety
         const timeoutId = setTimeout(() => {
             if (!isConnected) {
                 console.log('Connection timed out, logging out...');
@@ -98,12 +78,10 @@ function App() {
             }
         }, 5000);
 
-        // Connect to WebSocket with real token
         const socket = socketService.connect(token);
 
         if (socket.connected) {
             setIsConnected(true);
-            console.log('Already connected to chat server');
         }
 
         socket.on('connect', () => {
@@ -121,14 +99,17 @@ function App() {
             console.error('Connection error:', err);
             setError('Failed to connect to chat server');
             setIsConnected(false);
-
-            // Auto-logout on auth error
             if (err.message.includes('jwt') || err.message.includes('Authentication') || err.message.includes('token')) {
                 logout();
             }
         });
 
-        // Decode token to get user info (simplified)
+        socket.on('auth_error', (err) => {
+            console.error('Auth error:', err);
+            logout();
+        });
+
+        // Decode token
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             setCurrentUser({
@@ -146,6 +127,123 @@ function App() {
         };
     }, [token]);
 
+    // Fetch rooms
+    useEffect(() => {
+        if (!token || !isConnected) return;
+
+        const fetchRooms = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/rooms`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setRooms(response.data.rooms);
+            } catch (err) {
+                console.error('Failed to fetch rooms', err);
+                errorToast('Failed to load rooms');
+            }
+        };
+
+        fetchRooms();
+    }, [token, isConnected, API_URL, errorToast]);
+
+    // Fetch messages when room selected
+    useEffect(() => {
+        if (!selectedRoomId || !token) return;
+
+        const fetchMessages = async () => {
+            setIsLoadingMessages(true);
+            try {
+                const response = await axios.get(`${API_URL}/messages/room/${selectedRoomId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                // Transform backend messages to frontend format
+                const loadedMessages = response.data.messages.map((msg: any) => ({
+                    id: msg.id,
+                    roomId: msg.room_id,
+                    sender: {
+                        id: msg.sender_id,
+                        name: msg.sender_username || 'Unknown',
+                        avatar: msg.sender_avatar
+                    },
+                    content: msg.content,
+                    timestamp: msg.created_at,
+                    status: 'read', // Assume read for history
+                    isOwn: msg.sender_id === currentUser?.id,
+                    reactions: []
+                }));
+
+                setMessages(loadedMessages.reverse()); // Oldest first
+            } catch (err) {
+                console.error('Failed to fetch messages', err);
+                errorToast('Failed to load messages');
+            } finally {
+                setIsLoadingMessages(false);
+            }
+        };
+
+        fetchMessages();
+
+        // Join room via socket
+        socketService.joinRoom(selectedRoomId);
+
+        return () => {
+            if (selectedRoomId) {
+                socketService.leaveRoom(selectedRoomId);
+            }
+        };
+    }, [selectedRoomId, token, currentUser, API_URL, errorToast]);
+
+    // Socket event listeners
+    useEffect(() => {
+        if (!socketService.getSocket()) return;
+
+        const handleNewMessage = (message: any) => {
+            // Only add if it belongs to current room
+            if (selectedRoomId && message.room_id === selectedRoomId) {
+                const newMessage: Message = {
+                    id: message.id,
+                    roomId: message.room_id,
+                    sender: {
+                        id: message.sender.id,
+                        name: message.sender.username,
+                        avatar: message.sender.avatar
+                    },
+                    content: message.content,
+                    timestamp: message.created_at,
+                    status: 'delivered',
+                    isOwn: message.sender.id === currentUser?.id,
+                    reactions: []
+                };
+
+                setMessages(prev => {
+                    // Avoid duplicates
+                    if (prev.some(m => m.id === newMessage.id)) return prev;
+                    return [...prev, newMessage];
+                });
+            }
+
+            // Update room list preview
+            setRooms(prev => prev.map(room => {
+                if (room.id === message.room_id) {
+                    return {
+                        ...room,
+                        last_message_content: message.content,
+                        last_message_at: message.created_at,
+                        last_sender_username: message.sender.username
+                    };
+                }
+                return room;
+            }));
+        };
+
+        socketService.on('message:new', handleNewMessage);
+
+        return () => {
+            socketService.off('message:new', handleNewMessage);
+        };
+    }, [selectedRoomId, currentUser]);
+
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -156,7 +254,6 @@ function App() {
                 ? { username, password, email: `${username}@example.com`, displayName: username }
                 : { email: `${username}@example.com`, password };
 
-            console.log('Auth request:', { endpoint, payload, apiUrl: API_URL });
             const response = await axios.post(`${API_URL}${endpoint}`, payload, {
                 timeout: 5000,
             });
@@ -183,40 +280,56 @@ function App() {
         setCurrentUser(null);
         setIsConnected(false);
         socketService.disconnect();
+        setMessages([]);
+        setRooms([]);
+        setSelectedRoomId(null);
     };
 
     const handleSendMessage = useCallback(
         async (content: string) => {
-            if (!selectedRoomId) return;
-            try {
-                // Send message via API
-                const response = await axios.post(
-                    `${API_URL}/messages`,
-                    { roomId: selectedRoomId, content },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                success('Message sent');
-                // Add to local messages
-                const newMessage: Message = {
-                    id: response.data.id,
-                    roomId: selectedRoomId,
-                    sender: { id: currentUser.id, name: currentUser.username },
-                    content,
-                    timestamp: new Date(),
-                    status: 'sent',
-                    isOwn: true,
-                };
-                setMessages((prev) => [...prev, newMessage]);
-            } catch (err) {
-                errorToast('Failed to send message');
-                console.error(err);
-            }
+            if (!selectedRoomId || !currentUser) return;
+
+            const tempId = Date.now().toString();
+
+            // Optimistic update
+            const optimisticMessage: Message = {
+                id: tempId,
+                roomId: selectedRoomId,
+                sender: { id: currentUser.id, name: currentUser.username },
+                content,
+                timestamp: new Date(),
+                status: 'sending',
+                isOwn: true,
+                tempId
+            };
+
+            setMessages(prev => [...prev, optimisticMessage]);
+
+            // Send via socket
+            socketService.sendMessage(selectedRoomId, content, tempId, (response) => {
+                if (response.success) {
+                    // Update message with real ID and status
+                    setMessages(prev => prev.map(msg =>
+                        msg.tempId === tempId
+                            ? { ...msg, id: response.message.id, status: 'sent', tempId: undefined }
+                            : msg
+                    ));
+                } else {
+                    // Mark as failed
+                    setMessages(prev => prev.map(msg =>
+                        msg.tempId === tempId
+                            ? { ...msg, status: 'failed' }
+                            : msg
+                    ));
+                    errorToast(response.error || 'Failed to send message');
+                }
+            });
         },
-        [selectedRoomId, token, currentUser, API_URL, success, errorToast]
+        [selectedRoomId, currentUser, errorToast]
     );
 
     const handleRoomSelect = useCallback((roomId: string) => {
-        setSelectedRoomId(roomId);
+        setSelectedRoomId(parseInt(roomId));
         setIsMobileMenuOpen(false);
     }, []);
 
@@ -224,17 +337,36 @@ function App() {
         setIsModalOpen(true);
     }, []);
 
+    const createRoom = async (name: string) => {
+        try {
+            const response = await axios.post(`${API_URL}/rooms`, {
+                name,
+                roomType: 'group',
+                members: []
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const newRoom = response.data.room;
+            setRooms(prev => [newRoom, ...prev]);
+            setSelectedRoomId(newRoom.id);
+            setIsModalOpen(false);
+            success('Room created successfully!');
+        } catch (err) {
+            console.error('Create room error:', err);
+            errorToast('Failed to create room');
+        }
+    };
+
     if (!token) {
         return (
             <div className="min-h-screen bg-mono-bg text-mono-text flex items-center justify-center p-4">
                 <div className="w-full max-w-sm">
-                    {/* Logo */}
                     <div className="text-center mb-8">
                         <h1 className="text-4xl font-bold mb-2">Samvaad</h1>
                         <p className="text-mono-muted">Connect with clarity</p>
                     </div>
 
-                    {/* Error Message */}
                     {error && (
                         <div className={cn(
                             'mb-6 px-4 py-3 rounded-glass',
@@ -245,11 +377,7 @@ function App() {
                         </div>
                     )}
 
-                    {/* Form */}
-                    <form onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAuth(e);
-                    }} className="space-y-4">
+                    <form onSubmit={handleAuth} className="space-y-4">
                         <input
                             type="text"
                             value={username}
@@ -295,7 +423,6 @@ function App() {
                         </button>
                     </form>
 
-                    {/* Toggle Register */}
                     <div className="mt-6 text-center">
                         <button
                             onClick={() => setIsRegistering(!isRegistering)}
@@ -338,11 +465,21 @@ function App() {
         );
     }
 
-    const currentRoom = mockRooms.find((r: Room) => r.id === selectedRoomId);
+    const currentRoom = rooms.find(r => r.id === selectedRoomId);
+
+    // Transform rooms for Sidebar (map id to string if needed by Sidebar, but better to fix Sidebar types later)
+    // For now, casting id to string for Sidebar compatibility if it expects string
+    const sidebarRooms = rooms.map(r => ({
+        id: r.id.toString(),
+        name: r.name || 'Direct Message',
+        unread: r.unread || 0,
+        snippet: r.last_message_content,
+        timestamp: r.last_message_at ? new Date(r.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+        isOnline: r.isOnline
+    }));
 
     return (
         <div className="h-screen w-full bg-mono-bg flex overflow-hidden">
-            {/* Sidebar */}
             <div
                 className={cn(
                     'hidden md:flex w-80 flex-shrink-0 h-full',
@@ -351,16 +488,14 @@ function App() {
                 )}
             >
                 <Sidebar
-                    rooms={mockRooms}
-                    selectedRoomId={selectedRoomId || undefined}
+                    rooms={sidebarRooms}
+                    selectedRoomId={selectedRoomId?.toString()}
                     onRoomSelect={handleRoomSelect}
                     onCreateRoom={handleCreateRoom}
                 />
             </div>
 
-            {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-w-0 h-full">
-                {/* Header */}
                 <div
                     className={cn(
                         'flex-shrink-0 h-16 px-4 py-3',
@@ -370,7 +505,6 @@ function App() {
                     )}
                 >
                     <div className="flex items-center gap-2 min-w-0">
-                        {/* Mobile Menu Toggle */}
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className={cn(
@@ -401,18 +535,16 @@ function App() {
                             </svg>
                         </button>
 
-                        {/* Room Name */}
                         <div className="min-w-0">
                             <h2 className="text-base font-semibold text-mono-text truncate">
                                 {currentRoom?.name || 'Select a room'}
                             </h2>
                             <p className="text-xs text-mono-muted truncate">
-                                {currentRoom?.isOnline ? 'Online' : 'Offline'}
+                                {currentRoom ? (currentRoom.isOnline ? 'Online' : 'Offline') : ''}
                             </p>
                         </div>
                     </div>
 
-                    {/* Header Actions */}
                     <div className="flex gap-2 flex-shrink-0">
                         <button
                             onClick={logout}
@@ -448,7 +580,15 @@ function App() {
 
                 {/* Messages */}
                 <MessageList
-                    messages={messages}
+                    messages={messages.map(m => ({
+                        ...m,
+                        sender: {
+                            ...m.sender,
+                            id: m.sender.id.toString() // Convert to string for MessageList compatibility
+                        },
+                        roomId: m.roomId.toString()
+                    }))}
+                    isLoading={isLoadingMessages}
                     roomName={currentRoom?.name}
                     className="flex-1"
                 />
@@ -460,7 +600,6 @@ function App() {
                 />
             </div>
 
-            {/* Mobile Sidebar Overlay */}
             {isMobileMenuOpen && (
                 <div
                     className={cn(
@@ -480,8 +619,8 @@ function App() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Sidebar
-                            rooms={mockRooms}
-                            selectedRoomId={selectedRoomId || undefined}
+                            rooms={sidebarRooms}
+                            selectedRoomId={selectedRoomId?.toString()}
                             onRoomSelect={handleRoomSelect}
                             onCreateRoom={handleCreateRoom}
                         />
@@ -489,19 +628,21 @@ function App() {
                 </div>
             )}
 
-            {/* Modal */}
             <Modal
                 isOpen={isModalOpen}
                 title="Create New Room"
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={() => {
-                    setIsModalOpen(false);
-                    success('Room created successfully!');
+                    const input = document.getElementById('new-room-name') as HTMLInputElement;
+                    if (input && input.value) {
+                        createRoom(input.value);
+                    }
                 }}
                 confirmText="Create"
                 contentClassName="space-y-4"
             >
                 <input
+                    id="new-room-name"
                     type="text"
                     placeholder="Room name"
                     className={cn(
@@ -525,7 +666,6 @@ function App() {
                 />
             </Modal>
 
-            {/* Toast Container */}
             <ToastContainer
                 toasts={toasts}
                 onDismiss={dismissToast}
