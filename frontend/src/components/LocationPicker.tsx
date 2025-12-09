@@ -23,7 +23,8 @@ interface LocationPickerProps {
 
 const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, onCancel }) => {
     const mapRef = useRef<HTMLDivElement>(null);
-    const [map, setMap] = useState<L.Map | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [, setMap] = useState<L.Map | null>(null);
     const [marker, setMarker] = useState<L.Marker | null>(null);
     const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [isLoading, setIsLoading] = useState(true);

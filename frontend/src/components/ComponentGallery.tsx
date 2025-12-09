@@ -218,8 +218,9 @@ const ComponentGallery: React.FC = () => {
                 </p>
                 <div className="border border-mono-glass-border rounded-glass overflow-hidden">
                   <Composer
-                    onSendMessage={(msg) => success(`Sent: ${msg}`)}
-                    placeholder="Try typing here... Press Ctrl+Enter to send!"
+                    onSendMessage={(msg) => `Sent: ${msg}`}
+                    placeholder="Type a message..."
+                    onAttachmentSelect={(type) => console.log('Attachment:', type)}
                   />
                 </div>
               </section>

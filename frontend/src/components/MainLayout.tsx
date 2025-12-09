@@ -294,6 +294,7 @@ const MainLayout: React.FC = () => {
         <Composer
           onSendMessage={handleSendMessage}
           placeholder="Type a message..."
+          onAttachmentSelect={(type) => console.log('Attachment selected:', type)}
         />
       </div>
 

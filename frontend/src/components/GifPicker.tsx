@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GiphyFetch } from '@giphy/js-fetch-api';
 import { Grid } from '@giphy/react-components';
+import { useDebounce } from 'use-debounce';
 import { cn } from '../utils/theme';
 
 // Use a demo key if not provided, but warn user
 const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY || 'sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh'; // Demo key
-const gf = new GiphyFetch(GIPHY_API_KEY);
+const gf = new GiphyFetch(GIPHY_API_KEY); // TODO: Move to env
 
 interface GifPickerProps {
     onSelect: (gif: any) => void;
@@ -14,11 +15,13 @@ interface GifPickerProps {
 
 const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
     const [search, setSearch] = useState('');
-    const [width, setWidth] = useState(window.innerWidth < 400 ? window.innerWidth - 40 : 350);
+    const [debouncedSearch] = useDebounce(search, 500);
+    // const [width, setWidth] = useState(window.innerWidth < 400 ? window.innerWidth - 40 : 350);
+    const width = window.innerWidth < 400 ? window.innerWidth - 40 : 350;
 
     const fetchGifs = (offset: number) => {
-        if (search) {
-            return gf.search(search, { offset, limit: 10 });
+        if (debouncedSearch) {
+            return gf.search(debouncedSearch, { offset, limit: 10 });
         }
         return gf.trending({ offset, limit: 10 });
     };
@@ -48,7 +51,7 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
                         width={width}
                         columns={3}
                         fetchGifs={fetchGifs}
-                        key={search} // Force re-render on search change
+                        key={debouncedSearch} // Force re-render on search change
                         onGifClick={(gif, e) => {
                             e.preventDefault();
                             onSelect(gif);

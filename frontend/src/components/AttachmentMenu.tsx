@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '../utils/theme';
+import { Image, FileText, BarChart2, MapPin, FileImage } from 'lucide-react';
 
 interface AttachmentMenuProps {
     onSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif') => void;
@@ -24,11 +25,11 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({ onSelect, className }) 
     }, []);
 
     const options = [
-        { type: 'image', label: 'Photos & Videos', icon: '🖼️' },
-        { type: 'file', label: 'Document', icon: '📄' },
-        { type: 'poll', label: 'Poll', icon: '📊' },
-        { type: 'location', label: 'Location', icon: '📍' },
-        { type: 'gif', label: 'GIF', icon: '👾' },
+        { type: 'image', label: 'Photos & Videos', icon: <Image className="w-6 h-6" /> },
+        { type: 'file', label: 'Document', icon: <FileText className="w-6 h-6" /> },
+        { type: 'poll', label: 'Poll', icon: <BarChart2 className="w-6 h-6" /> },
+        { type: 'location', label: 'Location', icon: <MapPin className="w-6 h-6" /> },
+        { type: 'gif', label: 'GIF', icon: <FileImage className="w-6 h-6" /> },
     ] as const;
 
     return (
@@ -50,7 +51,7 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({ onSelect, className }) 
 
             {isOpen && (
                 <div className={cn(
-                    'absolute bottom-full left-0 mb-2 w-48',
+                    'absolute bottom-full left-0 mb-2 w-56',
                     'bg-mono-surface border border-mono-glass-border rounded-glass',
                     'shadow-lg backdrop-blur-glass',
                     'animate-fade-up origin-bottom-left',
@@ -64,12 +65,12 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({ onSelect, className }) 
                                 setIsOpen(false);
                             }}
                             className={cn(
-                                'flex items-center gap-3 px-4 py-2 text-left',
+                                'flex items-center gap-3 px-4 py-3 text-left',
                                 'text-mono-text hover:bg-mono-surface-2',
                                 'transition-colors duration-fast'
                             )}
                         >
-                            <span className="text-xl">{option.icon}</span>
+                            <span className="text-accent-primary">{option.icon}</span>
                             <span className="text-sm font-medium">{option.label}</span>
                         </button>
                     ))}

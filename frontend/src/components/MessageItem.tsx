@@ -111,7 +111,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
             <h4 className="font-medium text-mono-text mb-2">{pollData?.question}</h4>
             {pollData?.options.map((option: any, index: number) => {
               const percentage = totalVotes > 0 ? Math.round(((option.votes || 0) / totalVotes) * 100) : 0;
-              const isVoted = false; // TODO: Check if current user voted
+              // const isVoted = false; // TODO: Check if current user voted
 
               return (
                 <button
