@@ -76,11 +76,7 @@ const Composer: React.FC<ComposerProps> = ({
       aria-label="Message composer"
     >
       {/* Hint */}
-      {isFocused && (
-        <div className="text-xs text-mono-muted mb-2 px-1 animate-fade-up">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-mono-surface border border-mono-glass-border text-mono-text text-xs">Ctrl+Enter</kbd> to send, <kbd className="px-1.5 py-0.5 rounded bg-mono-surface border border-mono-glass-border text-mono-text text-xs">Shift+Enter</kbd> for new line
-        </div>
-      )}
+      {/* Hint removed */}
 
       {/* Composer Container */}
       <div
