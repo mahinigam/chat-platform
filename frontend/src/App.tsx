@@ -1,14 +1,19 @@
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import MessageList from './components/MessageList';
 import Composer from './components/Composer';
 import Modal from './components/Modal';
 import ToastContainer from './components/Toast';
+import PollCreator from './components/PollCreator';
+import LocationPicker from './components/LocationPicker';
+import GifPicker from './components/GifPicker';
+import AudioRecorder from './components/AudioRecorder';
 import { useToast } from './hooks/useToast';
 import { cn } from './utils/theme';
 import socketService from './services/socket';
 import axios from 'axios';
+import { uploadFile } from './api/upload';
 import './index.css';
 
 interface Room {
@@ -18,8 +23,8 @@ interface Room {
     last_message_content?: string;
     last_message_at?: string;
     last_sender_username?: string;
-    isOnline?: boolean; // Derived from presence
-    unread?: number; // TODO: Implement unread count
+    isOnline?: boolean;
+    unread?: number;
 }
 
 interface Message {
@@ -31,6 +36,8 @@ interface Message {
         avatar?: string;
     };
     content: string;
+    messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker';
+    metadata?: any;
     timestamp: Date | string;
     status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
     isOwn: boolean;
@@ -63,6 +70,12 @@ function App() {
     // UI state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isPollCreatorOpen, setIsPollCreatorOpen] = useState(false);
+    const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+    const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
+    const [isAudioRecording, setIsAudioRecording] = useState(false);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
 
     const API_URL = import.meta.env.VITE_API_URL || `http://localhost:3000/api`;
@@ -167,6 +180,8 @@ function App() {
                         avatar: msg.sender_avatar
                     },
                     content: msg.content,
+                    messageType: msg.message_type,
+                    metadata: msg.metadata,
                     timestamp: msg.created_at,
                     status: 'read', // Assume read for history
                     isOwn: msg.sender_id === currentUser?.id,
@@ -210,6 +225,8 @@ function App() {
                         avatar: message.sender.avatar
                     },
                     content: message.content,
+                    messageType: message.message_type,
+                    metadata: message.metadata,
                     timestamp: message.created_at,
                     status: 'delivered',
                     isOwn: message.sender.id === currentUser?.id,
@@ -228,7 +245,7 @@ function App() {
                 if (room.id === message.room_id) {
                     return {
                         ...room,
-                        last_message_content: message.content,
+                        last_message_content: message.message_type === 'text' ? message.content : `Sent a ${message.message_type}`,
                         last_message_at: message.created_at,
                         last_sender_username: message.sender.username
                     };
@@ -237,10 +254,29 @@ function App() {
             }));
         };
 
+        const handlePollUpdate = (data: any) => {
+            if (selectedRoomId && data.roomId === selectedRoomId) {
+                setMessages(prev => prev.map(msg => {
+                    if (msg.id === data.pollId) {
+                        return {
+                            ...msg,
+                            metadata: {
+                                ...msg.metadata,
+                                options: data.options
+                            }
+                        };
+                    }
+                    return msg;
+                }));
+            }
+        }
+
         socketService.on('message:new', handleNewMessage);
+        socketService.on('poll:updated', handlePollUpdate);
 
         return () => {
             socketService.off('message:new', handleNewMessage);
+            socketService.off('poll:updated', handlePollUpdate);
         };
     }, [selectedRoomId, currentUser]);
 
@@ -286,7 +322,7 @@ function App() {
     };
 
     const handleSendMessage = useCallback(
-        async (content: string) => {
+        async (content: string, type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker' = 'text', metadata?: any) => {
             if (!selectedRoomId || !currentUser) return;
 
             const tempId = Date.now().toString();
@@ -297,6 +333,8 @@ function App() {
                 roomId: selectedRoomId,
                 sender: { id: currentUser.id, name: currentUser.username },
                 content,
+                messageType: type,
+                metadata,
                 timestamp: new Date(),
                 status: 'sending',
                 isOwn: true,
@@ -306,7 +344,13 @@ function App() {
             setMessages(prev => [...prev, optimisticMessage]);
 
             // Send via socket
-            socketService.sendMessage(selectedRoomId, content, tempId, (response) => {
+            socketService.emit('message:send', {
+                roomId: selectedRoomId,
+                content,
+                messageType: type,
+                metadata,
+                tempId
+            }, (response: any) => {
                 if (response.success) {
                     // Update message with real ID and status
                     setMessages(prev => prev.map(msg =>
@@ -327,6 +371,96 @@ function App() {
         },
         [selectedRoomId, currentUser, errorToast]
     );
+
+    const handleAttachmentSelect = (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif') => {
+        switch (type) {
+            case 'poll':
+                setIsPollCreatorOpen(true);
+                break;
+            case 'location':
+                setIsLocationPickerOpen(true);
+                break;
+            case 'gif':
+                setIsGifPickerOpen(true);
+                break;
+            case 'image':
+            case 'video':
+            case 'file':
+                if (fileInputRef.current) {
+                    fileInputRef.current.accept = type === 'image' ? 'image/*' : type === 'video' ? 'video/*' : '*/*';
+                    fileInputRef.current.click();
+                }
+                break;
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const uploaded = await uploadFile(file);
+            let type: 'image' | 'video' | 'file' | 'audio' = 'file';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('video/')) type = 'video';
+            else if (file.type.startsWith('audio/')) type = 'audio';
+
+            handleSendMessage(uploaded.url, type, {
+                url: uploaded.url,
+                originalName: uploaded.filename,
+                mimetype: uploaded.mimetype,
+                size: uploaded.size
+            });
+        } catch (err) {
+            console.error('Upload failed', err);
+            errorToast('Failed to upload file');
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handlePollSubmit = (question: string, options: string[], allowMultiple: boolean) => {
+        handleSendMessage('Poll: ' + question, 'poll', {
+            question,
+            options: options.map(opt => ({ text: opt, votes: 0 })),
+            allowMultiple
+        });
+    };
+
+    const handleLocationSelect = (location: { lat: number; lng: number }) => {
+        handleSendMessage('Shared Location', 'location', location);
+        setIsLocationPickerOpen(false);
+    };
+
+    const handleGifSelect = (gif: any) => {
+        handleSendMessage(gif.images.fixed_height.url, 'gif', {
+            url: gif.images.fixed_height.url,
+            width: gif.images.fixed_height.width,
+            height: gif.images.fixed_height.height
+        });
+        setIsGifPickerOpen(false);
+    };
+
+    const handleAudioComplete = async (audioBlob: Blob) => {
+        const file = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
+        try {
+            const uploaded = await uploadFile(file);
+            handleSendMessage(uploaded.url, 'audio', {
+                url: uploaded.url,
+                originalName: 'Voice Note',
+                mimetype: 'audio/webm',
+                size: file.size
+            });
+            setIsAudioRecording(false);
+        } catch (err) {
+            console.error('Audio upload failed', err);
+            errorToast('Failed to send voice note');
+        }
+    };
+
+    const handlePollVote = (pollId: string, optionIndex: number) => {
+        socketService.emit('poll:vote', { pollId, optionIndex });
+    };
 
     const handleRoomSelect = useCallback((roomId: string) => {
         setSelectedRoomId(parseInt(roomId));
@@ -467,8 +601,6 @@ function App() {
 
     const currentRoom = rooms.find(r => r.id === selectedRoomId);
 
-    // Transform rooms for Sidebar (map id to string if needed by Sidebar, but better to fix Sidebar types later)
-    // For now, casting id to string for Sidebar compatibility if it expects string
     const sidebarRooms = rooms.map(r => ({
         id: r.id.toString(),
         name: r.name || 'Direct Message',
@@ -519,19 +651,8 @@ function App() {
                             )}
                             aria-label="Toggle menu"
                         >
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 6h16M4 12h16M4 18h16"
-                                />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
 
@@ -560,45 +681,79 @@ function App() {
                             )}
                             aria-label="Logout"
                         >
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                         </button>
                     </div>
                 </div>
 
                 {/* Messages */}
-                <MessageList
-                    messages={messages.map(m => ({
-                        ...m,
-                        sender: {
-                            ...m.sender,
-                            id: m.sender.id.toString() // Convert to string for MessageList compatibility
-                        },
-                        roomId: m.roomId.toString()
-                    }))}
-                    isLoading={isLoadingMessages}
-                    roomName={currentRoom?.name}
-                    className="flex-1"
-                />
+                <div className="flex-1 overflow-hidden relative">
+                    <MessageList
+                        messages={messages.map(m => ({
+                            ...m,
+                            sender: {
+                                ...m.sender,
+                                id: m.sender.id.toString()
+                            },
+                            roomId: m.roomId.toString()
+                        }))}
+                        isLoading={isLoadingMessages}
+                        roomName={currentRoom?.name}
+                        className="h-full"
+                        onPollVote={handlePollVote}
+                    />
+
+                    {/* Audio Recorder Overlay */}
+                    {isAudioRecording && (
+                        <div className="absolute bottom-4 left-4 right-4 z-10 flex justify-center">
+                            <AudioRecorder
+                                onRecordingComplete={handleAudioComplete}
+                                onCancel={() => setIsAudioRecording(false)}
+                            />
+                        </div>
+                    )}
+                </div>
 
                 {/* Composer */}
-                <Composer
-                    onSendMessage={handleSendMessage}
-                    placeholder="Type a message..."
-                />
+                {!isAudioRecording && (
+                    <Composer
+                        onSendMessage={(content) => handleSendMessage(content)}
+                        onAttachmentSelect={handleAttachmentSelect}
+                        placeholder="Type a message..."
+                    />
+                )}
             </div>
+
+            {/* Hidden File Input */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleFileUpload}
+            />
+
+            {/* Modals */}
+            <PollCreator
+                isOpen={isPollCreatorOpen}
+                onClose={() => setIsPollCreatorOpen(false)}
+                onSubmit={handlePollSubmit}
+            />
+
+            {isLocationPickerOpen && (
+                <LocationPicker
+                    onLocationSelect={handleLocationSelect}
+                    onCancel={() => setIsLocationPickerOpen(false)}
+                />
+            )}
+
+            {isGifPickerOpen && (
+                <GifPicker
+                    onSelect={handleGifSelect}
+                    onClose={() => setIsGifPickerOpen(false)}
+                />
+            )}
 
             {isMobileMenuOpen && (
                 <div

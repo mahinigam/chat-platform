@@ -1,25 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { cn, smoothScroll, announceToScreenReader } from '../utils/theme';
-import MessageItem from './MessageItem';
-
-interface Message {
-  id: string;
-  roomId: string;
-  sender: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  content: string;
-  timestamp: Date | string;
-  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
-  isOwn: boolean;
-  reactions?: Array<{
-    emoji: string;
-    count: number;
-    by: string[];
-  }>;
-}
+import MessageItem, { Message } from './MessageItem';
 
 interface MessageListProps {
   messages: Message[];
@@ -28,6 +9,7 @@ interface MessageListProps {
   onLoadMore?: () => void;
   roomName?: string;
   className?: string;
+  onPollVote?: (pollId: string, optionIndex: number) => void;
 }
 
 const LOAD_MORE_THRESHOLD = 200; // pixels from top
@@ -39,6 +21,7 @@ const MessageList: React.FC<MessageListProps> = ({
   onLoadMore,
   roomName = 'Chat',
   className,
+  onPollVote,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLUListElement>(null);
@@ -211,7 +194,7 @@ const MessageList: React.FC<MessageListProps> = ({
             ref={index === messages.length - 1 ? lastMessageRef : undefined}
             role="listitem"
           >
-            <MessageItem message={message} />
+            <MessageItem message={message} onPollVote={onPollVote} />
           </li>
         ))}
 

@@ -4,12 +4,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
+import path from 'path';
 import initializeSocket from './socket';
 import Database from './config/database';
 import { redisClient, RedisService } from './config/redis';
 import authRoutes from './routes/auth';
 import messageRoutes from './routes/messages';
 import roomRoutes from './routes/rooms';
+import uploadRoutes from './routes/upload';
 
 dotenv.config();
 
@@ -31,6 +33,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Request logging in development
 if (process.env.NODE_ENV === 'development') {
     app.use((req, _res, next) => {
@@ -45,6 +50,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check endpoint
 app.get('/health', async (_req: Request, res: Response) => {

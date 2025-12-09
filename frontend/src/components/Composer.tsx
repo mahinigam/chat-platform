@@ -1,8 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { cn, focusElement } from '../utils/theme';
+import AttachmentMenu from './AttachmentMenu';
 
 interface ComposerProps {
   onSendMessage: (content: string) => void;
+  onAttachmentSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif') => void;
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
@@ -10,6 +12,7 @@ interface ComposerProps {
 
 const Composer: React.FC<ComposerProps> = ({
   onSendMessage,
+  onAttachmentSelect,
   isLoading = false,
   placeholder = 'Type a message...',
   className,
@@ -91,37 +94,8 @@ const Composer: React.FC<ComposerProps> = ({
             : 'border-mono-glass-border hover:border-mono-glass-border'
         )}
       >
-        {/* Attachment Button */}
-        <button
-          className={cn(
-            'p-2 rounded-glass flex-shrink-0',
-            'bg-mono-surface-2 hover:bg-mono-surface/40',
-            'border border-transparent hover:border-mono-glass-border',
-            'text-mono-muted hover:text-mono-text',
-            'transition-all duration-fast ease-glass',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-            'active:scale-95 hover:translate-y-[-1px]',
-            'min-h-[36px] min-w-[36px] flex items-center justify-center'
-          )}
-          aria-label="Attach file"
-          title="Attach file"
-          disabled={isLoading}
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8m0 8l-6-4m6 4l6-4"
-            />
-          </svg>
-        </button>
+        {/* Attachment Menu */}
+        <AttachmentMenu onSelect={onAttachmentSelect} className="flex-shrink-0" />
 
         {/* Textarea */}
         <textarea

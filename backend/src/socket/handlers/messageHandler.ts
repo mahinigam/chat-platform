@@ -39,7 +39,7 @@ class MessageHandler {
         callback?: (response: any) => void
     ): Promise<void> {
         try {
-            const { userId } = socket;
+            const { userId, username } = socket;
             const { roomId, content, messageType = 'text', metadata, tempId } = data;
 
             // Validation
@@ -108,8 +108,9 @@ class MessageHandler {
                 ...message,
                 sender: {
                     id: userId,
-                    username: socket.username,
+                    username: username,
                 },
+                tempId, // Send back tempId so other clients can deduplicate if needed
             });
 
             // Stop typing indicator for this user
@@ -117,7 +118,7 @@ class MessageHandler {
             socket.to(`room:${roomId}`).emit('typing:stop', {
                 roomId,
                 userId,
-                username: socket.username,
+                username: username,
             });
 
             // Send acknowledgment to sender (optimistic UI confirmation)
@@ -149,7 +150,7 @@ class MessageHandler {
      */
     async handleMessageDelivered(
         socket: AuthenticatedSocket,
-        data: MessageDeliveredData
+        data: { messageId: string; roomId: number }
     ): Promise<void> {
         try {
             const { userId } = socket;
@@ -183,7 +184,7 @@ class MessageHandler {
      */
     async handleMessageRead(
         socket: AuthenticatedSocket,
-        data: MessageReadData
+        data: { messageId: string; roomId: number }
     ): Promise<void> {
         try {
             const { userId } = socket;

@@ -160,6 +160,12 @@ class SocketService {
     off(event: string, callback?: (...args: any[]) => void): void {
         this.socket?.off(event, callback);
     }
+    /**
+     * Emit a custom event
+     */
+    emit(event: string, data: any, callback?: (response: any) => void): void {
+        this.socket?.emit(event, data, callback);
+    }
 }
 
 export default new SocketService();

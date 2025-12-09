@@ -1,30 +1,175 @@
 import React, { useState } from 'react';
 import { cn, formatTimestamp, getStatusAriaLabel, getAriaLabel } from '../utils/theme';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-interface MessageItemProps {
-  message: {
+// Fix Leaflet icon issue
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+export interface Message {
+  id: string;
+  sender: {
     id: string;
-    sender: {
-      id: string;
-      name: string;
-      avatar?: string;
-    };
-    content: string;
-    timestamp: Date | string;
-    status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
-    isOwn: boolean;
-    reactions?: Array<{
-      emoji: string;
-      count: number;
-      by: string[];
-    }>;
+    name: string;
+    avatar?: string;
   };
+  content: string;
+  messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker';
+  metadata?: any;
+  timestamp: Date | string;
+  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+  isOwn: boolean;
+  reactions?: Array<{
+    emoji: string;
+    count: number;
+    by: string[];
+  }>;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
-  const [showReactions, setShowReactions] = useState(false);
+interface MessageItemProps {
+  message: Message;
+  onPollVote?: (pollId: string, optionIndex: number) => void;
+}
 
+const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
+  const [showReactions, setShowReactions] = useState(false);
   const timestamp = formatTimestamp(message.timestamp);
+
+  const renderContent = () => {
+    switch (message.messageType) {
+      case 'image':
+      case 'gif':
+      case 'sticker':
+        return (
+          <div className="relative group/image">
+            <img
+              src={message.metadata?.url || message.content}
+              alt="Attachment"
+              className="max-w-full rounded-lg max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => window.open(message.metadata?.url || message.content, '_blank')}
+            />
+          </div>
+        );
+      case 'video':
+        return (
+          <video
+            src={message.metadata?.url || message.content}
+            controls
+            className="max-w-full rounded-lg max-h-[300px]"
+          />
+        );
+      case 'audio':
+        return (
+          <audio
+            src={message.metadata?.url || message.content}
+            controls
+            className="w-[250px]"
+          />
+        );
+      case 'file':
+        return (
+          <a
+            href={message.metadata?.url || message.content}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-3 bg-mono-surface-2 rounded-lg hover:bg-mono-surface-3 transition-colors group/file"
+          >
+            <div className="p-2 bg-mono-glass-highlight/20 rounded-full text-mono-glass-highlight">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-mono-text truncate">
+                {message.metadata?.originalName || 'Document'}
+              </p>
+              <p className="text-xs text-mono-muted">
+                {message.metadata?.size ? `${(message.metadata.size / 1024).toFixed(1)} KB` : 'Download'}
+              </p>
+            </div>
+            <svg className="w-5 h-5 text-mono-muted group-hover/file:text-mono-text transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </a>
+        );
+      case 'poll':
+        const pollData = message.metadata;
+        const totalVotes = pollData?.options.reduce((acc: number, opt: any) => acc + (opt.votes || 0), 0) || 0;
+
+        return (
+          <div className="min-w-[250px] space-y-2">
+            <h4 className="font-medium text-mono-text mb-2">{pollData?.question}</h4>
+            {pollData?.options.map((option: any, index: number) => {
+              const percentage = totalVotes > 0 ? Math.round(((option.votes || 0) / totalVotes) * 100) : 0;
+              const isVoted = false; // TODO: Check if current user voted
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => onPollVote?.(message.id, index)}
+                  className="w-full relative overflow-hidden rounded-lg border border-mono-glass-border hover:border-mono-glass-highlight transition-colors group/poll"
+                  disabled={false} // TODO: Handle already voted logic if single choice
+                >
+                  <div
+                    className="absolute inset-0 bg-mono-glass-highlight/10 transition-all duration-500"
+                    style={{ width: `${percentage}%` }}
+                  />
+                  <div className="relative p-2 flex justify-between items-center z-10">
+                    <span className="text-sm text-mono-text">{option.text}</span>
+                    <span className="text-xs text-mono-muted font-medium">{percentage}%</span>
+                  </div>
+                </button>
+              );
+            })}
+            <div className="text-xs text-mono-muted text-right mt-1">
+              {totalVotes} vote{totalVotes !== 1 ? 's' : ''}
+            </div>
+          </div>
+        );
+      case 'location':
+        const { lat, lng } = message.metadata || {};
+        const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01}%2C${lat - 0.01}%2C${lng + 0.01}%2C${lat + 0.01}&layer=mapnik&marker=${lat}%2C${lng}`;
+
+        return (
+          <div className="min-w-[250px] rounded-lg overflow-hidden border border-mono-glass-border">
+            <iframe
+              width="100%"
+              height="150"
+              frameBorder="0"
+              scrolling="no"
+              marginHeight={0}
+              marginWidth={0}
+              src={mapUrl}
+              className="bg-mono-surface-2"
+            />
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block p-2 text-xs text-center bg-mono-surface hover:bg-mono-surface-2 text-mono-glass-highlight transition-colors"
+            >
+              Open in Maps
+            </a>
+          </div>
+        );
+      default:
+        return (
+          <p className="text-sm text-mono-text whitespace-pre-wrap break-words leading-normal">
+            {message.content}
+          </p>
+        );
+    }
+  };
 
   return (
     <div
@@ -36,7 +181,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
       aria-label={getAriaLabel(
         message.sender.name,
         timestamp,
-        message.content
+        message.messageType === 'text' ? message.content : `Sent a ${message.messageType}`
       )}
     >
       {/* Avatar */}
@@ -80,18 +225,18 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
             message.isOwn
               ? 'bg-mono-surface border-mono-glass-highlight'
               : 'bg-mono-surface/50 border-mono-glass-border',
-            message.status === 'failed' && 'border-red-500/50 bg-red-500/10'
+            message.status === 'failed' && 'border-red-500/50 bg-red-500/10',
+            (message.messageType === 'image' || message.messageType === 'gif' || message.messageType === 'sticker') && 'p-1 bg-transparent border-none shadow-none'
           )}
         >
-          <p className="text-sm text-mono-text whitespace-pre-wrap break-words leading-normal">
-            {message.content}
-          </p>
+          {renderContent()}
 
           {/* Timestamp and Status */}
           <div
             className={cn(
               'flex items-center gap-1 mt-1',
-              'text-xs text-mono-muted'
+              'text-xs text-mono-muted',
+              (message.messageType === 'image' || message.messageType === 'gif') && 'text-white drop-shadow-md absolute bottom-2 right-2'
             )}
           >
             <span>{timestamp}</span>
@@ -112,72 +257,27 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
                   </svg>
                 )}
                 {message.status === 'sent' && (
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 )}
                 {message.status === 'delivered' && (
                   <div className="flex gap-0.5">
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <svg
-                      className="w-3 h-3 -ml-1.5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
+                    <svg className="w-3 h-3 -ml-1.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
                 )}
                 {message.status === 'read' && (
                   <div className="flex gap-0.5 text-green-400">
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <svg
-                      className="w-3 h-3 -ml-1.5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
+                    <svg className="w-3 h-3 -ml-1.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
                 )}
@@ -232,19 +332,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
             aria-label="Add reaction"
             onClick={() => setShowReactions(!showReactions)}
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
 
@@ -261,12 +350,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
             )}
             aria-label="More options"
           >
-            <svg
-              className="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              aria-hidden="true"
-            >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10.5 1.5H9.5V3h1V1.5zM10.5 9.5H9.5V11h1V9.5zM10.5 17.5H9.5V19h1v-1.5z" />
             </svg>
           </button>

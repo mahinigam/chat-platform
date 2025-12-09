@@ -2,12 +2,13 @@ import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { Server as HTTPServer } from 'http';
 import { redisPubClient, redisSubClient } from '../config/redis';
-import { authMiddleware } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rateLimiter';
 import messageHandler from './handlers/messageHandler';
 import typingHandler from './handlers/typingHandler';
 import presenceHandler from './handlers/presenceHandler';
 import roomHandler from './handlers/roomHandler';
+import pollHandler from './handlers/pollHandler';
 
 export interface AuthenticatedSocket extends Socket {
     userId: number;
@@ -44,7 +45,8 @@ export function initializeSocket(httpServer: HTTPServer): Server {
     // ============================================
 
     // 1. Authentication - Verify JWT token
-    io.use(authMiddleware);
+    // 1. Authentication - Verify JWT token
+    io.use(authenticateToken);
 
     // 2. Rate limiting - Prevent connection flooding (thundering herd protection)
     io.use(rateLimitMiddleware);
@@ -79,6 +81,11 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             );
             socket.on('message:read', (data) =>
                 messageHandler.handleMessageRead(authSocket, data)
+            );
+
+            // Polls
+            socket.on('poll:vote', (data) =>
+                pollHandler.handleVote(authSocket, data)
             );
 
             // Typing Indicators

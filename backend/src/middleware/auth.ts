@@ -11,7 +11,7 @@ interface JWTPayload {
  * Authentication middleware for Socket.io
  * Verifies JWT token from handshake auth or query params
  */
-export const authMiddleware = async (
+export const authenticateToken = async (
     socket: Socket,
     next: (err?: Error) => void
 ): Promise<void> => {
@@ -42,5 +42,38 @@ export const authMiddleware = async (
     } catch (error) {
         console.error('Socket authentication error:', error);
         next(new Error('Authentication failed'));
+    }
+};
+
+import { Request, Response, NextFunction } from 'express';
+
+/**
+ * Authentication middleware for Express
+ */
+export const authenticateTokenHTTP = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Authentication token missing' });
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+        console.error('JWT_SECRET not configured');
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
+        // Attach user info to request (extend Request type if needed, or use as any)
+        (req as any).user = decoded;
+        next();
+    } catch (error) {
+        return res.status(403).json({ error: 'Invalid token' });
     }
 };

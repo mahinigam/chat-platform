@@ -10,37 +10,39 @@ interface Message {
     metadata?: any;
 }
 
-interface CreateMessageInput {
-    id: string;
-    roomId: number;
-    senderId: number;
-    content: string;
-    messageType?: string;
-    metadata?: any;
-}
+
 
 export class MessageRepository {
     /**
      * Create a new message
      */
-    static async createMessage(input: CreateMessageInput): Promise<Message> {
-        const {
-            id,
-            roomId,
-            senderId,
-            content,
-            messageType = 'text',
-            metadata,
-        } = input;
+    static async createMessage(data: {
+        id?: string;
+        roomId: number;
+        senderId: number;
+        content: string;
+        messageType?: string;
+        metadata?: any;
+    }): Promise<any> {
+        const { id, roomId, senderId, content, messageType = 'text', metadata } = data;
 
-        const result = await Database.query(
-            `INSERT INTO messages (id, room_id, sender_id, content, message_type, metadata)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-            [id, roomId, senderId, content, messageType, metadata]
-        );
-
-        return result.rows[0];
+        if (id) {
+            const result = await Database.query(
+                `INSERT INTO messages (id, room_id, sender_id, content, message_type, metadata)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING *`,
+                [id, roomId, senderId, content, messageType, metadata]
+            );
+            return result.rows[0];
+        } else {
+            const result = await Database.query(
+                `INSERT INTO messages (room_id, sender_id, content, message_type, metadata)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+                [roomId, senderId, content, messageType, metadata]
+            );
+            return result.rows[0];
+        }
     }
 
     /**
