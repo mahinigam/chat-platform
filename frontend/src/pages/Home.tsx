@@ -452,7 +452,7 @@ function Home() {
 
     if (!isConnected || !currentUser) {
         return (
-            <div className="h-screen bg-mono-bg text-mono-text flex items-center justify-center flex-col gap-4">
+            <div className="h-screen text-mono-text flex items-center justify-center flex-col gap-4">
                 <div className="flex gap-1">
                     {[0, 1, 2].map((i) => (
                         <div
@@ -491,11 +491,11 @@ function Home() {
     }));
 
     return (
-        <div className="h-screen w-full bg-mono-bg flex overflow-hidden">
+        <div className="h-screen w-full flex overflow-hidden">
             <div
                 className={cn(
                     'hidden md:flex w-80 flex-shrink-0 h-full',
-                    'bg-mono-bg border-r border-mono-glass-border',
+                    'bg-mono-bg/40 backdrop-blur-glass border-r border-mono-glass-border',
                     'flex-col'
                 )}
             >
@@ -513,7 +513,7 @@ function Home() {
                         'flex-shrink-0 h-16 px-4 py-3',
                         'border-b border-mono-glass-border',
                         'flex items-center justify-between gap-2',
-                        'bg-mono-bg'
+                        'bg-mono-bg/40 backdrop-blur-glass'
                     )}
                 >
                     <div className="flex items-center gap-2 min-w-0">

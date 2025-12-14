@@ -31,7 +31,7 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-mono-bg text-mono-text flex items-center justify-center p-4">
+        <div className="min-h-screen text-mono-text flex items-center justify-center p-4">
             <div className="w-full max-w-sm">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-bold mb-2">Samvaad</h1>

@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-white text-gray-900 font-sans antialiased overflow-hidden;
+    @apply bg-black text-mono-text font-sans antialiased overflow-hidden;
   }
 }
 
