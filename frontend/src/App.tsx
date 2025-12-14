@@ -44,9 +44,12 @@ function AnimatedRoutes() {
     );
 }
 
+import ParticleBackground from './components/ParticleBackground';
+
 function App() {
     return (
         <Router>
+            <ParticleBackground />
             <AnimatedRoutes />
         </Router>
     );
