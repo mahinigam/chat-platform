@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn, createFocusTrap, focusElement } from '../utils/theme';
 
 interface ModalProps {
@@ -73,128 +74,141 @@ const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // if (!isOpen) return null; // Removed early return to allow AnimatePresence to handle exit
 
   return (
-    <div
-      ref={modalRef}
-      className={cn(
-        'fixed inset-0 z-50',
-        'bg-mono-bg/80 backdrop-blur-glass',
-        'flex items-center justify-center',
-        'p-4 animate-fade-up'
-      )}
-      role="presentation"
-      aria-hidden="false"
-      onClick={(e) => e.target === modalRef.current && onClose()}
-    >
-      {/* Modal Content */}
-      <div
-        ref={contentRef}
-        className={cn(
-          'relative w-full max-w-md',
-          'rounded-glass',
-          'bg-mono-surface border border-mono-glass-border',
-          'shadow-glass',
-          'animate-fade-up',
-          className
-        )}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-mono-glass-border">
-          <h2
-            id="modal-title"
-            className="text-base font-semibold text-mono-text"
-          >
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className={cn(
-              'p-2 rounded-glass',
-              'bg-mono-surface-2 hover:bg-mono-surface/60',
-              'border border-transparent hover:border-mono-glass-border',
-              'text-mono-muted hover:text-mono-text',
-              'transition-all duration-fast ease-glass',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-              'active:scale-95',
-              'min-h-[36px] min-w-[36px] flex items-center justify-center'
-            )}
-            aria-label="Close modal"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* Content */}
-        <div
-          id="modal-description"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          ref={modalRef}
           className={cn(
-            'px-6 py-4',
-            'text-sm text-mono-text',
-            contentClassName
+            'fixed inset-0 z-50',
+            'bg-mono-bg/80 backdrop-blur-glass',
+            'flex items-center justify-center',
+            'p-4'
           )}
+          role="presentation"
+          aria-hidden="false"
+          onClick={(e) => e.target === modalRef.current && onClose()}
         >
-          {children}
-        </div>
-
-        {/* Footer */}
-        {onConfirm && (
-          <div className="flex gap-2 px-6 py-4 border-t border-mono-glass-border justify-end">
-            <button
-              onClick={onClose}
-              className={cn(
-                'px-4 py-2 rounded-glass text-sm',
-                'bg-mono-surface-2 hover:bg-mono-surface/60',
-                'border border-mono-glass-border hover:border-mono-glass-highlight',
-                'text-mono-muted hover:text-mono-text',
-                'transition-all duration-fast ease-glass',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                'active:scale-95 hover:translate-y-[-1px]',
-                'min-h-[40px]'
-              )}
-            >
-              {cancelText}
-            </button>
-
-            {onConfirm && (
+          {/* Modal Content */}
+          <motion.div
+            key="modal-content"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
+            ref={contentRef}
+            className={cn(
+              'relative w-full max-w-md',
+              'rounded-glass',
+              'bg-mono-surface border border-mono-glass-border',
+              'shadow-glass',
+              className
+            )}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            aria-describedby="modal-description"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-mono-glass-border">
+              <h2
+                id="modal-title"
+                className="text-base font-semibold text-mono-text"
+              >
+                {title}
+              </h2>
               <button
-                onClick={onConfirm}
+                onClick={onClose}
                 className={cn(
-                  'px-4 py-2 rounded-glass text-sm font-medium',
+                  'p-2 rounded-glass',
+                  'bg-mono-surface-2 hover:bg-mono-surface/60',
+                  'border border-transparent hover:border-mono-glass-border',
+                  'text-mono-muted hover:text-mono-text',
                   'transition-all duration-fast ease-glass',
                   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                  'active:scale-95 hover:translate-y-[-1px]',
-                  'min-h-[40px]',
-                  isDestructive
-                    ? 'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 text-red-300 hover:text-red-200'
-                    : 'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-highlight hover:border-mono-glass-highlight/80 text-mono-text'
+                  'active:scale-95',
+                  'min-h-[36px] min-w-[36px] flex items-center justify-center'
                 )}
+                aria-label="Close modal"
               >
-                {confirmText}
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
               </button>
+            </div>
+
+            {/* Content */}
+            <div
+              id="modal-description"
+              className={cn(
+                'px-6 py-4',
+                'text-sm text-mono-text',
+                contentClassName
+              )}
+            >
+              {children}
+            </div>
+
+            {/* Footer */}
+            {onConfirm && (
+              <div className="flex gap-2 px-6 py-4 border-t border-mono-glass-border justify-end">
+                <button
+                  onClick={onClose}
+                  className={cn(
+                    'px-4 py-2 rounded-glass text-sm',
+                    'bg-mono-surface-2 hover:bg-mono-surface/60',
+                    'border border-mono-glass-border hover:border-mono-glass-highlight',
+                    'text-mono-muted hover:text-mono-text',
+                    'transition-all duration-fast ease-glass',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
+                    'active:scale-95 hover:translate-y-[-1px]',
+                    'min-h-[40px]'
+                  )}
+                >
+                  {cancelText}
+                </button>
+
+                {onConfirm && (
+                  <button
+                    onClick={onConfirm}
+                    className={cn(
+                      'px-4 py-2 rounded-glass text-sm font-medium',
+                      'transition-all duration-fast ease-glass',
+                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
+                      'active:scale-95 hover:translate-y-[-1px]',
+                      'min-h-[40px]',
+                      isDestructive
+                        ? 'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 text-red-300 hover:text-red-200'
+                        : 'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-highlight hover:border-mono-glass-highlight/80 text-mono-text'
+                    )}
+                  >
+                    {confirmText}
+                  </button>
+                )}
+              </div>
             )}
-          </div>
-        )}
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
