@@ -34,7 +34,7 @@ router.post('/register', async (req: Request, res: Response) => {
         const result = await Database.query(
             `INSERT INTO users (username, email, password_hash, display_name)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, username, email, display_name, created_at`,
+       RETURNING id, username, email, display_name, avatar_url, created_at`,
             [username, email, passwordHash, displayName || username]
         );
 
