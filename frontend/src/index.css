@@ -12,6 +12,29 @@
 
 @layer components {
 
+  /* Prominent Glass Panel (Liquid Style) */
+  .glass-panel {
+    @apply backdrop-blur-glass bg-mono-surface border border-mono-glass-border shadow-glass rounded-glass transition-all duration-normal ease-glass relative overflow-hidden;
+  }
+
+  /* Shining edge effect */
+  .glass-panel::after {
+    content: '';
+    @apply absolute inset-0 rounded-glass box-border pointer-events-none;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.05) 100%);
+    opacity: 0.6;
+  }
+
+  /* Lively Glass Button */
+  .btn-glass {
+    @apply px-4 py-2 rounded-glass font-medium bg-mono-surface border border-mono-glass-border text-mono-text hover:bg-mono-surface/90 hover:border-mono-glass-highlight hover:translate-y-[-1px] hover:shadow-glass-sm active:scale-95 active:translate-y-[0px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-mono-text/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 transition-all duration-fast ease-glass;
+  }
+
+  /* Input Field Animation */
+  .input-glass {
+    @apply w-full px-4 py-3 rounded-glass bg-mono-surface/50 border border-mono-glass-border text-mono-text placeholder-mono-muted focus:outline-none focus:bg-mono-surface focus:border-mono-glass-highlight focus:ring-2 focus:ring-mono-glass-highlight/20 transition-all duration-normal ease-glass;
+  }
+
   /* Telegram Message Bubbles */
   .message-bubble {
     @apply px-3 py-1.5 rounded-lg max-w-[460px] break-words shadow-sm relative text-[15px] leading-snug;

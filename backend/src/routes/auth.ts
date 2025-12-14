@@ -89,10 +89,10 @@ router.post('/login', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Missing email or password' });
         }
 
-        // Find user
+        // Find user by email or username
         const result = await Database.query(
-            'SELECT * FROM users WHERE email = $1',
-            [email]
+            'SELECT * FROM users WHERE email = $1 OR username = $1',
+            [email] // The 'email' variable here holds the input identifier (email or username)
         );
 
         if (result.rows.length === 0) {

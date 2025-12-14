@@ -9,29 +9,29 @@ export default {
             colors: {
                 // Strict monochrome palette
                 mono: {
-                    bg: '#0b0b0b',      // --bg
+                    bg: '#000000',      // --bg (Pure black for deep contrast)
                     'bg-100': '#111111', // --bg-100
-                    surface: 'rgba(255,255,255,0.06)',    // --surface
-                    'surface-2': 'rgba(255,255,255,0.04)', // --surface-2
-                    'glass-border': 'rgba(255,255,255,0.10)',    // --glass-border
-                    'glass-highlight': 'rgba(255,255,255,0.08)', // --glass-highlight
+                    'surface': 'rgba(255,255,255,0.03)',    // --surface (Ultra translucent)
+                    'surface-2': 'rgba(255,255,255,0.05)', // --surface-2
+                    'glass-border': 'rgba(255,255,255,0.08)',    // --glass-border (Subtle)
+                    'glass-highlight': 'rgba(255,255,255,0.12)', // --glass-highlight (Light edge)
                     text: '#ffffff',
-                    muted: '#bdbdbd',
+                    muted: '#a3a3a3',
                 }
             },
             fontFamily: {
                 sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
             },
             backdropBlur: {
-                glass: '12px',
-                'glass-light': '8px',
-                'glass-strong': '16px',
+                glass: '24px',          // Heavier blur for "liquid" feel
+                'glass-light': '12px',
+                'glass-strong': '40px', // VisionOS style deep depth
             },
             boxShadow: {
-                'glass-sm': '0 1px 3px rgba(0,0,0,0.12)',
-                'glass': '0 4px 18px rgba(0,0,0,0.6)',     // --elevation-1
-                'glass-lg': '0 8px 36px rgba(0,0,0,0.65)', // --elevation-2
-                'glass-inner': 'inset 0 2px 4px rgba(255,255,255,0.05)',
+                'glass-sm': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 0 20px rgba(255,255,255,0.02)',
+                'glass': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), inset 0 0 30px rgba(255,255,255,0.02)',     // --elevation-1
+                'glass-lg': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), inset 0 0 50px rgba(255,255,255,0.02)', // --elevation-2
+                'glass-inner': 'inset 0 1px 1px rgba(255,255,255,0.1), inset 0 0 20px rgba(255,255,255,0.02)',
             },
             animation: {
                 'glass-blur': 'blur-motion 0.3s cubic-bezier(0.2, 0.9, 0.2, 1)',
@@ -40,6 +40,8 @@ export default {
                 'slide-up': 'slide-up 0.22s cubic-bezier(0.2, 0.9, 0.2, 1)',
                 'bloop': 'bloop 0.4s cubic-bezier(0.2, 0.9, 0.2, 1)',
                 'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.2, 0.9, 0.2, 1) infinite',
+                'scale-in': 'scale-in 0.3s cubic-bezier(0.2, 0.9, 0.2, 1)',
+                'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.2, 0.9, 0.2, 1)',
             },
             keyframes: {
                 'fade-up': {
@@ -65,6 +67,14 @@ export default {
                 'blur-motion': {
                     '0%': { backdropFilter: 'blur(0px)' },
                     '100%': { backdropFilter: 'blur(12px)' },
+                },
+                'scale-in': {
+                    '0%': { opacity: '0', transform: 'scale(0.95)' },
+                    '100%': { opacity: '1', transform: 'scale(1)' },
+                },
+                'slide-in-right': {
+                    '0%': { transform: 'translateX(20px)', opacity: '0' },
+                    '100%': { transform: 'translateX(0)', opacity: '1' },
                 },
             },
             transitionDuration: {

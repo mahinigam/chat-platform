@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn, focusElement } from '../utils/theme';
 
 interface Room {
@@ -144,113 +145,146 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {activeTab === 'chats' && (
-          <ul role="list" aria-label="Chat room list" className="h-full">
-            {rooms.length === 0 ? (
-              <li className="flex items-center justify-center h-full p-4">
-                <div className="text-center">
-                  <p className="text-mono-muted text-sm mb-3">No chats yet</p>
-                  <button
-                    onClick={() => setActiveTab('search')}
-                    className="text-accent-primary hover:text-accent-primary-hover text-sm font-medium"
-                  >
-                    Find someone to chat with
-                  </button>
-                </div>
-              </li>
-            ) : (
-              rooms.map((room, index) => (
-                <li key={room.id} role="listitem">
-                  <button
-                    ref={(el) => {
-                      itemRefs.current[index] = el;
-                    }}
-                    onClick={() => onRoomSelect(room.id)}
-                    onKeyDown={(e) => handleKeyDown(e, index)}
-                    onFocus={() => setFocusedIndex(index)}
-                    className={cn(
-                      'w-full px-3 py-2 m-2 rounded-glass',
-                      'transition-all duration-normal ease-glass',
-                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-mono-text/50',
-                      selectedRoomId === room.id
-                        ? 'bg-mono-surface border border-mono-glass-highlight shadow-glass-sm'
-                        : 'hover:bg-mono-surface/40 border border-transparent hover:border-mono-glass-border',
-                      'active:scale-98',
-                      'min-h-[64px] flex items-center gap-3'
-                    )}
-                    aria-selected={selectedRoomId === room.id}
-                  >
-                    {/* Avatar */}
-                    <div className="flex-shrink-0 w-12 h-12 relative">
-                      {room.avatar ? (
-                        <img
-                          src={room.avatar}
-                          alt=""
-                          className="w-full h-full rounded-full object-cover border border-mono-glass-border"
-                        />
-                      ) : (
-                        <div
-                          className={cn(
-                            'w-full h-full rounded-full',
-                            'bg-gradient-to-br from-blue-500 to-cyan-500',
-                            'flex items-center justify-center',
-                            'text-white text-lg font-semibold shadow-inner'
+      <div className="flex-1 overflow-y-auto min-h-0 relative">
+        <AnimatePresence mode="wait">
+          {activeTab === 'chats' && (
+            <motion.div
+              key="chats"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="h-full"
+            >
+              <ul role="list" aria-label="Chat room list" className="h-full">
+                {rooms.length === 0 ? (
+                  <li className="flex items-center justify-center h-full p-4">
+                    <div className="text-center">
+                      <p className="text-mono-muted text-sm mb-3">No chats yet</p>
+                      <button
+                        onClick={() => setActiveTab('search')}
+                        className="text-accent-primary hover:text-accent-primary-hover text-sm font-medium"
+                      >
+                        Find someone to chat with
+                      </button>
+                    </div>
+                  </li>
+                ) : (
+                  rooms.map((room, index) => (
+                    <li key={room.id} role="listitem">
+                      <button
+                        ref={(el) => {
+                          itemRefs.current[index] = el;
+                        }}
+                        onClick={() => onRoomSelect(room.id)}
+                        onKeyDown={(e) => handleKeyDown(e, index)}
+                        onFocus={() => setFocusedIndex(index)}
+                        className={cn(
+                          'w-[calc(100%-16px)] px-3 py-2 m-2 rounded-glass block',
+                          'transition-all duration-normal ease-glass',
+                          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-mono-text/50',
+                          selectedRoomId === room.id
+                            ? 'bg-mono-surface border border-mono-glass-highlight shadow-glass-sm'
+                            : 'hover:bg-mono-surface/40 border border-transparent hover:border-mono-glass-border',
+                          'active:scale-98',
+                          'min-h-[64px] flex items-center gap-3'
+                        )}
+                        aria-selected={selectedRoomId === room.id}
+                      >
+                        {/* Avatar */}
+                        <div className="flex-shrink-0 w-12 h-12 relative">
+                          {room.avatar ? (
+                            <img
+                              src={room.avatar}
+                              alt=""
+                              className="w-full h-full rounded-full object-cover border border-mono-glass-border"
+                            />
+                          ) : (
+                            <div
+                              className={cn(
+                                'w-full h-full rounded-full',
+                                'bg-gradient-to-br from-blue-500 to-cyan-500',
+                                'flex items-center justify-center',
+                                'text-white text-lg font-semibold shadow-inner'
+                              )}
+                            >
+                              {room.name.charAt(0).toUpperCase()}
+                            </div>
                           )}
-                        >
-                          {room.name.charAt(0).toUpperCase()}
+
+                          {/* Online indicator */}
+                          {room.isOnline && (
+                            <div
+                              className={cn(
+                                'absolute w-3.5 h-3.5 rounded-full',
+                                'bg-green-500 border-2 border-mono-bg',
+                                'bottom-0 right-0'
+                              )}
+                            />
+                          )}
                         </div>
-                      )}
 
-                      {/* Online indicator */}
-                      {room.isOnline && (
-                        <div
-                          className={cn(
-                            'absolute w-3.5 h-3.5 rounded-full',
-                            'bg-green-500 border-2 border-mono-bg',
-                            'bottom-0 right-0'
-                          )}
-                        />
-                      )}
-                    </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <h3 className="text-sm font-semibold text-mono-text truncate">
+                              {room.name}
+                            </h3>
+                            {room.timestamp && (
+                              <span className="text-[10px] text-mono-muted flex-shrink-0 ml-1">
+                                {room.timestamp}
+                              </span>
+                            )}
+                          </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h3 className="text-sm font-semibold text-mono-text truncate">
-                          {room.name}
-                        </h3>
-                        {room.timestamp && (
-                          <span className="text-[10px] text-mono-muted flex-shrink-0 ml-1">
-                            {room.timestamp}
-                          </span>
-                        )}
-                      </div>
+                          <div className="flex items-center justify-between">
+                            <p className={cn(
+                              "text-xs truncate max-w-[140px]",
+                              room.unread > 0 ? "text-mono-text font-medium" : "text-mono-muted"
+                            )}>
+                              {room.snippet || 'Start chatting...'}
+                            </p>
+                            {room.unread > 0 && (
+                              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-accent-primary text-white text-[10px] font-bold px-1">
+                                {room.unread > 99 ? '99+' : room.unread}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </motion.div>
+          )}
 
-                      <div className="flex items-center justify-between">
-                        <p className={cn(
-                          "text-xs truncate max-w-[140px]",
-                          room.unread > 0 ? "text-mono-text font-medium" : "text-mono-muted"
-                        )}>
-                          {room.snippet || 'Start chatting...'}
-                        </p>
-                        {room.unread > 0 && (
-                          <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-accent-primary text-white text-[10px] font-bold px-1">
-                            {room.unread > 99 ? '99+' : room.unread}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
-        )}
+          {activeTab === 'search' && (
+            <motion.div
+              key="search"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="h-full"
+            >
+              <SearchUsers />
+            </motion.div>
+          )}
 
-        {activeTab === 'search' && <SearchUsers />}
-
-        {activeTab === 'requests' && <RequestList />}
+          {activeTab === 'requests' && (
+            <motion.div
+              key="requests"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="h-full"
+            >
+              <RequestList />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Footer Profile */}

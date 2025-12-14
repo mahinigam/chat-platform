@@ -28,19 +28,19 @@ const GlassPanel = React.forwardRef<HTMLDivElement, GlassPanelProps>(
     ref
   ) => {
     const variants = {
-      default: 'backdrop-blur-glass bg-mono-surface border border-mono-glass-border rounded-glass shadow-glass-sm',
-      elevated: 'backdrop-blur-glass bg-mono-surface border border-mono-glass-border rounded-glass shadow-glass',
+      default: 'glass-panel',
+      elevated: 'glass-panel shadow-glass-lg',
       ghost: 'backdrop-blur-glass-light bg-mono-surface-2 border border-transparent rounded-glass',
     };
 
     const interactiveStyles = interactive
-      ? 'hover:translate-y-[-2px] active:scale-98 cursor-pointer'
+      ? 'hover:translate-y-[-2px] active:scale-98 cursor-pointer hover:bg-mono-surface/90 hover:border-mono-glass-highlight'
       : '';
 
     const baseStyles = clsx(
       variants[variant],
       interactiveStyles,
-      'transition-all duration-normal ease-glass',
+      'animate-fade-up', // Default entrance animation
       'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mono-text/30',
       className
     );
