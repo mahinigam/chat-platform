@@ -4,12 +4,17 @@ import { useLocation } from 'react-router-dom';
 interface Particle {
     x: number;
     y: number;
+    z: number; // For depth/parallax
     size: number;
-    speedX: number;
-    speedY: number;
-    baseOpacity: number;
+    baseX: number; // Original position for parallax
+    baseY: number;
+    vx: number;
+    vy: number;
     opacity: number;
+    baseOpacity: number;
     pulseSpeed: number;
+    life?: number; // For transient particles
+    type: 'star' | 'burst';
 }
 
 const ParticleBackground: React.FC = () => {
@@ -17,166 +22,203 @@ const ParticleBackground: React.FC = () => {
     const location = useLocation();
     const particles = useRef<Particle[]>([]);
     const animationFrameId = useRef<number>();
-    const isWarping = useRef(false);
 
-    // Mouse interaction
+    // State for effects
+    const isAwakening = useRef(false);
     const mouse = useRef({ x: 0, y: 0 });
-    const mouseActive = useRef(false);
 
     // Configuration
-    const STAR_COUNT = window.innerWidth < 768 ? 60 : 120; // Reduced for mobile
-    const BASE_SPEED = 0.2;
-    const WARP_SPEED = 8;
-    const WARP_DURATION = 600; // ms
+    const STAR_COUNT = window.innerWidth < 768 ? 15 : 35; // Very sparse
+    const BASE_SPEED = 0.05; // Almost frozen
+    const AWAKEN_SPEED_MULTIPLIER = 8;
+    const PARALLAX_STRENGTH = 15; // How much mouse moves them
 
-    // Initialize Particles (Universe Creation)
     const initParticles = (width: number, height: number) => {
         particles.current = [];
         for (let i = 0; i < STAR_COUNT; i++) {
+            const z = Math.random() * 0.5 + 0.5; // Depth factor 0.5 - 1.0
             particles.current.push({
                 x: Math.random() * width,
                 y: Math.random() * height,
-                size: Math.random() * 2 + 0.5, // 0.5px to 2.5px
-                speedX: (Math.random() - 0.5) * BASE_SPEED,
-                speedY: (Math.random() - 0.5) * BASE_SPEED,
-                baseOpacity: Math.random() * 0.5 + 0.1, // 0.1 to 0.6
-                opacity: Math.random() * 0.5 + 0.1,
-                pulseSpeed: Math.random() * 0.02 + 0.005,
+                z,
+                size: (Math.random() * 1.5 + 0.5) * z, // Smaller if further
+                baseX: 0, // Set in loop
+                baseY: 0,
+                vx: (Math.random() - 0.5) * BASE_SPEED,
+                vy: (Math.random() - 0.5) * BASE_SPEED,
+                baseOpacity: Math.random() * 0.4 + 0.1, // Faint
+                opacity: 0, // Start invisible, fade in
+                pulseSpeed: Math.random() * 0.005 + 0.002, // Slow pulse
+                type: 'star',
             });
+            // Set initial base positions
+            particles.current[i].baseX = particles.current[i].x;
+            particles.current[i].baseY = particles.current[i].y;
         }
     };
 
-    // Warp Drive Effect on Route Change
+    // "Awaken" - The Cosmic Dissolve Trigger
     useEffect(() => {
-        isWarping.current = true;
+        isAwakening.current = true;
         const timer = setTimeout(() => {
-            isWarping.current = false;
-        }, WARP_DURATION);
+            isAwakening.current = false;
+        }, 800); // Duration of awakening
         return () => clearTimeout(timer);
     }, [location.pathname]);
 
     useEffect(() => {
+        const handleCosmicInput = () => {
+            // Ripple effect: add transient particles at bottom center
+            const centerX = window.innerWidth / 2;
+            const height = window.innerHeight;
+            for (let i = 0; i < 5; i++) {
+                particles.current.push({
+                    x: centerX,
+                    y: height - 50,
+                    z: 1,
+                    size: Math.random() * 2 + 1,
+                    baseX: centerX,
+                    baseY: height - 50,
+                    vx: (Math.random() - 0.5) * 2, // Fast spread
+                    vy: (Math.random() * -1) - 1, // Upwards
+                    opacity: 0.8,
+                    baseOpacity: 0,
+                    pulseSpeed: 0,
+                    type: 'burst',
+                    life: 1.0
+                });
+            }
+        };
+
+        const handleClick = (e: MouseEvent) => {
+            // Click burst
+            for (let i = 0; i < 3; i++) {
+                particles.current.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    z: 1,
+                    size: Math.random() * 2,
+                    baseX: e.clientX,
+                    baseY: e.clientY,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 1.5,
+                    opacity: 0.8,
+                    baseOpacity: 0,
+                    pulseSpeed: 0,
+                    type: 'burst',
+                    life: 1.0
+                });
+            }
+        };
+
+        window.addEventListener('cosmic:input', handleCosmicInput);
+        window.addEventListener('click', handleClick);
+        return () => {
+            window.removeEventListener('cosmic:input', handleCosmicInput);
+            window.removeEventListener('click', handleClick);
+        };
+    }, []);
+
+    useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        // Handle Resolution
         const handleResize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initParticles(canvas.width, canvas.height);
+            const dpr = window.devicePixelRatio || 1;
+            // Set actual size in memory (scaled to account for extra pixel density)
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+
+            // Normalize coordinate system to use css pixels
+            ctx.scale(dpr, dpr);
+
+            // Fix visual size
+            canvas.style.width = `${window.innerWidth}px`;
+            canvas.style.height = `${window.innerHeight}px`;
+
+            initParticles(window.innerWidth, window.innerHeight);
         };
 
         const handleMouseMove = (e: MouseEvent) => {
-            mouse.current = { x: e.clientX, y: e.clientY };
-            mouseActive.current = true;
-        };
-
-        const handleMouseLeave = () => {
-            mouseActive.current = false;
+            // Normalize mouse -1 to 1
+            mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1;
         };
 
         window.addEventListener('resize', handleResize);
         window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseout', handleMouseLeave);
-
-        // Initial setup
         handleResize();
 
-        // Animation Loop
+        let time = 0;
         const animate = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Deep Space Gradient (optional, can be done in CSS for perf)
-            // We rely on CSS background-color: #000000 for the void.
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            time += 0.01;
 
             particles.current.forEach((p) => {
-                // Physics
-                let currentSpeedX = p.speedX;
-                let currentSpeedY = p.speedY;
+                // 1. Movement Logic
+                let speedMultiplier = isAwakening.current ? AWAKEN_SPEED_MULTIPLIER : 1;
+                p.x += p.vx * speedMultiplier;
+                p.y += p.vy * speedMultiplier;
 
-                // Warp Logic
-                if (isWarping.current) {
-                    // Stars stretch towards user (simulate by expanding outward from center)
-                    const centerX = canvas.width / 2;
-                    const centerY = canvas.height / 2;
-                    const dx = p.x - centerX;
-                    const dy = p.y - centerY;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                // 2. Parallax (Gentle opposite movement based on depth)
+                const targetX = p.x + (mouse.current.x * PARALLAX_STRENGTH * p.z);
+                const targetY = p.y + (mouse.current.y * PARALLAX_STRENGTH * p.z);
 
-                    // Move away from center
-                    currentSpeedX += (dx / dist) * WARP_SPEED * 0.5;
-                    currentSpeedY += (dy / dist) * WARP_SPEED * 0.5;
+                // 3. Screen Wrap
+                if (p.x < -50) p.x = window.innerWidth + 50;
+                if (p.x > window.innerWidth + 50) p.x = -50;
+                if (p.y < -50) p.y = window.innerHeight + 50;
+                if (p.y > window.innerHeight + 50) p.y = -50;
 
-                    // Elongate stars during warp (visual effect handled in draw)
+                // 4. Pulse
+                if (p.type === 'star') {
+                    p.opacity = p.baseOpacity + Math.sin(time * p.pulseSpeed * 100) * 0.05;
+                } else if (p.type === 'burst' && p.life !== undefined) {
+                    p.life -= 0.02;
+                    p.opacity = p.life;
+                    p.x += p.vx;
+                    p.y += p.vy;
                 }
 
-                // Mouse Repulsion (Liquid feel)
-                if (mouseActive.current && !isWarping.current) {
-                    const dx = p.x - mouse.current.x;
-                    const dy = p.y - mouse.current.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const force = 100; // Radius of influence
+                if (p.opacity <= 0 && p.type === 'burst') return; // Skip drawing dead particles
 
-                    if (dist < force) {
-                        const angle = Math.atan2(dy, dx);
-                        const push = (force - dist) * 0.02; // Gentle push
-                        currentSpeedX += Math.cos(angle) * push;
-                        currentSpeedY += Math.sin(angle) * push;
-                    }
-                }
-
-                p.x += currentSpeedX;
-                p.y += currentSpeedY;
-
-                // Twinkle
-                p.opacity += Math.sin(Date.now() * p.pulseSpeed) * 0.01;
-                // Clamp opacity
-                if (p.opacity < 0.1) p.opacity = 0.1;
-                if (p.opacity > p.baseOpacity + 0.2) p.opacity = p.baseOpacity + 0.2;
-
-                // Wrap around screen
-                if (p.x < 0) p.x = canvas.width;
-                if (p.x > canvas.width) p.x = 0;
-                if (p.y < 0) p.y = canvas.height;
-                if (p.y > canvas.height) p.y = 0;
-
-                // Draw Star
+                // Draw
+                // Use targetX/Y for rendering to enable smooth parallax
                 ctx.beginPath();
-                ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+                ctx.fillStyle = `rgba(220, 230, 255, ${p.opacity})`;
+                ctx.shadowBlur = p.size * 2;
+                ctx.shadowColor = `rgba(220, 230, 255, ${p.opacity * 0.5})`;
 
-                if (isWarping.current) {
-                    // Draw streaks
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p.x - currentSpeedX * 2, p.y - currentSpeedY * 2);
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${p.opacity})`;
-                    ctx.stroke();
+                if (isAwakening.current) {
+                    // Draw slight streak when awakening
+                    ctx.ellipse(targetX, targetY, p.size * 3, p.size * 0.5, Math.atan2(p.vy, p.vx), 0, Math.PI * 2);
                 } else {
-                    // Draw soft dots
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.arc(targetX, targetY, p.size, 0, Math.PI * 2);
                 }
+                ctx.fill();
             });
+
+            // Cleanup dead particles
+            particles.current = particles.current.filter(p => p.type === 'star' || (p.life !== undefined && p.life > 0));
 
             animationFrameId.current = requestAnimationFrame(animate);
         };
-
         animate();
 
         return () => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseout', handleMouseLeave);
             if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
         };
-    }, []); // Re-run if Warp logic needs to be bound, but refs handle it.
+    }, []);
 
     return (
         <canvas
             ref={canvasRef}
             className="fixed inset-0 pointer-events-none z-[-1]"
-            style={{ background: 'transparent' }} // Let CSS handle base color
         />
     );
 };

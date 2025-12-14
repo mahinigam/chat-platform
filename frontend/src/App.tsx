@@ -6,10 +6,10 @@ import Home from './pages/Home';
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
     <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 1.02 }}
-        transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }} // smooth glass ease
+        initial={{ opacity: 0, filter: 'blur(10px)', scale: 0.99 }}
+        animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+        exit={{ opacity: 0, filter: 'blur(10px)', scale: 0.99 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} // "Cosmic" ease
         className="w-full h-full"
     >
         {children}
@@ -45,11 +45,29 @@ function AnimatedRoutes() {
 }
 
 import ParticleBackground from './components/ParticleBackground';
+import CosmicIntro from './components/CosmicIntro';
+import { useState, useEffect } from 'react';
 
 function App() {
+    const [showIntro, setShowIntro] = useState(false);
+
+    useEffect(() => {
+        const hasSeenIntro = sessionStorage.getItem('hasSeenCosmicIntro');
+        if (!hasSeenIntro) {
+            setShowIntro(true);
+        }
+    }, []);
+
+    const handleIntroComplete = () => {
+        setShowIntro(false);
+        sessionStorage.setItem('hasSeenCosmicIntro', 'true');
+    };
+
     return (
         <Router>
+            <div className="cosmic-noise" />
             <ParticleBackground />
+            {showIntro && <CosmicIntro onComplete={handleIntroComplete} />}
             <AnimatedRoutes />
         </Router>
     );

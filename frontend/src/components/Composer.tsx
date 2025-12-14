@@ -36,6 +36,10 @@ const Composer: React.FC<ComposerProps> = ({
     if (content.trim() && !isLoading) {
       onSendMessage(content.trim());
       setContent('');
+
+      // Cosmic Ripple Effect
+      window.dispatchEvent(new CustomEvent('cosmic:input'));
+
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
         focusElement(textareaRef.current);
