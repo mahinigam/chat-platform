@@ -150,10 +150,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           {activeTab === 'chats' && (
             <motion.div
               key="chats"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className="h-full"
             >
               <ul role="list" aria-label="Chat room list" className="h-full">
@@ -263,10 +263,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           {activeTab === 'search' && (
             <motion.div
               key="search"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className="h-full"
             >
               <SearchUsers />
@@ -276,10 +276,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           {activeTab === 'requests' && (
             <motion.div
               key="requests"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className="h-full"
             >
               <RequestList />

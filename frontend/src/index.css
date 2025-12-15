@@ -33,37 +33,61 @@
       inset 0 0 20px rgba(255, 255, 255, 0.02);
   }
 
+  /* Adaptive Blur: Stronger on hover/focus */
+  .glass-panel:hover,
+  .glass-panel:focus-within {
+    backdrop-filter: blur(24px);
+    box-shadow:
+      0 8px 40px rgba(0, 0, 0, 0.2),
+      inset 0 0 30px rgba(255, 255, 255, 0.04);
+  }
+
   /* Inner light gradient for glass */
   .glass-panel::after {
     content: '';
-    @apply absolute inset-0 rounded-xl pointer-events-none;
+    @apply absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-500;
     background: linear-gradient(125deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.01) 100%);
   }
 
   /* Glass Button */
   .btn-glass {
-    @apply px-4 py-2 rounded-lg font-medium bg-white/5 border border-white/10 text-mono-text hover:bg-white/10 hover:border-white/20 active:scale-95 transition-all duration-300 ease-glass disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply px-4 py-2 rounded-lg font-medium bg-white/5 border border-white/10 text-mono-text transition-all duration-300 ease-glass disabled:opacity-40 disabled:cursor-not-allowed;
     backdrop-filter: blur(10px);
   }
 
   .btn-glass:hover {
+    @apply bg-white/10 border-white/20;
+    backdrop-filter: blur(16px);
+    /* Adaptive Blur */
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-glass:active {
+    @apply scale-95;
   }
 
   /* Input Glass */
   .input-glass {
-    @apply w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-mono-text placeholder-mono-muted focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all duration-300 ease-glass;
+    @apply w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-mono-text placeholder-mono-muted focus:outline-none transition-all duration-300 ease-glass;
     backdrop-filter: blur(10px);
   }
 
   .input-glass:focus {
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.02);
+    @apply bg-white/10 border-white/20;
+    backdrop-filter: blur(16px);
+    /* Adaptive Blur */
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.03);
   }
 
   /* Layer 2: Message Tiles (Floating Glass) */
   .message-bubble {
     @apply px-4 py-2.5 rounded-lg max-w-[480px] break-words relative text-[15px] leading-relaxed border border-white/5 shadow-sm transition-all duration-300;
     backdrop-filter: blur(15px);
+  }
+
+  .message-bubble:hover {
+    backdrop-filter: blur(20px);
+    /* Subtle adaptive blur */
   }
 
   .message-sent {

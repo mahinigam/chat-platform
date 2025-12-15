@@ -158,10 +158,22 @@ const ParticleBackground: React.FC = () => {
             time += 0.01;
 
             particles.current.forEach((p) => {
+                // 0. Context Awareness (Sidebar vs Chat)
+                // Sidebar is typically < 320px logic, simplified here by x position
+                const isSidebar = p.x < 320;
+
                 // 1. Movement Logic
                 let speedMultiplier = isAwakening.current ? AWAKEN_SPEED_MULTIPLIER : 1;
-                p.x += p.vx * speedMultiplier;
-                p.y += p.vy * speedMultiplier;
+
+                // Sidebar: "Calmer, heavier" -> slower base speed, less vertical movement
+                if (isSidebar) {
+                    p.x += (p.vx * 0.5) * speedMultiplier;
+                    p.y += (p.vy * 0.3) * speedMultiplier; // Very little vertical drift
+                } else {
+                    // Chat: "Freer" -> normal speed
+                    p.x += p.vx * speedMultiplier;
+                    p.y += p.vy * speedMultiplier;
+                }
 
                 // 2. Parallax (Gentle opposite movement based on depth)
                 const targetX = p.x + (mouse.current.x * PARALLAX_STRENGTH * p.z);
@@ -177,7 +189,7 @@ const ParticleBackground: React.FC = () => {
                 if (p.type === 'star') {
                     p.opacity = p.baseOpacity + Math.sin(time * p.pulseSpeed * 100) * 0.05;
                 } else if (p.type === 'burst' && p.life !== undefined) {
-                    p.life -= 0.02;
+                    p.life -= 0.03; // Fade out faster
                     p.opacity = p.life;
                     p.x += p.vx;
                     p.y += p.vy;

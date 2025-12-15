@@ -26,7 +26,8 @@ export default {
                 }
             },
             fontFamily: {
-                sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                sans: ['Outfit', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                display: ['Cinzel Decorative', 'serif'], // Added for potential future use or headings
             },
             backdropBlur: {
                 glass: '24px',          // Heavier blur for "liquid" feel
