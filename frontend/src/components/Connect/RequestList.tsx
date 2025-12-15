@@ -74,7 +74,7 @@ const RequestList: React.FC = () => {
                     )}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-mono-surface-2 border border-mono-glass-border flex items-center justify-center text-mono-text font-semibold">
                             {req.avatar_url ? (
                                 <img src={req.avatar_url} alt={req.username} className="w-full h-full rounded-full object-cover" />
                             ) : (
@@ -94,8 +94,8 @@ const RequestList: React.FC = () => {
                             onClick={() => handleAccept(req.id)}
                             className={cn(
                                 'p-1.5 rounded-full',
-                                'bg-green-500/10 hover:bg-green-500/20',
-                                'text-green-500',
+                                'bg-white/10 hover:bg-white/20',
+                                'text-white',
                                 'transition-colors'
                             )}
                             title="Accept"
@@ -106,8 +106,8 @@ const RequestList: React.FC = () => {
                             onClick={() => handleReject(req.id)}
                             className={cn(
                                 'p-1.5 rounded-full',
-                                'bg-red-500/10 hover:bg-red-500/20',
-                                'text-red-500',
+                                'bg-white/5 hover:bg-white/10',
+                                'text-mono-muted hover:text-white',
                                 'transition-colors'
                             )}
                             title="Reject"

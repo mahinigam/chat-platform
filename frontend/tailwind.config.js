@@ -17,6 +17,12 @@ export default {
                     'glass-highlight': 'rgba(255,255,255,0.12)', // --glass-highlight (Light edge)
                     text: '#ffffff',
                     muted: '#a3a3a3',
+                },
+                accent: {
+                    primary: '#ffffff',      // Pure white for high contrast
+                    'primary-hover': '#e5e5e5',
+                    secondary: '#a3a3a3',    // Silver/Gray
+                    'secondary-hover': '#d4d4d4',
                 }
             },
             fontFamily: {

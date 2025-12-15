@@ -296,8 +296,8 @@ const ComponentGallery: React.FC = () => {
                     onClick={() => success('Success message!')}
                     className={cn(
                       'px-3 py-2 rounded-glass text-sm',
-                      'bg-green-500/20 hover:bg-green-500/30 border border-green-500/30',
-                      'text-green-200 transition-all duration-fast ease-glass'
+                      'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-border',
+                      'text-mono-text transition-all duration-fast ease-glass'
                     )}
                   >
                     Success
@@ -306,8 +306,8 @@ const ComponentGallery: React.FC = () => {
                     onClick={() => error('Error message!')}
                     className={cn(
                       'px-3 py-2 rounded-glass text-sm',
-                      'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30',
-                      'text-red-200 transition-all duration-fast ease-glass'
+                      'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-border',
+                      'text-mono-text transition-all duration-fast ease-glass'
                     )}
                   >
                     Error
@@ -316,8 +316,8 @@ const ComponentGallery: React.FC = () => {
                     onClick={() => warning('Warning message!')}
                     className={cn(
                       'px-3 py-2 rounded-glass text-sm',
-                      'bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30',
-                      'text-yellow-200 transition-all duration-fast ease-glass'
+                      'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-border',
+                      'text-mono-text transition-all duration-fast ease-glass'
                     )}
                   >
                     Warning
@@ -326,8 +326,8 @@ const ComponentGallery: React.FC = () => {
                     onClick={() => info('Info message!')}
                     className={cn(
                       'px-3 py-2 rounded-glass text-sm',
-                      'bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30',
-                      'text-blue-200 transition-all duration-fast ease-glass'
+                      'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-border',
+                      'text-mono-text transition-all duration-fast ease-glass'
                     )}
                   >
                     Info

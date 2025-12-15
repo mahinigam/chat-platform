@@ -203,9 +203,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <div
                               className={cn(
                                 'w-full h-full rounded-full',
-                                'bg-gradient-to-br from-blue-500 to-cyan-500',
+                                'bg-gradient-to-br from-mono-surface-2 to-mono-glass-highlight',
+                                'border border-mono-glass-border shadow-glass-inner',
                                 'flex items-center justify-center',
-                                'text-white text-lg font-semibold shadow-inner'
+                                'text-mono-text text-lg font-medium tracking-wide'
                               )}
                             >
                               {room.name.charAt(0).toUpperCase()}
@@ -217,8 +218,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <div
                               className={cn(
                                 'absolute w-3.5 h-3.5 rounded-full',
-                                'bg-green-500 border-2 border-mono-bg',
-                                'bottom-0 right-0'
+                                'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]',
+                                'bottom-0 right-0 animate-pulse-subtle'
                               )}
                             />
                           )}
@@ -245,7 +246,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                               {room.snippet || 'Start chatting...'}
                             </p>
                             {room.unread > 0 && (
-                              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-accent-primary text-white text-[10px] font-bold px-1">
+                              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-black text-[10px] font-bold px-1 shadow-[0_0_10px_rgba(255,255,255,0.4)]">
                                 {room.unread > 99 ? '99+' : room.unread}
                               </span>
                             )}

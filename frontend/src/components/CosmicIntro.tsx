@@ -40,8 +40,8 @@ const CosmicIntro: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
                     transition={{ duration: 2, ease: "easeOut" }}
                     className="w-32 h-32 rounded-full relative"
                     style={{
-                        background: 'radial-gradient(circle at center, rgba(220, 230, 255, 0.8) 0%, rgba(220, 230, 255, 0.1) 40%, transparent 70%)',
-                        boxShadow: '0 0 40px rgba(220, 230, 255, 0.2)'
+                        background: 'radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.1) 40%, transparent 70%)',
+                        boxShadow: '0 0 40px rgba(255, 255, 255, 0.2)'
                     }}
                 >
                     {/* Core */}

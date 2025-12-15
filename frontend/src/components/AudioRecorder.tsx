@@ -69,14 +69,14 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, onCa
     };
 
     return (
-        <div className="flex items-center gap-4 px-4 py-2 bg-mono-surface rounded-glass border border-red-500/30 animate-fade-up">
-            <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+        <div className="flex items-center gap-4 px-4 py-2 bg-mono-surface rounded-glass border border-white/20 animate-fade-up">
+            <div className="w-3 h-3 rounded-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
             <span className="text-mono-text font-mono">{formatDuration(duration)}</span>
             <button
                 onClick={() => {
                     stopRecording(); // This will trigger onstop which calls onRecordingComplete
                 }}
-                className="p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors"
+                className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
