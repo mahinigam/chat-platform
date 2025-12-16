@@ -4,6 +4,7 @@ import { login } from '../api/auth';
 import { useToast } from '../hooks/useToast';
 
 import ToastContainer from '../components/Toast';
+import ParticleBackground from '../components/ParticleBackground';
 
 const Login: React.FC = () => {
     const [username, setUsername] = useState('');
@@ -31,8 +32,8 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen text-mono-text flex items-center justify-center p-4">
-            <div className="w-full max-w-sm">
+        <div className="min-h-screen text-mono-text flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="w-full max-w-sm relative z-10">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-bold mb-2">Samvaad</h1>
                     <p className="text-mono-muted">Connect with clarity</p>
@@ -74,6 +75,9 @@ const Login: React.FC = () => {
                 </div>
             </div>
             <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <ParticleBackground />
+            </div>
         </div>
     );
 };

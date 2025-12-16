@@ -99,9 +99,9 @@ const Modal: React.FC<ModalProps> = ({
           {/* Modal Content */}
           <motion.div
             key="modal-content"
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
             ref={contentRef}
             className={cn(
@@ -196,7 +196,7 @@ const Modal: React.FC<ModalProps> = ({
                       'active:scale-95 hover:translate-y-[-1px]',
                       'min-h-[40px]',
                       isDestructive
-                        ? 'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 text-red-300 hover:text-red-200'
+                        ? 'bg-mono-surface-2 hover:bg-mono-surface/80 border border-white/20 hover:border-white/40 text-white shadow-glow-sm'
                         : 'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-highlight hover:border-mono-glass-highlight/80 text-mono-text'
                     )}
                   >

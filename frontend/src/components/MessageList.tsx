@@ -195,8 +195,8 @@ const MessageList: React.FC<MessageListProps> = ({
               key={message.id}
               ref={index === messages.length - 1 ? lastMessageRef : undefined}
               role="listitem"
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
             >
               <MessageItem message={message} onPollVote={onPollVote} />
