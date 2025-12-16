@@ -34,9 +34,8 @@ const Login: React.FC = () => {
     return (
         <div className="min-h-screen text-mono-text flex items-center justify-center p-4 relative overflow-hidden">
             <div className="w-full max-w-sm relative z-10">
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold mb-2">Samvaad</h1>
-                    <p className="text-mono-muted">Connect with clarity</p>
+                <div className="text-center mb-12">
+                    <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent">Samvaad</h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">

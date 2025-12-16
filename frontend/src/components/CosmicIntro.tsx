@@ -48,15 +48,7 @@ const CosmicIntro: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
                     <div className="absolute inset-0 rounded-full bg-white blur-xl opacity-30 animate-pulse" />
                 </motion.div>
 
-                {/* Text */}
-                <motion.p
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: stage === 1 ? 1 : 0, scale: 1 }}
-                    transition={{ delay: 0.3, duration: 0.8 }}
-                    className="absolute bottom-1/3 text-white/40 text-xs tracking-[0.4em] font-light uppercase"
-                >
-                    Entering the Void
-                </motion.p>
+                {/* Text Removed as per request */}
             </motion.div>
         </AnimatePresence>
     );
