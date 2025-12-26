@@ -1,5 +1,5 @@
 /**
- * Utility functions for Samvaad theme
+ * Utility functions for Aether theme
  */
 
 /**
