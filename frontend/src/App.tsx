@@ -65,10 +65,15 @@ function App() {
 
     return (
         <Router>
+            {/* Background layers - always visible */}
             <div className="cosmic-noise" />
             <ParticleBackground />
-            {showIntro && <CosmicIntro onComplete={handleIntroComplete} />}
+
+            {/* Main App - Always rendered, visible underneath intro */}
             <AnimatedRoutes />
+
+            {/* Intro Overlay - Fades out to reveal app */}
+            {showIntro && <CosmicIntro onComplete={handleIntroComplete} />}
         </Router>
     );
 }
