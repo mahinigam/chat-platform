@@ -63,7 +63,7 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: your-production-secret-change-this
       JWT_EXPIRES_IN: 7d
-      CORS_ORIGIN: http://localhost
+      CORS_ORIGIN: http://localhost,http://localhost:5173
       CONNECTION_RATE_LIMIT_MAX: 100
     depends_on:
       postgres:
