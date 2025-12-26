@@ -38,9 +38,8 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({ onSelect, className }) 
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    'p-2 rounded-full transition-colors',
-                    'text-mono-muted hover:text-mono-text hover:bg-mono-surface',
-                    isOpen && 'text-mono-text bg-mono-surface'
+                    'btn-glass p-2 rounded-full',
+                    isOpen && 'text-mono-text'
                 )}
                 aria-label="Attach"
             >

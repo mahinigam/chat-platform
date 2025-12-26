@@ -121,16 +121,7 @@ const Composer: React.FC<ComposerProps> = ({
 
         {/* Emoji Button */}
         <button
-          className={cn(
-            'p-2 rounded-glass flex-shrink-0',
-            'bg-mono-surface-2 hover:bg-mono-surface/40',
-            'border border-transparent hover:border-mono-glass-border',
-            'text-mono-muted hover:text-mono-text',
-            'transition-all duration-fast ease-glass',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-            'active:scale-95 hover:translate-y-[-1px]',
-            'min-h-[36px] min-w-[36px] flex items-center justify-center'
-          )}
+          className="btn-glass p-2 flex-shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center"
           aria-label="Emoji picker"
           title="Emoji picker"
           disabled={isLoading}
@@ -155,17 +146,7 @@ const Composer: React.FC<ComposerProps> = ({
         <button
           onClick={handleSubmit}
           disabled={!content.trim() || isLoading}
-          className={cn(
-            'p-2 rounded-glass flex-shrink-0',
-            'bg-mono-surface-2 hover:bg-mono-surface/40',
-            'border border-transparent hover:border-mono-glass-highlight',
-            'text-mono-muted hover:text-mono-text',
-            'transition-all duration-fast ease-glass',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-            'active:scale-95 hover:translate-y-[-1px]',
-            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
-            'min-h-[36px] min-w-[36px] flex items-center justify-center'
-          )}
+          className="btn-glass p-2 flex-shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Send message"
           title="Send message (Ctrl+Enter)"
         >

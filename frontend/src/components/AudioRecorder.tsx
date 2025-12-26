@@ -76,7 +76,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, onCa
                 onClick={() => {
                     stopRecording(); // This will trigger onstop which calls onRecordingComplete
                 }}
-                className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                className="btn-glass p-2 rounded-full text-white"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -92,7 +92,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, onCa
                     }
                     onCancel();
                 }}
-                className="p-2 rounded-full hover:bg-mono-surface-2 text-mono-muted hover:text-mono-text transition-colors"
+                className="btn-glass p-2 rounded-full text-mono-muted hover:text-mono-text"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

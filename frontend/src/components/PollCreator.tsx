@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
-import { cn } from '../utils/theme';
 
 interface PollCreatorProps {
     isOpen: boolean;
@@ -60,13 +59,7 @@ const PollCreator: React.FC<PollCreatorProps> = ({ isOpen, onClose, onSubmit }) 
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     placeholder="Ask a question..."
-                    className={cn(
-                        'w-full px-3 py-2 rounded-glass',
-                        'bg-mono-surface-2 border border-mono-glass-border',
-                        'text-mono-text placeholder-mono-muted',
-                        'focus:outline-none focus:ring-2 focus:ring-mono-glass-highlight/50',
-                        'transition-all duration-fast ease-glass'
-                    )}
+                    className="input-glass w-full"
                     autoFocus
                 />
             </div>
@@ -80,18 +73,12 @@ const PollCreator: React.FC<PollCreatorProps> = ({ isOpen, onClose, onSubmit }) 
                             value={option}
                             onChange={(e) => handleOptionChange(index, e.target.value)}
                             placeholder={`Option ${index + 1}`}
-                            className={cn(
-                                'flex-1 px-3 py-2 rounded-glass',
-                                'bg-mono-surface-2 border border-mono-glass-border',
-                                'text-mono-text placeholder-mono-muted',
-                                'focus:outline-none focus:ring-2 focus:ring-mono-glass-highlight/50',
-                                'transition-all duration-fast ease-glass'
-                            )}
+                            className="input-glass flex-1"
                         />
                         {options.length > 2 && (
                             <button
                                 onClick={() => removeOption(index)}
-                                className="p-2 text-mono-muted hover:text-red-400 transition-colors"
+                                className="btn-glass p-2 text-mono-muted hover:text-red-400"
                             >
                                 ✕
                             </button>
@@ -101,7 +88,7 @@ const PollCreator: React.FC<PollCreatorProps> = ({ isOpen, onClose, onSubmit }) 
                 {options.length < 10 && (
                     <button
                         onClick={addOption}
-                        className="text-sm text-mono-glass-highlight hover:text-mono-text transition-colors flex items-center gap-1"
+                        className="btn-glass text-sm px-3 py-1"
                     >
                         + Add Option
                     </button>

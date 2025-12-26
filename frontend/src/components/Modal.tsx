@@ -172,16 +172,7 @@ const Modal: React.FC<ModalProps> = ({
               <div className="flex gap-2 px-6 py-4 border-t border-mono-glass-border justify-end">
                 <button
                   onClick={onClose}
-                  className={cn(
-                    'px-4 py-2 rounded-glass text-sm',
-                    'bg-mono-surface-2 hover:bg-mono-surface/60',
-                    'border border-mono-glass-border hover:border-mono-glass-highlight',
-                    'text-mono-muted hover:text-mono-text',
-                    'transition-all duration-fast ease-glass',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                    'active:scale-95 hover:translate-y-[-1px]',
-                    'min-h-[40px]'
-                  )}
+                  className="btn-glass px-4 py-2 text-sm min-h-[40px]"
                 >
                   {cancelText}
                 </button>
@@ -190,14 +181,8 @@ const Modal: React.FC<ModalProps> = ({
                   <button
                     onClick={onConfirm}
                     className={cn(
-                      'px-4 py-2 rounded-glass text-sm font-medium',
-                      'transition-all duration-fast ease-glass',
-                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                      'active:scale-95 hover:translate-y-[-1px]',
-                      'min-h-[40px]',
-                      isDestructive
-                        ? 'bg-mono-surface-2 hover:bg-mono-surface/80 border border-white/20 hover:border-white/40 text-white shadow-glow-sm'
-                        : 'bg-mono-surface hover:bg-mono-surface/80 border border-mono-glass-highlight hover:border-mono-glass-highlight/80 text-mono-text'
+                      'btn-glass px-4 py-2 text-sm font-medium min-h-[40px]',
+                      isDestructive && 'text-red-400 hover:text-red-300'
                     )}
                   >
                     {confirmText}

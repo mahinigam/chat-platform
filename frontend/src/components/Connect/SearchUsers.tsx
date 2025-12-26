@@ -72,12 +72,7 @@ const SearchUsers: React.FC = () => {
         return (
             <button
                 onClick={() => handleConnect(user.id)}
-                className={cn(
-                    'p-2 rounded-glass',
-                    'bg-accent-primary/10 hover:bg-accent-primary/20',
-                    'text-accent-primary hover:text-accent-primary-hover',
-                    'transition-colors duration-fast'
-                )}
+                className="btn-glass p-2 rounded-full min-w-[36px] min-h-[36px] flex items-center justify-center text-accent-primary hover:text-accent-primary-hover"
                 title="Connect"
             >
                 <UserPlus className="w-4 h-4" />
@@ -95,13 +90,7 @@ const SearchUsers: React.FC = () => {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search users by username..."
-                        className={cn(
-                            'w-full pl-9 pr-4 py-2 rounded-glass text-sm',
-                            'bg-mono-surface border border-mono-glass-border',
-                            'text-mono-text placeholder-mono-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-mono-glass-highlight/50',
-                            'transition-all duration-fast ease-glass'
-                        )}
+                        className="input-glass w-full pl-9 pr-4 py-2 text-sm"
                         autoFocus
                     />
                 </div>

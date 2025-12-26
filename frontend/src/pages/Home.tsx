@@ -465,13 +465,7 @@ function Home() {
                 <p className="text-mono-muted">Connecting...</p>
                 <button
                     onClick={logout}
-                    className={cn(
-                        'mt-4 px-4 py-2 rounded-glass text-sm',
-                        'bg-mono-surface hover:bg-mono-surface-2',
-                        'border border-mono-glass-border hover:border-mono-glass-highlight',
-                        'text-mono-muted hover:text-mono-text',
-                        'transition-all duration-fast ease-glass'
-                    )}
+                    className="btn-glass mt-4 px-4 py-2 text-sm"
                 >
                     Cancel
                 </button>
@@ -519,16 +513,7 @@ function Home() {
                     <div className="flex items-center gap-2 min-w-0">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className={cn(
-                                'md:hidden p-2 rounded-glass',
-                                'bg-mono-surface hover:bg-mono-surface/80',
-                                'border border-mono-glass-border hover:border-mono-glass-highlight',
-                                'text-mono-text hover:text-mono-text',
-                                'transition-all duration-fast ease-glass',
-                                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                                'active:scale-95',
-                                'min-h-[40px] min-w-[40px] flex items-center justify-center'
-                            )}
+                            className="btn-glass md:hidden p-2 min-h-[40px] min-w-[40px] flex items-center justify-center"
                             aria-label="Toggle menu"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -658,13 +643,7 @@ function Home() {
                     id="new-room-name"
                     type="text"
                     placeholder="Room Name"
-                    className={cn(
-                        'w-full px-4 py-2 rounded-glass',
-                        'bg-mono-surface border border-mono-glass-border',
-                        'text-mono-text placeholder-mono-muted',
-                        'focus:outline-none focus:ring-2 focus:ring-mono-glass-highlight/50 focus:border-mono-glass-highlight',
-                        'transition-all duration-fast ease-glass'
-                    )}
+                    className="input-glass w-full"
                     autoFocus
                 />
             </Modal>

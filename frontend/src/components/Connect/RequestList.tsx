@@ -92,24 +92,14 @@ const RequestList: React.FC = () => {
                     <div className="flex gap-2">
                         <button
                             onClick={() => handleAccept(req.id)}
-                            className={cn(
-                                'p-1.5 rounded-full',
-                                'bg-white/10 hover:bg-white/20',
-                                'text-white',
-                                'transition-colors'
-                            )}
+                            className="btn-glass p-2 rounded-full min-w-[32px] min-h-[32px] flex items-center justify-center text-white"
                             title="Accept"
                         >
                             <Check className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => handleReject(req.id)}
-                            className={cn(
-                                'p-1.5 rounded-full',
-                                'bg-white/5 hover:bg-white/10',
-                                'text-mono-muted hover:text-white',
-                                'transition-colors'
-                            )}
+                            className="btn-glass p-2 rounded-full min-w-[32px] min-h-[32px] flex items-center justify-center text-mono-muted hover:text-white"
                             title="Reject"
                         >
                             <X className="w-4 h-4" />
