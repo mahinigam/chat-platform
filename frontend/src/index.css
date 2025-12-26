@@ -23,12 +23,13 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   }
 
-  /* Layer 2: Liquid Glass Panel */
+  /* Layer 2: Liquid Glass Panel with Metallic Edge */
   .glass-panel {
-    @apply backdrop-blur-xl bg-mono-surface border border-white/5 shadow-glass rounded-xl relative overflow-hidden transition-all duration-500 ease-glass;
+    @apply backdrop-blur-xl bg-mono-surface border border-white/8 shadow-glass rounded-xl relative overflow-hidden transition-all duration-500 ease-glass;
     box-shadow:
-      0 4px 30px rgba(0, 0, 0, 0.1),
-      inset 0 0 20px rgba(255, 255, 255, 0.02);
+      0 4px 30px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   }
 
   /* Adaptive Blur: Stronger on hover/focus */
@@ -36,8 +37,9 @@
   .glass-panel:focus-within {
     backdrop-filter: blur(24px);
     box-shadow:
-      0 8px 40px rgba(0, 0, 0, 0.2),
-      inset 0 0 30px rgba(255, 255, 255, 0.04);
+      0 8px 40px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 
   /* Inner light gradient for glass */
@@ -47,34 +49,111 @@
     background: linear-gradient(125deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.01) 100%);
   }
 
-  /* Glass Button */
+  /* Glass Button with Metallic Chrome Edge */
   .btn-glass {
-    @apply px-4 py-2 rounded-lg font-medium bg-white/5 border border-white/10 text-mono-text transition-all duration-300 ease-glass disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply px-4 py-2 rounded-lg font-medium bg-white/5 border border-white/15 text-mono-text transition-all duration-300 ease-glass disabled:opacity-40 disabled:cursor-not-allowed;
     backdrop-filter: blur(10px);
+    box-shadow: var(--metal-inset), var(--metal-depth);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Chromatic edge - appears on hover */
+  .btn-glass::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: var(--chromatic-edge);
+    opacity: 0;
+    filter: blur(3px);
+    z-index: -1;
+    transition: opacity 0.4s ease;
+  }
+
+  .btn-glass:hover::before,
+  .btn-glass:focus::before {
+    opacity: 0.5;
   }
 
   .btn-glass:hover {
-    @apply bg-white/10 border-white/20;
+    @apply bg-white/10 border-white/25;
     backdrop-filter: blur(16px);
-    /* Adaptive Blur */
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+    box-shadow: var(--metal-inset), 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(255, 255, 255, 0.08);
   }
 
   .btn-glass:active {
     @apply scale-95;
   }
 
-  /* Input Glass - Increased opacity for better visibility */
+  /* ===== CIRCULAR CHROME BUTTON ===== */
+  /* For action buttons like Send, matching reference images */
+  .btn-chrome-circle {
+    @apply flex items-center justify-center text-mono-text transition-all duration-300 ease-glass disabled:opacity-40;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(20, 20, 20, 0.9);
+    border: 2px solid transparent;
+    position: relative;
+    box-shadow:
+      inset 0 2px 4px rgba(255, 255, 255, 0.08),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Chrome rim with metallic gradient */
+  .btn-chrome-circle::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: var(--metal-rim);
+    z-index: -2;
+    transition: all 0.3s ease;
+  }
+
+  /* Chromatic aberration layer */
+  .btn-chrome-circle::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: var(--chromatic-edge);
+    opacity: 0;
+    filter: blur(4px);
+    z-index: -3;
+    transition: opacity 0.4s ease;
+  }
+
+  .btn-chrome-circle:hover::after,
+  .btn-chrome-circle:focus::after {
+    opacity: 0.6;
+  }
+
+  .btn-chrome-circle:hover {
+    box-shadow:
+      inset 0 2px 6px rgba(255, 255, 255, 0.12),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.5),
+      0 6px 20px rgba(0, 0, 0, 0.6),
+      0 0 15px rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-chrome-circle:active {
+    transform: scale(0.95);
+  }
+
+  /* Input Glass - Metallic edge enhancement */
   .input-glass {
-    @apply w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-mono-text placeholder-mono-muted focus:outline-none transition-all duration-300 ease-glass;
+    @apply w-full px-4 py-3 rounded-lg bg-white/10 border border-white/15 text-mono-text placeholder-mono-muted focus:outline-none transition-all duration-300 ease-glass;
     backdrop-filter: blur(10px);
+    box-shadow: var(--metal-inset), 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   .input-glass:focus {
-    @apply bg-white/10 border-white/20;
+    @apply bg-white/12 border-white/25;
     backdrop-filter: blur(16px);
-    /* Adaptive Blur */
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.03);
+    box-shadow: var(--metal-inset), 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(255, 255, 255, 0.04);
   }
 
   /* Layer 2: Message Tiles (Floating Glass) */

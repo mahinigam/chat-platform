@@ -41,6 +41,21 @@
   --glass-bg: rgba(255, 255, 255, 0.06);
   --glass-border: rgba(255, 255, 255, 0.10);
 
+  /* ===== METALLIC CHROME ===== */
+  --metal-rim: linear-gradient(135deg, #2a2a2a 0%, #5a5a5a 20%, #8a8a8a 40%, #ffffff 50%, #8a8a8a 60%, #5a5a5a 80%, #2a2a2a 100%);
+  --metal-inset: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+  --metal-depth: 0 2px 8px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+
+  /* Chromatic Aberration - Prismatic Edge */
+  --chromatic-edge: conic-gradient(from 200deg,
+      rgba(255, 100, 100, 0.6) 0deg,
+      rgba(100, 200, 255, 0.5) 60deg,
+      rgba(255, 220, 100, 0.5) 120deg,
+      rgba(100, 255, 150, 0.4) 180deg,
+      rgba(200, 100, 255, 0.5) 240deg,
+      rgba(255, 150, 100, 0.5) 300deg,
+      rgba(255, 100, 100, 0.6) 360deg);
+
   /* ===== SPACING ===== */
   --touch-target: 44px;
 }
