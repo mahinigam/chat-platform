@@ -26,7 +26,7 @@ export default {
                 }
             },
             fontFamily: {
-                sans: ['Outfit', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                sans: ['Manrope', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
                 display: ['Cinzel Decorative', 'serif'], // Added for potential future use or headings
             },
             backdropBlur: {
