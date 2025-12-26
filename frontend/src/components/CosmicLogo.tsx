@@ -51,15 +51,15 @@ const CosmicLogo: React.FC<CosmicLogoProps> = ({
                             {/* Turbulence for organic distortion pattern */}
                             <feTurbulence
                                 type="fractalNoise"
-                                baseFrequency="0.015"
-                                numOctaves="2"
+                                baseFrequency="0.025"
+                                numOctaves="3"
                                 result="turbulence"
                             >
-                                {/* Animate the turbulence for subtle movement */}
+                                {/* Animate the turbulence for visible movement */}
                                 <animate
                                     attributeName="baseFrequency"
-                                    values="0.015;0.02;0.015"
-                                    dur="8s"
+                                    values="0.02;0.04;0.02"
+                                    dur="6s"
                                     repeatCount="indefinite"
                                 />
                             </feTurbulence>
@@ -67,7 +67,7 @@ const CosmicLogo: React.FC<CosmicLogoProps> = ({
                             <feDisplacementMap
                                 in="SourceGraphic"
                                 in2="turbulence"
-                                scale="3"
+                                scale="8"
                                 xChannelSelector="R"
                                 yChannelSelector="G"
                             />
