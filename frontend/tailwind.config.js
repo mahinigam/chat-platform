@@ -27,7 +27,7 @@ export default {
             },
             fontFamily: {
                 sans: ['Manrope', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
-                display: ['Cinzel Decorative', 'serif'], // Added for potential future use or headings
+                display: ['Manrope', 'sans-serif'],
             },
             backdropBlur: {
                 glass: '24px',          // Heavier blur for "liquid" feel
