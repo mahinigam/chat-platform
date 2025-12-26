@@ -22,6 +22,7 @@ interface SidebarProps {
 
 import SearchUsers from './Connect/SearchUsers';
 import RequestList from './Connect/RequestList';
+import CosmicLogo from './CosmicLogo';
 import { MessageSquare, UserPlus, Users, LogOut, User } from 'lucide-react';
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -98,9 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-mono-glass-border">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent truncate">
-            Aether
-          </h1>
+          <CosmicLogo size="sm" />
         </div>
 
         {/* Tabs */}
