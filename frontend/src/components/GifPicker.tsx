@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GiphyFetch } from '@giphy/js-fetch-api';
 import { Grid } from '@giphy/react-components';
 import { useDebounce } from 'use-debounce';
-import { cn } from '../utils/theme';
+import ChromeButton from './ChromeButton';
 
 // Use a demo key if not provided, but warn user
 const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY || 'sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh'; // Demo key
@@ -29,21 +29,16 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-mono-surface w-full max-w-md rounded-glass border border-mono-glass-border shadow-2xl flex flex-col h-[500px] animate-fade-up">
-                <div className="p-4 border-b border-mono-glass-border flex justify-between items-center">
+                <div className="p-4 border-b border-mono-glass-border flex justify-between items-center gap-2">
                     <input
                         type="text"
                         placeholder="Search GIFs..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className={cn(
-                            'flex-1 px-3 py-2 rounded-glass mr-2',
-                            'bg-mono-surface-2 border border-mono-glass-border',
-                            'text-mono-text placeholder-mono-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-mono-glass-highlight/50'
-                        )}
+                        className="input-glass flex-1"
                         autoFocus
                     />
-                    <button onClick={onClose} className="text-mono-muted hover:text-mono-text">✕</button>
+                    <ChromeButton onClick={onClose} variant="circle" className="text-mono-muted hover:text-mono-text min-h-[36px] min-w-[36px]">✕</ChromeButton>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">

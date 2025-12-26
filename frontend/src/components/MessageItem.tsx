@@ -319,16 +319,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
           )}
         >
           <button
-            className={cn(
-              'p-1.5 rounded-glass text-xs',
-              'bg-mono-surface hover:bg-mono-surface/80',
-              'border border-mono-glass-border hover:border-mono-glass-highlight',
-              'text-mono-muted hover:text-mono-text',
-              'transition-all duration-fast ease-glass',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-mono-text/50',
-              'active:scale-95 hover:translate-y-[-1px]',
-              'min-h-[32px] min-w-[32px] flex items-center justify-center'
-            )}
+            className="btn-glass p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
             aria-label="Add reaction"
             onClick={() => setShowReactions(!showReactions)}
           >
@@ -338,16 +329,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
           </button>
 
           <button
-            className={cn(
-              'p-1.5 rounded-glass text-xs',
-              'bg-mono-surface hover:bg-mono-surface/80',
-              'border border-mono-glass-border hover:border-mono-glass-highlight',
-              'text-mono-muted hover:text-mono-text',
-              'transition-all duration-fast ease-glass',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-mono-text/50',
-              'active:scale-95 hover:translate-y-[-1px]',
-              'min-h-[32px] min-w-[32px] flex items-center justify-center'
-            )}
+            className="btn-glass p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
             aria-label="More options"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

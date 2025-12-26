@@ -63,63 +63,91 @@
     background: linear-gradient(125deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.01) 100%);
   }
 
-  /* Glass Button with Metallic Chrome Edge */
+  /* Glass Button with Subtle Chrome Rim - Dark Face Style */
   .btn-glass {
-    @apply px-4 py-2 rounded-lg font-medium bg-white/5 border border-white/10 text-mono-text transition-all duration-300 ease-glass disabled:opacity-40 disabled:cursor-not-allowed;
-    backdrop-filter: blur(10px);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-      0 2px 8px rgba(0, 0, 0, 0.4);
+    @apply px-4 py-2 rounded-xl font-medium text-mono-text transition-all duration-300 ease-glass disabled:opacity-40 disabled:cursor-not-allowed;
+    background: rgba(20, 20, 22, 0.98);
+    border: none;
     position: relative;
     overflow: visible;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.4);
   }
 
-  /* Chrome rim - always visible */
+  /* Chrome/metallic rim - visible by default */
   .btn-glass::before {
     content: '';
     position: absolute;
-    inset: -2px;
+    inset: -1.5px;
     border-radius: inherit;
-    background: var(--metal-rim);
-    z-index: -2;
-    opacity: 0.6;
-    transition: opacity 0.4s ease;
+    background: linear-gradient(135deg,
+        rgba(60, 60, 65, 0.8) 0%,
+        rgba(120, 120, 130, 0.5) 30%,
+        rgba(180, 180, 190, 0.6) 50%,
+        rgba(120, 120, 130, 0.5) 70%,
+        rgba(60, 60, 65, 0.8) 100%);
+    z-index: -1;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
   }
 
-  /* Chromatic edge - subtle always, stronger on hover */
+  /* Chromatic/prismatic edge - subtle visible by default */
   .btn-glass::after {
     content: '';
     position: absolute;
     inset: -3px;
     border-radius: inherit;
-    background: var(--chromatic-edge);
-    opacity: 0.3;
-    filter: blur(4px);
-    z-index: -3;
-    transition: opacity 0.4s ease;
+    background: conic-gradient(from 180deg,
+        rgba(100, 150, 255, 0.25) 0deg,
+        rgba(255, 100, 150, 0.2) 60deg,
+        rgba(255, 200, 100, 0.2) 120deg,
+        rgba(100, 255, 150, 0.2) 180deg,
+        rgba(200, 100, 255, 0.2) 240deg,
+        rgba(255, 150, 100, 0.2) 300deg,
+        rgba(100, 150, 255, 0.25) 360deg);
+    opacity: 0.4;
+    filter: blur(2px);
+    z-index: -2;
+    transition: opacity 0.3s ease;
   }
 
   .btn-glass:hover::before {
-    opacity: 0.9;
+    opacity: 0.8;
   }
 
   .btn-glass:hover::after {
-    opacity: 0.6;
+    opacity: 0.7;
   }
 
   .btn-glass:hover {
-    @apply bg-white/10 border-white/20;
-    backdrop-filter: blur(16px);
+    background: rgba(28, 28, 30, 0.98);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-      0 4px 20px rgba(0, 0, 0, 0.5),
-      0 0 12px rgba(255, 255, 255, 0.08);
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+      0 4px 16px rgba(0, 0, 0, 0.5);
   }
 
   .btn-glass:active {
     @apply scale-95;
+    background: #0a0a0a;
+    /* Deep pressed well */
+    box-shadow:
+      inset 0 4px 12px rgba(0, 0, 0, 0.9),
+      /* Deep top shadow */
+      inset 0 1px 3px rgba(0, 0, 0, 0.8),
+      /* Sharp inner lip */
+      0 0 0 transparent;
+    /* No outer shadow */
+    transform: translateY(1px) scale(0.96);
+    /* Physical press feel */
+  }
+
+  /* Dim the chrome rim slightly when pressed */
+  .btn-glass:active::before {
+    opacity: 0.4;
+    filter: brightness(0.8);
   }
 
   /* ===== CIRCULAR CHROME BUTTON ===== */

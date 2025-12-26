@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ChromeButton from './ChromeButton';
 // import { cn } from '../utils/theme';
 
 interface AudioRecorderProps {
@@ -72,17 +73,18 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, onCa
         <div className="flex items-center gap-4 px-4 py-2 bg-mono-surface rounded-glass border border-white/20 animate-fade-up">
             <div className="w-3 h-3 rounded-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
             <span className="text-mono-text font-mono">{formatDuration(duration)}</span>
-            <button
+            <ChromeButton
                 onClick={() => {
                     stopRecording(); // This will trigger onstop which calls onRecordingComplete
                 }}
-                className="btn-glass p-2 rounded-full text-white"
+                variant="circle"
+                className="text-white min-w-[36px] min-h-[36px]"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-            </button>
-            <button
+            </ChromeButton>
+            <ChromeButton
                 onClick={() => {
                     if (mediaRecorderRef.current) {
                         // Stop without saving
@@ -92,12 +94,13 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, onCa
                     }
                     onCancel();
                 }}
-                className="btn-glass p-2 rounded-full text-mono-muted hover:text-mono-text"
+                variant="circle"
+                className="text-mono-muted hover:text-mono-text min-w-[36px] min-h-[36px]"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-            </button>
+            </ChromeButton>
         </div>
     );
 };

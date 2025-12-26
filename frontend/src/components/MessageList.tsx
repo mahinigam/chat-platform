@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, smoothScroll, announceToScreenReader } from '../utils/theme';
 import MessageItem, { Message } from './MessageItem';
+import ChromeButton from './ChromeButton';
 
 interface MessageListProps {
   messages: Message[];
@@ -81,17 +82,9 @@ const MessageList: React.FC<MessageListProps> = ({
           </h2>
         </div>
         <div className="flex gap-2">
-          <button
-            className={cn(
-              'p-2 rounded-glass',
-              'bg-mono-surface hover:bg-mono-surface/80',
-              'border border-mono-glass-border hover:border-mono-glass-highlight',
-              'text-mono-text hover:text-mono-text',
-              'transition-all duration-fast ease-glass',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-              'hover:translate-y-[-1px] active:scale-95',
-              'min-h-[40px] min-w-[40px] flex items-center justify-center'
-            )}
+          <ChromeButton
+            variant="circle"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center"
             aria-label="Room info"
           >
             <svg
@@ -108,7 +101,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-          </button>
+          </ChromeButton>
         </div>
       </div>
 
@@ -236,7 +229,7 @@ const MessageList: React.FC<MessageListProps> = ({
           </li>
         )}
       </ul>
-    </div>
+    </div >
   );
 };
 

@@ -126,16 +126,7 @@ const Modal: React.FC<ModalProps> = ({
               </h2>
               <button
                 onClick={onClose}
-                className={cn(
-                  'p-2 rounded-glass',
-                  'bg-mono-surface-2 hover:bg-mono-surface/60',
-                  'border border-transparent hover:border-mono-glass-border',
-                  'text-mono-muted hover:text-mono-text',
-                  'transition-all duration-fast ease-glass',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                  'active:scale-95',
-                  'min-h-[36px] min-w-[36px] flex items-center justify-center'
-                )}
+                className="btn-glass p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"
                 aria-label="Close modal"
               >
                 <svg

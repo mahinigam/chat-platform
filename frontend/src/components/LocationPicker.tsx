@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { cn } from '../utils/theme';
+import ChromeButton from './ChromeButton';
 
 // Fix Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -88,7 +88,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, onCan
             <div className="bg-mono-surface w-full max-w-2xl rounded-glass border border-mono-glass-border shadow-2xl flex flex-col overflow-hidden animate-fade-up">
                 <div className="p-4 border-b border-mono-glass-border flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-mono-text">Share Location</h3>
-                    <button onClick={onCancel} className="text-mono-muted hover:text-mono-text">✕</button>
+                    <ChromeButton onClick={onCancel} variant="circle" className="text-mono-muted hover:text-mono-text min-h-[36px] min-w-[36px]">✕</ChromeButton>
                 </div>
 
                 <div className="relative h-96 w-full bg-mono-surface-2">
@@ -103,17 +103,14 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, onCan
                 <div className="p-4 border-t border-mono-glass-border flex justify-end gap-3">
                     <button
                         onClick={onCancel}
-                        className="px-4 py-2 rounded-glass text-mono-text hover:bg-mono-surface-2 transition-colors"
+                        className="btn-glass px-4 py-2 text-sm"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={!selectedLocation}
-                        className={cn(
-                            "px-4 py-2 rounded-glass bg-mono-glass-highlight text-white transition-all",
-                            !selectedLocation && "opacity-50 cursor-not-allowed"
-                        )}
+                        className="btn-glass px-4 py-2 text-sm font-medium"
                     >
                         Share Selected Location
                     </button>

@@ -103,13 +103,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex p-1 bg-mono-surface rounded-glass">
+        <div className="flex p-1 bg-[#2a2a2c] rounded-2xl">
           <button
             onClick={() => setActiveTab('chats')}
             className={cn(
-              'flex-1 flex items-center justify-center py-1.5 rounded-sm text-xs font-medium transition-all duration-fast',
+              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
               activeTab === 'chats'
-                ? 'bg-mono-bg text-mono-text shadow-sm'
+                ? 'bg-[#1a1a1c] text-mono-text shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
                 : 'text-mono-muted hover:text-mono-text'
             )}
             title="Chats"
@@ -119,9 +119,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => setActiveTab('requests')}
             className={cn(
-              'flex-1 flex items-center justify-center py-1.5 rounded-sm text-xs font-medium transition-all duration-fast',
+              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
               activeTab === 'requests'
-                ? 'bg-mono-bg text-mono-text shadow-sm'
+                ? 'bg-[#1a1a1c] text-mono-text shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
                 : 'text-mono-muted hover:text-mono-text'
             )}
             title="Requests"
@@ -131,9 +131,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => setActiveTab('search')}
             className={cn(
-              'flex-1 flex items-center justify-center py-1.5 rounded-sm text-xs font-medium transition-all duration-fast',
+              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
               activeTab === 'search'
-                ? 'bg-mono-bg text-mono-text shadow-sm'
+                ? 'bg-[#1a1a1c] text-mono-text shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
                 : 'text-mono-muted hover:text-mono-text'
             )}
             title="Find Users"
@@ -298,7 +298,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <p className="text-[10px] text-mono-muted truncate">Online</p>
           </div>
           <button
-            className="text-mono-muted hover:text-red-400 transition-colors p-1"
+            className="btn-glass p-2 min-h-[32px] min-w-[32px] flex items-center justify-center text-mono-muted hover:text-red-400"
             title="Logout"
             onClick={() => {
               localStorage.removeItem('token');

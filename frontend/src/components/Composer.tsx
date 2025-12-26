@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { cn, focusElement } from '../utils/theme';
 import AttachmentMenu from './AttachmentMenu';
+import ChromeButton from './ChromeButton';
 
 interface ComposerProps {
   onSendMessage: (content: string) => void;
@@ -120,14 +121,16 @@ const Composer: React.FC<ComposerProps> = ({
         />
 
         {/* Emoji Button */}
-        <button
-          className="btn-glass p-2 flex-shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center"
+        <ChromeButton
+          onClick={() => { }} // Emoji picker logic to be implemented or if existing, use it. Wait, original didn't have onClick logic in snippet? 
+          variant="circle"
+          className="flex-shrink-0 min-h-[36px] min-w-[36px]"
           aria-label="Emoji picker"
           title="Emoji picker"
           disabled={isLoading}
         >
           <svg
-            className="w-4 h-4"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -140,19 +143,20 @@ const Composer: React.FC<ComposerProps> = ({
               d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-        </button>
+        </ChromeButton>
 
-        {/* Send Button */}
-        <button
+        {/* Send Button - with mouse-tracking chrome rim */}
+        <ChromeButton
           onClick={handleSubmit}
           disabled={!content.trim() || isLoading}
-          className="btn-glass p-2 flex-shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="circle"
+          className="flex-shrink-0 min-h-[36px] min-w-[36px]"
           aria-label="Send message"
           title="Send message (Ctrl+Enter)"
         >
           {isLoading ? (
             <svg
-              className="w-4 h-4 animate-spin"
+              className="w-5 h-5 animate-spin"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -174,15 +178,17 @@ const Composer: React.FC<ComposerProps> = ({
             </svg>
           ) : (
             <svg
-              className="w-4 h-4"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
               aria-hidden="true"
             >
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
             </svg>
           )}
-        </button>
+        </ChromeButton>
       </div>
 
       {/* Character Counter (Optional) */}
