@@ -28,7 +28,6 @@ export default {
             fontFamily: {
                 sans: ['Manrope', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
                 display: ['Manrope', 'sans-serif'],
-                borel: ['Borel', 'cursive'],
             },
             backdropBlur: {
                 glass: '24px',          // Heavier blur for "liquid" feel
