@@ -4,15 +4,16 @@ import { authenticateTokenHTTP } from '../middleware/auth';
 
 const router = Router();
 
-router.post('/', authenticateTokenHTTP, upload.single('file'), (req: Request, res: Response) => {
+router.post('/', authenticateTokenHTTP, upload.single('file'), (req: Request, res: Response): void => {
     try {
         if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
+            res.status(400).json({ error: 'No file uploaded' });
+            return;
         }
 
         const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
 
-        return res.json({
+        res.json({
             url: fileUrl,
             filename: req.file.originalname,
             mimetype: req.file.mimetype,

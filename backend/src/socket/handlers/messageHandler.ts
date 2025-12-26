@@ -12,16 +12,6 @@ interface SendMessageData {
     tempId?: string; // For optimistic UI matching
 }
 
-interface MessageDeliveredData {
-    messageId: string;
-    roomId: number;
-}
-
-interface MessageReadData {
-    messageId: string;
-    roomId: number;
-}
-
 class MessageHandler {
     /**
      * Handle sending a new message

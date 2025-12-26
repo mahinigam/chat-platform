@@ -11,10 +11,10 @@ if (!fs.existsSync(uploadDir)) {
 
 // Configure storage
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (_req, _file, cb) => {
         cb(null, uploadDir);
     },
-    filename: (req, file, cb) => {
+    filename: (_req, file, cb) => {
         // Generate unique filename: timestamp-uuid-originalName
         const uniqueName = `${Date.now()}-${uuidv4()}${path.extname(file.originalname)}`;
         cb(null, uniqueName);
@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 });
 
 // File filter
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     // Allow all file types as per requirement, but we can restrict if needed
     // For now, we allow everything but maybe block executables for security
     if (file.mimetype === 'application/x-msdownload' || file.mimetype === 'application/x-exe') {
