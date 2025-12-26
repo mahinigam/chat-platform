@@ -53,33 +53,55 @@
   .btn-glass {
     @apply px-4 py-2 rounded-lg font-medium bg-white/5 border border-white/10 text-mono-text transition-all duration-300 ease-glass disabled:opacity-40 disabled:cursor-not-allowed;
     backdrop-filter: blur(10px);
-    box-shadow: var(--metal-inset), var(--metal-depth);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+      0 2px 8px rgba(0, 0, 0, 0.4);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
   }
 
-  /* Chromatic edge - appears on hover */
+  /* Chrome rim - always visible */
   .btn-glass::before {
     content: '';
     position: absolute;
     inset: -2px;
     border-radius: inherit;
-    background: var(--chromatic-edge);
-    opacity: 0;
-    filter: blur(3px);
-    z-index: -1;
+    background: var(--metal-rim);
+    z-index: -2;
+    opacity: 0.6;
     transition: opacity 0.4s ease;
   }
 
-  .btn-glass:hover::before,
-  .btn-glass:focus::before {
-    opacity: 0.5;
+  /* Chromatic edge - subtle always, stronger on hover */
+  .btn-glass::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    background: var(--chromatic-edge);
+    opacity: 0.3;
+    filter: blur(4px);
+    z-index: -3;
+    transition: opacity 0.4s ease;
+  }
+
+  .btn-glass:hover::before {
+    opacity: 0.9;
+  }
+
+  .btn-glass:hover::after {
+    opacity: 0.6;
   }
 
   .btn-glass:hover {
     @apply bg-white/10 border-white/20;
     backdrop-filter: blur(16px);
-    box-shadow: var(--metal-inset), 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+      0 4px 20px rgba(0, 0, 0, 0.5),
+      0 0 12px rgba(255, 255, 255, 0.08);
   }
 
   .btn-glass:active {
