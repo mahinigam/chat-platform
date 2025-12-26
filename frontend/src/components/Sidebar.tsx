@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-mono-glass-border">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <h1 className="text-xl font-borel font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent truncate">
+          <h1 className="text-xl font-borel font-normal bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent truncate">
             Aether
           </h1>
         </div>

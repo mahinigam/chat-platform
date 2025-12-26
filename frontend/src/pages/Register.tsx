@@ -36,7 +36,7 @@ const Register: React.FC = () => {
         <div className="min-h-screen text-mono-text flex items-center justify-center p-4 relative overflow-hidden">
             <div className="w-full max-w-sm relative z-10">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-borel font-bold mb-2">Aether</h1>
+                    <h1 className="text-4xl font-borel font-normal mb-2">Aether</h1>
                     <p className="text-mono-muted">Create your account</p>
                 </div>
 
