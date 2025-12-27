@@ -3,6 +3,7 @@ import { cn, formatTimestamp, getStatusAriaLabel, getAriaLabel } from '../utils/
 import ChromeButton from './ChromeButton';
 import ResonanceCard from './ResonanceCard';
 import AetherWaves from './AetherWaves';
+import MessageOptionsMenu from './MessageOptionsMenu';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -46,6 +47,7 @@ interface MessageItemProps {
 
 const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
   const [showReactions, setShowReactions] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const timestamp = formatTimestamp(message.timestamp);
 
   const renderContent = () => {
@@ -340,15 +342,33 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
             </svg>
           </ChromeButton>
 
-          <ChromeButton
-            variant="circle"
-            className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
-            aria-label="More options"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.5 1.5H9.5V3h1V1.5zM10.5 9.5H9.5V11h1V9.5zM10.5 17.5H9.5V19h1v-1.5z" />
-            </svg>
-          </ChromeButton>
+          <div className="relative">
+            <ChromeButton
+              variant="circle"
+              className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
+              aria-label="More options"
+              onClick={() => setShowOptions(!showOptions)}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+              </svg>
+            </ChromeButton>
+            <MessageOptionsMenu
+              isOpen={showOptions}
+              onClose={() => setShowOptions(false)}
+              isOwn={message.isOwn}
+              onReply={() => console.log('Reply to', message.id)}
+              onStar={() => console.log('Star', message.id)}
+              onPin={() => console.log('Pin', message.id)}
+              onForward={() => console.log('Forward', message.id)}
+              onCopy={() => {
+                navigator.clipboard.writeText(message.content);
+                console.log('Copied', message.id);
+              }}
+              onDelete={() => console.log('Delete', message.id)}
+              onSelect={() => console.log('Select messages', message.id)}
+            />
+          </div>
         </div>
       </div>
     </div>
