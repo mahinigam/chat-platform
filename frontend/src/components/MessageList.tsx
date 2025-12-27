@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn, smoothScroll, announceToScreenReader } from '../utils/theme';
+import { cn, announceToScreenReader } from '../utils/theme';
 import MessageItem, { Message } from './MessageItem';
-import ChromeButton from './ChromeButton';
 
 interface MessageListProps {
   messages: Message[];
@@ -28,7 +27,6 @@ const MessageList: React.FC<MessageListProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLUListElement>(null);
   const lastMessageRef = useRef<HTMLLIElement>(null);
-  const isAutoScrolling = useRef(false);
 
   // Auto-scroll to latest message
   useEffect(() => {

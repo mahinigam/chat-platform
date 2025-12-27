@@ -20,7 +20,6 @@ const AetherWaves: React.FC<AetherWavesProps> = ({ audioUrl, fileName, className
     const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
-    const [, forceUpdate] = useState(0);
 
     useEffect(() => {
         if (!audioRef.current) {
