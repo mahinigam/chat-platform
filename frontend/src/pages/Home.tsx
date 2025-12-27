@@ -202,7 +202,7 @@ function Home() {
                     reactions: []
                 }));
 
-                setMessages(loadedMessages.reverse());
+                setMessages(loadedMessages);
             } catch (err) {
                 console.error('Failed to fetch messages', err);
                 errorToast('Failed to load messages');
