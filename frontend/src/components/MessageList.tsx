@@ -32,12 +32,15 @@ const MessageList: React.FC<MessageListProps> = ({
 
   // Auto-scroll to latest message
   useEffect(() => {
-    if (lastMessageRef.current && !isAutoScrolling.current) {
-      isAutoScrolling.current = true;
+    if (scrollContainerRef.current && messages.length > 0) {
+      const container = scrollContainerRef.current;
+      // Small delay to ensure DOM is updated
       setTimeout(() => {
-        smoothScroll(scrollContainerRef.current!, lastMessageRef.current!);
-        isAutoScrolling.current = false;
-      }, 100);
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 50);
     }
   }, [messages.length]);
 
