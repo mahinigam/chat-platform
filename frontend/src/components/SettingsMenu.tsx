@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Settings, LogOut, User } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
 import Avatar from './Avatar';
@@ -29,6 +30,58 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, onLogout, className }
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Animation Variants
+    const menuVariants: Variants = {
+        hidden: {
+            opacity: 0,
+            scale: 0.98,
+            backdropFilter: "blur(20px)",
+            transition: {
+                duration: 0.15,
+                ease: "easeOut" as const
+            }
+        },
+        visible: {
+            opacity: 1,
+            scale: 1,
+            backdropFilter: "blur(12px)",
+            transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 34,
+                mass: 1,
+                staggerChildren: 0.08,
+                delayChildren: 0.05 // Entry starts after container is ~40% formed
+            }
+        },
+        exit: {
+            opacity: 0,
+            scale: 0.98,
+            backdropFilter: "blur(20px)",
+            transition: {
+                duration: 0.15,
+                ease: "easeIn" as const
+            }
+        }
+    };
+
+    const itemVariants: Variants = {
+        hidden: {
+            opacity: 0,
+            y: 8,
+            filter: "blur(5px)"
+        },
+        visible: {
+            opacity: 1,
+            y: 0,
+            filter: "blur(0px)",
+            transition: {
+                duration: 0.3,
+                ease: [0.2, 0.65, 0.3, 0.9] as const
+            }
+        }
+    };
+
     return (
         <div className={cn("relative", className)} ref={menuRef}>
             <ChromeButton
@@ -43,45 +96,57 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, onLogout, className }
                 <Settings className="w-5 h-5" />
             </ChromeButton>
 
-            {isOpen && (
-                <div className={cn(
-                    "absolute bottom-full right-0 mb-3 w-64",
-                    "bg-mono-bg/95 backdrop-blur-xl border border-mono-glass-border",
-                    "rounded-2xl shadow-2xl overflow-hidden",
-                    "animate-scale-up origin-bottom-right z-50",
-                    "divide-y divide-mono-glass-border"
-                )}>
-                    {/* User Info Header */}
-                    <div className="p-4 flex items-center gap-3 bg-mono-surface/30">
-                        <Avatar src={user?.avatar} name={user?.name} size="md" />
-                        <div className="min-w-0">
-                            <p className="text-sm font-semibold text-mono-text truncate">
-                                {user?.name || 'User'}
-                            </p>
-                            {/* Email removed for privacy */}
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        variants={menuVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className={cn(
+                            "absolute bottom-full right-0 mb-3 w-64",
+                            "bg-mono-bg/90 border border-mono-glass-border", // Lower opacity to let backdrop blur work effectively
+                            "rounded-2xl shadow-2xl overflow-hidden",
+                            "z-50",
+                            "divide-y divide-mono-glass-border"
+                        )}
+                        style={{ transformOrigin: "bottom right" }}
+                    >
+                        {/* User Info Header */}
+                        <motion.div variants={itemVariants} className="p-4 flex items-center gap-3 bg-mono-surface/30">
+                            <Avatar src={user?.avatar} name={user?.name} size="md" />
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-mono-text truncate">
+                                    {user?.name || 'User'}
+                                </p>
+                            </div>
+                        </motion.div>
+
+                        {/* Menu Items */}
+                        <div className="p-1">
+                            <motion.button
+                                variants={itemVariants}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left"
+                            >
+                                <User className="w-4 h-4 text-mono-muted" />
+                                <span>Edit Profile</span>
+                            </motion.button>
                         </div>
-                    </div>
 
-                    {/* Menu Items */}
-                    <div className="p-1">
-                        <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left">
-                            <User className="w-4 h-4 text-mono-muted" />
-                            <span>Edit Profile</span>
-                        </button>
-                    </div>
-
-                    {/* Logout Section */}
-                    <div className="p-1">
-                        <button
-                            onClick={onLogout}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors text-left font-medium"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span>Log Out</span>
-                        </button>
-                    </div>
-                </div>
-            )}
+                        {/* Logout Section */}
+                        <div className="p-1">
+                            <motion.button
+                                variants={itemVariants}
+                                onClick={onLogout}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors text-left font-medium"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <span>Log Out</span>
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
