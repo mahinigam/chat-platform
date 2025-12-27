@@ -88,7 +88,7 @@ const Composer: React.FC<ComposerProps> = ({
         <div
           className={cn(
             'flex-1 flex gap-2 items-end',
-            'px-3 py-2 rounded-3xl', /* Floating Pill Shape */
+            'px-3 py-1.5 rounded-3xl', /* Reduced padding to match 48px height */
             'backdrop-blur-glass bg-mono-surface border',
             'transition-all duration-normal ease-glass',
             isFocused
@@ -196,12 +196,7 @@ const Composer: React.FC<ComposerProps> = ({
         </ChromeButton>
       </div>
 
-      {/* Character Counter (Optional) */}
-      {content.length > 0 && (
-        <div className="text-xs text-mono-muted mt-1 px-1">
-          {content.length} character{content.length !== 1 ? 's' : ''}
-        </div>
-      )}
+      {/* Character Counter Removed */}
     </div>
   );
 };

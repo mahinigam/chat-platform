@@ -280,7 +280,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           <Avatar size="sm" name="My Profile" /> {/* TODO: Get actual user name */}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-mono-text truncate">My Profile</p>
-            <p className="text-[10px] text-mono-muted truncate">Online</p>
           </div>
           <SettingsMenu
             user={{ name: "My Profile" }}
