@@ -7,6 +7,7 @@ import TypingIndicator from './TypingIndicator';
 import Modal from './Modal';
 import ToastContainer from './Toast';
 import { useToast } from '../hooks/useToast';
+import ChromeButton from './ChromeButton';
 
 interface Room {
   id: string;
@@ -168,7 +169,7 @@ const MainLayout: React.FC = () => {
         >
           <div className="flex items-center gap-2 min-w-0">
             {/* Mobile Menu Toggle */}
-            <button
+            <ChromeButton
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className={cn(
                 'md:hidden p-2 rounded-glass',
@@ -176,8 +177,6 @@ const MainLayout: React.FC = () => {
                 'border border-mono-glass-border hover:border-mono-glass-highlight',
                 'text-mono-text hover:text-mono-text',
                 'transition-all duration-fast ease-glass',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                'active:scale-95',
                 'min-h-[40px] min-w-[40px] flex items-center justify-center'
               )}
               aria-label="Toggle menu"
@@ -196,7 +195,7 @@ const MainLayout: React.FC = () => {
                   d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
-            </button>
+            </ChromeButton>
 
             {/* Room Name */}
             <div className="min-w-0">
@@ -211,15 +210,13 @@ const MainLayout: React.FC = () => {
 
           {/* Header Actions */}
           <div className="flex gap-2 flex-shrink-0">
-            <button
+            <ChromeButton
               className={cn(
                 'p-2 rounded-glass',
                 'bg-mono-surface hover:bg-mono-surface/80',
                 'border border-mono-glass-border hover:border-mono-glass-highlight',
                 'text-mono-text hover:text-mono-text',
                 'transition-all duration-fast ease-glass',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                'active:scale-95',
                 'min-h-[40px] min-w-[40px] flex items-center justify-center'
               )}
               aria-label="Search"
@@ -238,16 +235,14 @@ const MainLayout: React.FC = () => {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-            </button>
-            <button
+            </ChromeButton>
+            <ChromeButton
               className={cn(
                 'p-2 rounded-glass',
                 'bg-mono-surface hover:bg-mono-surface/80',
                 'border border-mono-glass-border hover:border-mono-glass-highlight',
                 'text-mono-text hover:text-mono-text',
                 'transition-all duration-fast ease-glass',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-mono-text/50',
-                'active:scale-95',
                 'min-h-[40px] min-w-[40px] flex items-center justify-center'
               )}
               aria-label="Call"
@@ -266,7 +261,7 @@ const MainLayout: React.FC = () => {
                   d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                 />
               </svg>
-            </button>
+            </ChromeButton>
           </div>
         </div>
 

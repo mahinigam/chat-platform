@@ -6,8 +6,10 @@ import { useToast } from '../hooks/useToast';
 import ToastContainer from '../components/Toast';
 import ParticleBackground from '../components/ParticleBackground';
 import CosmicLogo from '../components/CosmicLogo';
+import ChromeButton from '../components/ChromeButton';
 
 const Login: React.FC = () => {
+    // Force rebuild
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -56,13 +58,13 @@ const Login: React.FC = () => {
                         placeholder="Password"
                         required
                     />
-                    <button
+                    <ChromeButton
                         type="submit"
                         disabled={isLoading}
-                        className="btn-glass w-full min-h-[44px]"
+                        className="w-full min-h-[44px]"
                     >
                         {isLoading ? 'Signing In...' : 'Sign In'}
-                    </button>
+                    </ChromeButton>
                 </form>
 
                 <div className="mt-6 text-center">

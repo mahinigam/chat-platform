@@ -59,21 +59,21 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({ onSelect, className }) 
                     'flex flex-col py-2 z-50'
                 )}>
                     {options.map((option) => (
-                        <button
+                        <ChromeButton
                             key={option.type}
                             onClick={() => {
                                 onSelect(option.type);
                                 setIsOpen(false);
                             }}
                             className={cn(
-                                'flex items-center gap-3 px-4 py-3 text-left',
+                                'flex items-center gap-3 px-4 py-3 text-left w-full',
                                 'text-mono-text hover:bg-mono-surface-2',
-                                'transition-colors duration-fast'
+                                'transition-colors duration-fast rounded-none first:rounded-t-glass last:rounded-b-glass'
                             )}
                         >
                             <span className="text-accent-primary">{option.icon}</span>
                             <span className="text-sm font-medium">{option.label}</span>
-                        </button>
+                        </ChromeButton>
                     ))}
                 </div>
             )}

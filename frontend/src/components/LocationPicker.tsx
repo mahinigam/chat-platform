@@ -101,19 +101,19 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, onCan
                 </div>
 
                 <div className="p-4 border-t border-mono-glass-border flex justify-end gap-3">
-                    <button
+                    <ChromeButton
                         onClick={onCancel}
-                        className="btn-glass px-4 py-2 text-sm"
+                        className="px-4 py-2 text-sm"
                     >
                         Cancel
-                    </button>
-                    <button
+                    </ChromeButton>
+                    <ChromeButton
                         onClick={handleConfirm}
                         disabled={!selectedLocation}
-                        className="btn-glass px-4 py-2 text-sm font-medium"
+                        className="px-4 py-2 text-sm font-medium"
                     >
                         Share Selected Location
-                    </button>
+                    </ChromeButton>
                 </div>
             </div>
         </div>

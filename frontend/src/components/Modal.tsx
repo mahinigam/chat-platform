@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, createFocusTrap, focusElement } from '../utils/theme';
+import ChromeButton from './ChromeButton';
 
 interface ModalProps {
   isOpen: boolean;
@@ -124,9 +125,10 @@ const Modal: React.FC<ModalProps> = ({
               >
                 {title}
               </h2>
-              <button
+              <ChromeButton
                 onClick={onClose}
-                className="btn-glass p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                variant="circle"
                 aria-label="Close modal"
               >
                 <svg
@@ -143,7 +145,7 @@ const Modal: React.FC<ModalProps> = ({
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-              </button>
+              </ChromeButton>
             </div>
 
             {/* Content */}
@@ -161,23 +163,23 @@ const Modal: React.FC<ModalProps> = ({
             {/* Footer */}
             {onConfirm && (
               <div className="flex gap-2 px-6 py-4 border-t border-mono-glass-border justify-end">
-                <button
+                <ChromeButton
                   onClick={onClose}
-                  className="btn-glass px-4 py-2 text-sm min-h-[40px]"
+                  className="px-4 py-2 text-sm min-h-[40px]"
                 >
                   {cancelText}
-                </button>
+                </ChromeButton>
 
                 {onConfirm && (
-                  <button
+                  <ChromeButton
                     onClick={onConfirm}
                     className={cn(
-                      'btn-glass px-4 py-2 text-sm font-medium min-h-[40px]',
+                      'px-4 py-2 text-sm font-medium min-h-[40px]',
                       isDestructive && 'text-red-400 hover:text-red-300'
                     )}
                   >
                     {confirmText}
-                  </button>
+                  </ChromeButton>
                 )}
               </div>
             )}

@@ -172,7 +172,8 @@ const ChromeButton: React.FC<ChromeButtonProps> = ({
             {/* Outer Glow/Shadow for depth */}
             <span
                 className={cn(
-                    'absolute inset-0 rounded-full opacity-50',
+                    'absolute inset-0 opacity-50',
+                    isCircle ? 'rounded-full' : 'rounded-xl',
                     isHovering ? 'opacity-60' : 'opacity-20'
                 )}
                 style={{

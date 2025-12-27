@@ -6,6 +6,7 @@ import { useToast } from '../hooks/useToast';
 import ToastContainer from '../components/Toast';
 import ParticleBackground from '../components/ParticleBackground';
 import CosmicLogo from '../components/CosmicLogo';
+import ChromeButton from '../components/ChromeButton';
 
 const Register: React.FC = () => {
     const [username, setUsername] = useState('');
@@ -66,13 +67,13 @@ const Register: React.FC = () => {
                         placeholder="Password"
                         required
                     />
-                    <button
+                    <ChromeButton
                         type="submit"
                         disabled={isLoading}
-                        className="btn-glass w-full min-h-[44px]"
+                        className="w-full min-h-[44px]"
                     >
                         {isLoading ? 'Creating Account...' : 'Create Account'}
-                    </button>
+                    </ChromeButton>
                 </form>
 
                 <div className="mt-6 text-center">

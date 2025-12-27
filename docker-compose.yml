@@ -101,6 +101,8 @@ services:
       - "80:80"
     networks:
       - chat_network
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

@@ -4,6 +4,7 @@ import { searchUsers, sendRequest, User } from '../../api/contacts';
 import { cn } from '../../utils/theme';
 import { useToast } from '../../hooks/useToast';
 import { Search, UserPlus, Clock, UserCheck } from 'lucide-react';
+import ChromeButton from '../ChromeButton';
 
 const SearchUsers: React.FC = () => {
     const [query, setQuery] = useState('');
@@ -70,13 +71,14 @@ const SearchUsers: React.FC = () => {
         }
 
         return (
-            <button
+            <ChromeButton
                 onClick={() => handleConnect(user.id)}
-                className="btn-glass p-2 rounded-full min-w-[36px] min-h-[36px] flex items-center justify-center text-accent-primary hover:text-accent-primary-hover"
+                className="p-2 rounded-full min-w-[36px] min-h-[36px] flex items-center justify-center text-accent-primary hover:text-accent-primary-hover"
+                variant="circle"
                 title="Connect"
             >
                 <UserPlus className="w-4 h-4" />
-            </button>
+            </ChromeButton>
         );
     };
 

@@ -3,6 +3,7 @@ import { getPendingRequests, acceptRequest, rejectRequest, FriendRequest } from 
 import { cn } from '../../utils/theme';
 import { useToast } from '../../hooks/useToast';
 import { Check, X, Clock } from 'lucide-react';
+import ChromeButton from '../ChromeButton';
 
 const RequestList: React.FC = () => {
     const [requests, setRequests] = useState<FriendRequest[]>([]);
@@ -90,20 +91,22 @@ const RequestList: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
-                        <button
+                        <ChromeButton
                             onClick={() => handleAccept(req.id)}
-                            className="btn-glass p-2 rounded-full min-w-[32px] min-h-[32px] flex items-center justify-center text-white"
+                            className="p-2 rounded-full min-w-[32px] min-h-[32px] flex items-center justify-center text-white"
+                            variant="circle"
                             title="Accept"
                         >
                             <Check className="w-4 h-4" />
-                        </button>
-                        <button
+                        </ChromeButton>
+                        <ChromeButton
                             onClick={() => handleReject(req.id)}
-                            className="btn-glass p-2 rounded-full min-w-[32px] min-h-[32px] flex items-center justify-center text-mono-muted hover:text-white"
+                            className="p-2 rounded-full min-w-[32px] min-h-[32px] flex items-center justify-center text-mono-muted hover:text-white"
+                            variant="circle"
                             title="Reject"
                         >
                             <X className="w-4 h-4" />
-                        </button>
+                        </ChromeButton>
                     </div>
                 </div>
             ))}

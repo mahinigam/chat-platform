@@ -24,6 +24,7 @@ import SearchUsers from './Connect/SearchUsers';
 import RequestList from './Connect/RequestList';
 import CosmicLogo from './CosmicLogo';
 import { MessageSquare, UserPlus, Users, LogOut, User } from 'lucide-react';
+import ChromeButton from './ChromeButton';
 
 const Sidebar: React.FC<SidebarProps> = ({
   rooms,
@@ -104,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Tabs */}
         <div className="flex p-1 bg-[#2a2a2c] rounded-2xl">
-          <button
+          <ChromeButton
             onClick={() => setActiveTab('chats')}
             className={cn(
               'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
@@ -115,8 +116,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             title="Chats"
           >
             <MessageSquare className="w-4 h-4" />
-          </button>
-          <button
+          </ChromeButton>
+          <ChromeButton
             onClick={() => setActiveTab('requests')}
             className={cn(
               'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
@@ -127,8 +128,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             title="Requests"
           >
             <Users className="w-4 h-4" />
-          </button>
-          <button
+          </ChromeButton>
+          <ChromeButton
             onClick={() => setActiveTab('search')}
             className={cn(
               'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
@@ -139,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             title="Find Users"
           >
             <UserPlus className="w-4 h-4" />
-          </button>
+          </ChromeButton>
         </div>
       </div>
 
@@ -297,8 +298,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             <p className="text-xs font-medium text-mono-text truncate">My Profile</p>
             <p className="text-[10px] text-mono-muted truncate">Online</p>
           </div>
-          <button
-            className="btn-glass p-2 min-h-[32px] min-w-[32px] flex items-center justify-center text-mono-muted hover:text-red-400"
+          <ChromeButton
+            variant="circle"
+            className="p-2 min-h-[32px] min-w-[32px] flex items-center justify-center text-mono-muted hover:text-red-400"
             title="Logout"
             onClick={() => {
               localStorage.removeItem('token');
@@ -306,7 +308,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <LogOut className="w-4 h-4" />
-          </button>
+          </ChromeButton>
         </div>
       </div>
     </nav>
