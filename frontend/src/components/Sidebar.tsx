@@ -105,10 +105,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Tabs */}
         <div className="flex p-1 bg-[#2a2a2c] rounded-2xl">
-          <ChromeButton
+          <button
             onClick={() => setActiveTab('chats')}
             className={cn(
-              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
+              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200 z-10',
               activeTab === 'chats'
                 ? 'bg-[#1a1a1c] text-mono-text shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
                 : 'text-mono-muted hover:text-mono-text'
@@ -116,11 +116,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             title="Chats"
           >
             <MessageSquare className="w-4 h-4" />
-          </ChromeButton>
-          <ChromeButton
+          </button>
+          <button
             onClick={() => setActiveTab('requests')}
             className={cn(
-              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
+              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200 z-10',
               activeTab === 'requests'
                 ? 'bg-[#1a1a1c] text-mono-text shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
                 : 'text-mono-muted hover:text-mono-text'
@@ -128,11 +128,11 @@ const Sidebar: React.FC<SidebarProps> = ({
             title="Requests"
           >
             <Users className="w-4 h-4" />
-          </ChromeButton>
-          <ChromeButton
+          </button>
+          <button
             onClick={() => setActiveTab('search')}
             className={cn(
-              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200',
+              'flex-1 flex items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-all duration-200 z-10',
               activeTab === 'search'
                 ? 'bg-[#1a1a1c] text-mono-text shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]'
                 : 'text-mono-muted hover:text-mono-text'
@@ -140,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             title="Find Users"
           >
             <UserPlus className="w-4 h-4" />
-          </ChromeButton>
+          </button>
         </div>
       </div>
 
