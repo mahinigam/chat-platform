@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
+import ChromeButton from './ChromeButton';
 
 interface PollCreatorProps {
     isOpen: boolean;
@@ -76,22 +77,23 @@ const PollCreator: React.FC<PollCreatorProps> = ({ isOpen, onClose, onSubmit }) 
                             className="input-glass flex-1"
                         />
                         {options.length > 2 && (
-                            <button
+                            <ChromeButton
+                                variant="circle"
                                 onClick={() => removeOption(index)}
-                                className="btn-glass p-2 text-mono-muted hover:text-red-400"
+                                className="p-2 text-mono-muted hover:text-red-400"
                             >
                                 ✕
-                            </button>
+                            </ChromeButton>
                         )}
                     </div>
                 ))}
                 {options.length < 10 && (
-                    <button
+                    <ChromeButton
                         onClick={addOption}
-                        className="btn-glass text-sm px-3 py-1"
+                        className="text-sm px-3 py-1"
                     >
                         + Add Option
-                    </button>
+                    </ChromeButton>
                 )}
             </div>
 

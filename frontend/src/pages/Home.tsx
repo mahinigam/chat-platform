@@ -484,12 +484,12 @@ function Home() {
                     ))}
                 </div>
                 <p className="text-mono-muted">Connecting...</p>
-                <button
+                <ChromeButton
                     onClick={logout}
-                    className="btn-glass mt-4 px-4 py-2 text-sm"
+                    className="mt-4 px-4 py-2 text-sm"
                 >
                     Cancel
-                </button>
+                </ChromeButton>
             </div>
         );
     }

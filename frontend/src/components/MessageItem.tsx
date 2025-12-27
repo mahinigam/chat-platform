@@ -329,24 +329,26 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
             'px-1'
           )}
         >
-          <button
-            className="btn-glass p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
+          <ChromeButton
+            variant="circle"
+            className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
             aria-label="Add reaction"
             onClick={() => setShowReactions(!showReactions)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </button>
+          </ChromeButton>
 
-          <button
-            className="btn-glass p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
+          <ChromeButton
+            variant="circle"
+            className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
             aria-label="More options"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10.5 1.5H9.5V3h1V1.5zM10.5 9.5H9.5V11h1V9.5zM10.5 17.5H9.5V19h1v-1.5z" />
             </svg>
-          </button>
+          </ChromeButton>
         </div>
       </div>
     </div>
