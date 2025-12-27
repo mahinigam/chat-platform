@@ -8,6 +8,7 @@ import Modal from '../components/Modal';
 import PollCreator from '../components/PollCreator';
 import LocationPicker from '../components/LocationPicker';
 import GifPicker from '../components/GifPicker';
+import OrbitSearch from '../components/OrbitSearch';
 import AudioRecorder from '../components/AudioRecorder';
 import { useToast } from '../hooks/useToast';
 import { cn } from '../utils/theme';
@@ -39,7 +40,7 @@ interface Message {
         avatar?: string;
     };
     content: string;
-    messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker';
+    messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker' | 'youtube';
     metadata?: any;
     timestamp: Date | string;
     status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
@@ -73,6 +74,7 @@ function Home() {
     const [isPollCreatorOpen, setIsPollCreatorOpen] = useState(false);
     const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
     const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
+    const [isOrbitSearchOpen, setIsOrbitSearchOpen] = useState(false);
     const [isAudioRecording, setIsAudioRecording] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -289,7 +291,7 @@ function Home() {
 
 
     const handleSendMessage = useCallback(
-        async (content: string, type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker' = 'text', metadata?: any) => {
+        async (content: string, type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker' | 'youtube' = 'text', metadata?: any) => {
             if (!selectedRoomId || !currentUser) return;
 
             const tempId = Date.now().toString();
@@ -335,7 +337,7 @@ function Home() {
         [selectedRoomId, currentUser, errorToast]
     );
 
-    const handleAttachmentSelect = (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif') => {
+    const handleAttachmentSelect = (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music') => {
         switch (type) {
             case 'poll':
                 setIsPollCreatorOpen(true);
@@ -345,6 +347,9 @@ function Home() {
                 break;
             case 'gif':
                 setIsGifPickerOpen(true);
+                break;
+            case 'music':
+                setIsOrbitSearchOpen(true);
                 break;
             case 'image':
             case 'video':
@@ -402,6 +407,16 @@ function Home() {
             height: gif.images.fixed_height.height
         });
         setIsGifPickerOpen(false);
+    };
+
+    const handleOrbitSelect = (video: { videoId: string, title: string, thumbnail: string, channel: string }) => {
+        handleSendMessage(video.title, 'youtube', {
+            videoId: video.videoId,
+            title: video.title,
+            thumbnail: video.thumbnail,
+            channelTitle: video.channel
+        });
+        setIsOrbitSearchOpen(false);
     };
 
     const handleAudioComplete = async (audioBlob: Blob) => {
@@ -667,6 +682,20 @@ function Home() {
                     onSelect={handleGifSelect}
                     onClose={() => setIsGifPickerOpen(false)}
                 />
+            )}
+
+            {isOrbitSearchOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+                    onClick={() => setIsOrbitSearchOpen(false)}
+                >
+                    <div onClick={e => e.stopPropagation()} className="w-full max-w-2xl h-[70vh]">
+                        <OrbitSearch
+                            onSelect={handleOrbitSelect}
+                            onClose={() => setIsOrbitSearchOpen(false)}
+                        />
+                    </div>
+                </div>
             )}
 
             {isMobileMenuOpen && (

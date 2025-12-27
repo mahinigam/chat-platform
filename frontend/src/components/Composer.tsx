@@ -5,7 +5,7 @@ import ChromeButton from './ChromeButton';
 
 interface ComposerProps {
   onSendMessage: (content: string) => void;
-  onAttachmentSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif') => void;
+  onAttachmentSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music') => void;
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
@@ -107,7 +107,7 @@ const Composer: React.FC<ComposerProps> = ({
           )}
         >
           {/* Attachment Menu (Left) - Hidden in compact */}
-          <div className={cn("transition-all duration-300 overflow-hidden", isCompact ? "w-0 opacity-0" : "w-auto opacity-100")}>
+          <div className={cn("transition-all duration-300", isCompact ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100")}>
             <AttachmentMenu onSelect={onAttachmentSelect} className="flex-shrink-0" />
           </div>
 

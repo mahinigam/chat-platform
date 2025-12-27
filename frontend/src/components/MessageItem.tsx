@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { cn, formatTimestamp, getStatusAriaLabel, getAriaLabel } from '../utils/theme';
+import ChromeButton from './ChromeButton';
+import ResonanceCard from './ResonanceCard';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -24,7 +26,7 @@ export interface Message {
     avatar?: string;
   };
   content: string;
-  messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker';
+  messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker' | 'youtube';
   metadata?: any;
   timestamp: Date | string;
   status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
@@ -161,6 +163,15 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
               Open in Maps
             </a>
           </div>
+        );
+      case 'youtube':
+        return (
+          <ResonanceCard
+            videoId={message.metadata?.videoId}
+            title={message.metadata?.title}
+            channelTitle={message.metadata?.channelTitle}
+            thumbnailUrl={message.metadata?.thumbnail}
+          />
         );
       default:
         return (
