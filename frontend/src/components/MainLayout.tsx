@@ -7,7 +7,10 @@ import TypingIndicator from './TypingIndicator';
 import Modal from './Modal';
 import ToastContainer from './Toast';
 import { useToast } from '../hooks/useToast';
+
 import ChromeButton from './ChromeButton';
+import Avatar from './Avatar';
+import { Video, Phone, Search } from 'lucide-react';
 
 interface Room {
   id: string;
@@ -198,69 +201,41 @@ const MainLayout: React.FC = () => {
             </ChromeButton>
 
             {/* Room Name */}
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold text-mono-text truncate">
-                {currentRoom?.name}
-              </h2>
-              <p className="text-xs text-mono-muted truncate">
-                {currentRoom?.isOnline ? 'Online' : 'Offline'}
-              </p>
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar src={currentRoom?.avatar} name={currentRoom?.name} size="md" isOnline={currentRoom?.isOnline} />
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-mono-text truncate">
+                  {currentRoom?.name}
+                </h2>
+                <p className="text-xs text-mono-muted truncate">
+                  {currentRoom?.isOnline ? 'Online' : 'Offline'}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Header Actions */}
           <div className="flex gap-2 flex-shrink-0">
             <ChromeButton
-              className={cn(
-                'p-2 rounded-glass',
-                'bg-mono-surface hover:bg-mono-surface/80',
-                'border border-mono-glass-border hover:border-mono-glass-highlight',
-                'text-mono-text hover:text-mono-text',
-                'transition-all duration-fast ease-glass',
-                'min-h-[40px] min-w-[40px] flex items-center justify-center'
-              )}
-              aria-label="Search"
+              variant="circle"
+              className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+              aria-label="Video Call"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Video className="w-5 h-5" />
             </ChromeButton>
             <ChromeButton
-              className={cn(
-                'p-2 rounded-glass',
-                'bg-mono-surface hover:bg-mono-surface/80',
-                'border border-mono-glass-border hover:border-mono-glass-highlight',
-                'text-mono-text hover:text-mono-text',
-                'transition-all duration-fast ease-glass',
-                'min-h-[40px] min-w-[40px] flex items-center justify-center'
-              )}
-              aria-label="Call"
+              variant="circle"
+              className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+              aria-label="Voice Call"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                />
-              </svg>
+              <Phone className="w-5 h-5" />
+            </ChromeButton>
+            <ChromeButton
+              variant="circle"
+              className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
             </ChromeButton>
           </div>
         </div>

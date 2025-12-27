@@ -72,8 +72,7 @@ const Composer: React.FC<ComposerProps> = ({
   return (
     <div
       className={cn(
-        'flex-shrink-0 p-4',
-        'border-t border-mono-glass-border',
+        'flex-shrink-0 p-4 pb-6', /* Added padding bottom for spacing */
         'bg-mono-bg',
         className
       )}
@@ -83,80 +82,86 @@ const Composer: React.FC<ComposerProps> = ({
       {/* Hint */}
       {/* Hint removed */}
 
-      {/* Composer Container */}
-      <div
-        className={cn(
-          'flex gap-2 items-end',
-          'px-3 py-2 rounded-glass',
-          'backdrop-blur-glass bg-mono-surface border',
-          'transition-all duration-normal ease-glass',
-          isFocused
-            ? 'border-mono-glass-highlight shadow-glass-sm'
-            : 'border-mono-glass-border hover:border-mono-glass-border'
-        )}
-      >
-        {/* Attachment Menu */}
-        <AttachmentMenu onSelect={onAttachmentSelect} className="flex-shrink-0" />
-
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={placeholder}
-          disabled={isLoading}
-          rows={1}
+      {/* Floating Composer Container */}
+      <div className="flex gap-4 items-end max-w-4xl mx-auto w-full">
+        {/* The Pill: Attachment + Input + Emoji */}
+        <div
           className={cn(
-            'flex-1 bg-transparent text-mono-text placeholder-mono-muted',
-            'border-0 outline-0 resize-none',
-            'text-sm leading-normal',
-            'max-h-[120px] min-h-[36px]',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'flex-1 flex gap-2 items-end',
+            'px-3 py-2 rounded-3xl', /* Floating Pill Shape */
+            'backdrop-blur-glass bg-mono-surface border',
+            'transition-all duration-normal ease-glass',
+            isFocused
+              ? 'border-mono-glass-highlight shadow-glass-md'
+              : 'border-mono-glass-border hover:border-mono-glass-highlight/50'
           )}
-          aria-label="Message content"
-          aria-describedby="composer-hint"
-        />
-
-        {/* Emoji Button */}
-        <ChromeButton
-          onClick={() => { }} // Emoji picker logic to be implemented or if existing, use it. Wait, original didn't have onClick logic in snippet? 
-          variant="circle"
-          className="flex-shrink-0 min-h-[36px] min-w-[36px]"
-          aria-label="Emoji picker"
-          title="Emoji picker"
-          disabled={isLoading}
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </ChromeButton>
+          {/* Attachment Menu (Left) */}
+          <AttachmentMenu onSelect={onAttachmentSelect} className="flex-shrink-0" />
 
-        {/* Send Button - with mouse-tracking chrome rim */}
+          {/* Textarea (Center) */}
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={placeholder}
+            disabled={isLoading}
+            rows={1}
+            className={cn(
+              'flex-1 bg-transparent text-mono-text placeholder-mono-muted',
+              'border-0 outline-0 resize-none',
+              'text-sm leading-normal',
+              'max-h-[120px] min-h-[36px] py-2', /* Added py-2 for alignment */
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+            aria-label="Message content"
+            aria-describedby="composer-hint"
+          />
+
+          {/* Emoji Button (Right inside pill) */}
+          <ChromeButton
+            onClick={() => { }}
+            variant="circle"
+            className="flex-shrink-0 min-h-[36px] min-w-[36px] text-mono-muted hover:text-mono-text"
+            aria-label="Emoji picker"
+            title="Emoji picker"
+            disabled={isLoading}
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </ChromeButton>
+        </div>
+
+        {/* Send Button (Floating Outside Right) */}
         <ChromeButton
           onClick={handleSubmit}
           disabled={!content.trim() || isLoading}
           variant="circle"
-          className="flex-shrink-0 min-h-[36px] min-w-[36px]"
+          className={cn(
+            "flex-shrink-0 min-h-[48px] min-w-[48px] rounded-full", /* Bigger send button */
+            "shadow-glass-lg"
+          )}
           aria-label="Send message"
           title="Send message (Ctrl+Enter)"
         >
           {isLoading ? (
             <svg
-              className="w-5 h-5 animate-spin"
+              className="w-6 h-6 animate-spin"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -178,7 +183,7 @@ const Composer: React.FC<ComposerProps> = ({
             </svg>
           ) : (
             <svg
-              className="w-5 h-5"
+              className="w-6 h-6" /* Bigger Icon */
               fill="none"
               stroke="currentColor"
               strokeWidth={2}

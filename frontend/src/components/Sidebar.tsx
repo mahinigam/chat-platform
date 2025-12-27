@@ -23,8 +23,10 @@ interface SidebarProps {
 import SearchUsers from './Connect/SearchUsers';
 import RequestList from './Connect/RequestList';
 import CosmicLogo from './CosmicLogo';
-import { MessageSquare, UserPlus, Users, LogOut, User } from 'lucide-react';
+import { MessageSquare, UserPlus, Users, Menu } from 'lucide-react';
 import ChromeButton from './ChromeButton';
+import SettingsMenu from './SettingsMenu';
+import Avatar from './Avatar';
 
 const Sidebar: React.FC<SidebarProps> = ({
   rooms,
@@ -101,6 +103,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-shrink-0 p-4 border-b border-mono-glass-border">
         <div className="flex items-center justify-between gap-2 mb-4">
           <CosmicLogo size="sm" />
+          <ChromeButton
+            variant="circle"
+            className="hidden md:flex min-w-[32px] min-h-[32px] text-mono-muted hover:text-mono-text"
+            title="Menu"
+            aria-label="Menu"
+          >
+            <Menu className="w-4 h-4" />
+          </ChromeButton>
         </div>
 
         {/* Tabs */}
@@ -192,37 +202,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                         aria-selected={selectedRoomId === room.id}
                       >
                         {/* Avatar */}
-                        <div className="flex-shrink-0 w-12 h-12 relative">
-                          {room.avatar ? (
-                            <img
-                              src={room.avatar}
-                              alt=""
-                              className="w-full h-full rounded-full object-cover border border-mono-glass-border"
-                            />
-                          ) : (
-                            <div
-                              className={cn(
-                                'w-full h-full rounded-full',
-                                'bg-gradient-to-br from-mono-surface-2 to-mono-glass-highlight',
-                                'border border-mono-glass-border shadow-glass-inner',
-                                'flex items-center justify-center',
-                                'text-mono-text text-lg font-medium tracking-wide'
-                              )}
-                            >
-                              {room.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-
-                          {/* Online indicator */}
-                          {room.isOnline && (
-                            <div
-                              className={cn(
-                                'absolute w-3.5 h-3.5 rounded-full',
-                                'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]',
-                                'bottom-0 right-0 animate-pulse-subtle'
-                              )}
-                            />
-                          )}
+                        <div className="flex-shrink-0 relative">
+                          <Avatar
+                            src={room.avatar}
+                            name={room.name}
+                            isOnline={room.isOnline}
+                            size="lg"
+                          />
                         </div>
 
                         {/* Content */}
@@ -291,24 +277,18 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer Profile */}
       <div className="flex-shrink-0 p-3 border-t border-mono-glass-border">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-mono-surface-2 flex items-center justify-center text-mono-muted">
-            <User className="w-4 h-4" />
-          </div>
+          <Avatar size="sm" name="My Profile" /> {/* TODO: Get actual user name */}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-mono-text truncate">My Profile</p>
             <p className="text-[10px] text-mono-muted truncate">Online</p>
           </div>
-          <ChromeButton
-            variant="circle"
-            className="p-2 min-h-[32px] min-w-[32px] flex items-center justify-center text-mono-muted hover:text-red-400"
-            title="Logout"
-            onClick={() => {
+          <SettingsMenu
+            user={{ name: "My Profile" }}
+            onLogout={() => {
               localStorage.removeItem('token');
               window.location.reload();
             }}
-          >
-            <LogOut className="w-4 h-4" />
-          </ChromeButton>
+          />
         </div>
       </div>
     </nav>
