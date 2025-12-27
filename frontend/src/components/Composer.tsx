@@ -9,6 +9,7 @@ interface ComposerProps {
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
+  isSidebarOpen?: boolean;
 }
 
 const Composer: React.FC<ComposerProps> = ({
@@ -17,7 +18,10 @@ const Composer: React.FC<ComposerProps> = ({
   isLoading = false,
   placeholder = 'Type a message...',
   className,
+  isSidebarOpen = true,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isCompact = !isSidebarOpen && !isExpanded;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -83,21 +87,29 @@ const Composer: React.FC<ComposerProps> = ({
       {/* Hint removed */}
 
       {/* Floating Composer Container */}
-      <div className="flex gap-4 items-end max-w-4xl mx-auto w-full">
+      <div
+        className={cn(
+          "flex items-end mx-auto w-full transition-all duration-500 ease-in-out",
+          isCompact ? "max-w-[200px] gap-0" : "max-w-4xl gap-4"
+        )}
+        onClick={() => !isSidebarOpen && setIsExpanded(true)}
+      >
         {/* The Pill: Attachment + Input + Emoji */}
         <div
           className={cn(
             'flex-1 flex gap-2 items-end',
-            'px-3 py-1.5 rounded-3xl', /* Reduced padding to match 48px height */
             'backdrop-blur-glass bg-mono-surface border',
-            'transition-all duration-normal ease-glass',
-            isFocused
+            'transition-all duration-500 ease-in-out',
+            isCompact ? 'px-4 py-2 rounded-full justify-center cursor-pointer hover:bg-mono-surface/80' : 'px-3 py-1.5 rounded-3xl',
+            isFocused || isCompact
               ? 'border-mono-glass-highlight shadow-glass-md'
               : 'border-mono-glass-border hover:border-mono-glass-highlight/50'
           )}
         >
-          {/* Attachment Menu (Left) */}
-          <AttachmentMenu onSelect={onAttachmentSelect} className="flex-shrink-0" />
+          {/* Attachment Menu (Left) - Hidden in compact */}
+          <div className={cn("transition-all duration-300 overflow-hidden", isCompact ? "w-0 opacity-0" : "w-auto opacity-100")}>
+            <AttachmentMenu onSelect={onAttachmentSelect} className="flex-shrink-0" />
+          </div>
 
           {/* Textarea (Center) */}
           <textarea
@@ -105,95 +117,113 @@ const Composer: React.FC<ComposerProps> = ({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder={placeholder}
+            onFocus={() => {
+              setIsFocused(true);
+              if (!isSidebarOpen) setIsExpanded(true);
+            }}
+            onBlur={() => {
+              setIsFocused(false);
+              // Optional: We could auto-collapse on blur if empty, but user didn't explicitly ask. 
+              // Let's keep it expanded if it has content, or if user manually closes sidebar?
+              // The prompt implies it "becomes small" when sidebar IS collapsed.
+              // So if I expand it, does it stay expanded? 
+              // "they reappear when the compose pill is clicked and it becomes like it is now"
+              // It probably stays that way while typing.
+              // If I click away? Maybe collapse?
+              if (!content.trim() && !isSidebarOpen) setIsExpanded(false);
+            }}
+            placeholder={isCompact ? "Type..." : placeholder}
             disabled={isLoading}
             rows={1}
             className={cn(
               'flex-1 bg-transparent text-mono-text placeholder-mono-muted',
               'border-0 outline-0 resize-none',
               'text-sm leading-normal',
-              'max-h-[120px] min-h-[36px] py-2', /* Added py-2 for alignment */
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              'max-h-[120px] min-h-[36px] py-2',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              isCompact && "text-center cursor-pointer pb-0"
             )}
             aria-label="Message content"
             aria-describedby="composer-hint"
           />
 
-          {/* Emoji Button (Right inside pill) */}
-          <ChromeButton
-            onClick={() => { }}
-            variant="circle"
-            className="flex-shrink-0 min-h-[36px] min-w-[36px] text-mono-muted hover:text-mono-text"
-            aria-label="Emoji picker"
-            title="Emoji picker"
-            disabled={isLoading}
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+          {/* Emoji Button (Right inside pill) - Hidden in compact */}
+          <div className={cn("transition-all duration-300 overflow-hidden", isCompact ? "w-0 opacity-0" : "w-[36px] opacity-100")}>
+            <ChromeButton
+              onClick={() => { }}
+              variant="circle"
+              className="flex-shrink-0 min-h-[36px] min-w-[36px] text-mono-muted hover:text-mono-text"
+              aria-label="Emoji picker"
+              title="Emoji picker"
+              disabled={isLoading}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </ChromeButton>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </ChromeButton>
+          </div>
         </div>
 
-        {/* Send Button (Floating Outside Right) */}
-        <ChromeButton
-          onClick={handleSubmit}
-          disabled={!content.trim() || isLoading}
-          variant="circle"
-          className={cn(
-            "flex-shrink-0 min-h-[48px] min-w-[48px] rounded-full", /* Bigger send button */
-            "shadow-glass-lg"
-          )}
-          aria-label="Send message"
-          title="Send message (Ctrl+Enter)"
-        >
-          {isLoading ? (
-            <svg
-              className="w-6 h-6 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
+        {/* Send Button (Floating Outside Right) - Hidden in compact */}
+        <div className={cn("transition-all duration-300 transform", isCompact ? "scale-0 w-0 opacity-0" : "scale-100 w-[48px] opacity-100")}>
+          <ChromeButton
+            onClick={handleSubmit}
+            disabled={!content.trim() || isLoading}
+            variant="circle"
+            className={cn(
+              "flex-shrink-0 min-h-[48px] min-w-[48px] rounded-full", /* Bigger send button */
+              "shadow-glass-lg"
+            )}
+            aria-label="Send message"
+            title="Send message (Ctrl+Enter)"
+          >
+            {isLoading ? (
+              <svg
+                className="w-6 h-6 animate-spin"
+                fill="none"
                 stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="w-6 h-6" /* Bigger Icon */
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
-          )}
-        </ChromeButton>
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-6 h-6" /* Bigger Icon */
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
+            )}
+          </ChromeButton>
+        </div>
       </div>
 
       {/* Character Counter Removed */}

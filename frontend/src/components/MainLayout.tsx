@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '../utils/theme';
 import Sidebar from './Sidebar';
 import MessageList from './MessageList';
@@ -45,6 +46,7 @@ const MainLayout: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<string>('room-1');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { toasts, dismissToast, success } = useToast();
 
   // Mock rooms
@@ -144,21 +146,30 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="h-screen w-full flex overflow-hidden">
-      {/* Sidebar */}
-      <div
+      {/* Sidebar - Collapsible with AnimatePresence/Motion */}
+      <motion.div
+        initial={{ width: 320, opacity: 1 }}
+        animate={{
+          width: isSidebarOpen ? 320 : 0,
+          opacity: isSidebarOpen ? 1 : 0
+        }}
+        transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
         className={cn(
-          'hidden md:flex w-80 flex-shrink-0 h-full',
+          'hidden md:flex flex-shrink-0 h-full overflow-hidden',
           'bg-mono-bg/40 backdrop-blur-glass border-r border-mono-glass-border',
           'flex-col'
         )}
       >
-        <Sidebar
-          rooms={rooms}
-          selectedRoomId={selectedRoomId}
-          onRoomSelect={handleRoomSelect}
-          onCreateRoom={handleCreateRoom}
-        />
-      </div>
+        <div className="w-80 h-full"> {/* Inner container to prevent squishing */}
+          <Sidebar
+            rooms={rooms}
+            selectedRoomId={selectedRoomId}
+            onRoomSelect={handleRoomSelect}
+            onCreateRoom={handleCreateRoom}
+            onToggleSidebar={() => setIsSidebarOpen(false)}
+          />
+        </div>
+      </motion.div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
@@ -171,6 +182,18 @@ const MainLayout: React.FC = () => {
           )}
         >
           <div className="flex items-center gap-2 min-w-0">
+            {/* Toggle Sidebar Button (Only visible when sidebar is closed) */}
+            {!isSidebarOpen && (
+              <ChromeButton
+                onClick={() => setIsSidebarOpen(true)}
+                variant="circle"
+                className="hidden md:flex p-2 min-h-[40px] min-w-[40px] items-center justify-center text-mono-text mr-2 animate-fade-in"
+                title="Open Sidebar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+              </ChromeButton>
+            )}
+
             {/* Mobile Menu Toggle */}
             <ChromeButton
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -264,6 +287,7 @@ const MainLayout: React.FC = () => {
           onSendMessage={handleSendMessage}
           placeholder="Type a message..."
           onAttachmentSelect={(type) => console.log('Attachment selected:', type)}
+          isSidebarOpen={isSidebarOpen}
         />
       </div>
 

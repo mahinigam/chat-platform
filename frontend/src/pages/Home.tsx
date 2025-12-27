@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Video, Phone, Search } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import MessageList from '../components/MessageList';
 import Composer from '../components/Composer';
@@ -14,6 +16,8 @@ import axios from 'axios';
 import { uploadFile } from '../api/upload';
 import { useNavigate } from 'react-router-dom';
 import ToastContainer from '../components/Toast';
+import ChromeButton from '../components/ChromeButton';
+
 
 interface Room {
     id: number;
@@ -70,6 +74,7 @@ function Home() {
     const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
     const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
     const [isAudioRecording, setIsAudioRecording] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
@@ -486,20 +491,30 @@ function Home() {
 
     return (
         <div className="h-screen w-full flex overflow-hidden">
-            <div
+            {/* Sidebar - Collapsible with motion */}
+            <motion.div
+                initial={{ width: 320, opacity: 1 }}
+                animate={{
+                    width: isSidebarOpen ? 320 : 0,
+                    opacity: isSidebarOpen ? 1 : 0
+                }}
+                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
                 className={cn(
-                    'hidden md:flex w-80 flex-shrink-0 h-full',
+                    'hidden md:flex flex-shrink-0 h-full overflow-hidden',
                     'bg-mono-bg/40 backdrop-blur-glass border-r border-mono-glass-border',
                     'flex-col'
                 )}
             >
-                <Sidebar
-                    rooms={sidebarRooms}
-                    selectedRoomId={selectedRoomId?.toString()}
-                    onRoomSelect={handleRoomSelect}
-                    onCreateRoom={handleCreateRoom}
-                />
-            </div>
+                <div className="w-80 h-full">
+                    <Sidebar
+                        rooms={sidebarRooms}
+                        selectedRoomId={selectedRoomId?.toString()}
+                        onRoomSelect={handleRoomSelect}
+                        onCreateRoom={handleCreateRoom}
+                        onToggleSidebar={() => setIsSidebarOpen(false)}
+                    />
+                </div>
+            </motion.div>
 
             <div className="flex-1 flex flex-col min-w-0 h-full">
                 <div
@@ -511,24 +526,78 @@ function Home() {
                     )}
                 >
                     <div className="flex items-center gap-2 min-w-0">
-                        <button
+                        {/* Toggle Sidebar Button (Only visible when sidebar is closed) */}
+                        {!isSidebarOpen && (
+                            <ChromeButton
+                                onClick={() => setIsSidebarOpen(true)}
+                                variant="circle"
+                                className="hidden md:flex p-2 min-h-[40px] min-w-[40px] items-center justify-center text-mono-text mr-2 animate-fade-in"
+                                title="Open Sidebar"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                            </ChromeButton>
+                        )}
+
+                        {/* Mobile Menu Toggle */}
+                        <ChromeButton
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="btn-glass md:hidden p-2 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                            className={cn(
+                                'md:hidden p-2 rounded-glass',
+                                'bg-mono-surface hover:bg-mono-surface/80',
+                                'border border-mono-glass-border hover:border-mono-glass-highlight',
+                                'text-mono-text hover:text-mono-text',
+                                'min-h-[40px] min-w-[40px] flex items-center justify-center'
+                            )}
                             aria-label="Toggle menu"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
-                        </button>
+                        </ChromeButton>
 
-                        <div className="min-w-0">
-                            <h2 className="text-base font-semibold text-mono-text truncate">
-                                {currentRoom?.name || 'Select a room'}
-                            </h2>
-                            <p className="text-xs text-mono-muted truncate">
-                                {currentRoom ? (currentRoom.isOnline ? 'Online' : 'Offline') : ''}
-                            </p>
-                        </div>
+                        {/* Room Info */}
+                        {currentRoom && (
+                            <div className="flex items-center gap-3 min-w-0">
+                                {/* <Avatar src={currentRoom.avatar} name={currentRoom.name} size="md" isOnline={currentRoom.isOnline} /> */}
+                                {/* Keeping it simple as per original layout, just text? Or add helper? 
+                                    MainLayout had Avatar. Let's just keep text if no avatar data readily available/matched.
+                                    The original code just had text. 
+                                */}
+                                <div className="min-w-0">
+                                    <h2 className="text-base font-semibold text-mono-text truncate">
+                                        {currentRoom.name}
+                                    </h2>
+                                    <p className="text-xs text-mono-muted truncate">
+                                        {currentRoom.isOnline ? 'Online' : 'Offline'}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Header Actions */}
+                    <div className="flex gap-2 flex-shrink-0">
+                        <ChromeButton
+                            variant="circle"
+                            className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                            aria-label="Video Call"
+                        >
+                            <Video className="w-5 h-5" />
+                        </ChromeButton>
+                        <ChromeButton
+                            variant="circle"
+                            className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                            aria-label="Voice Call"
+                        >
+                            <Phone className="w-5 h-5" />
+                        </ChromeButton>
+                        <ChromeButton
+                            variant="circle"
+                            className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                            aria-label="Search"
+                        >
+                            <Search className="w-5 h-5" />
+                        </ChromeButton>
                     </div>
                 </div>
 
@@ -566,6 +635,7 @@ function Home() {
                         onSendMessage={(content) => handleSendMessage(content)}
                         onAttachmentSelect={handleAttachmentSelect}
                         placeholder="Type a message..."
+                        isSidebarOpen={isSidebarOpen}
                     />
                 )}
             </div>

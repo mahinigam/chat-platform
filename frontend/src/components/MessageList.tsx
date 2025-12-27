@@ -68,42 +68,7 @@ const MessageList: React.FC<MessageListProps> = ({
       )}
       ref={listRef}
     >
-      {/* Header */}
-      <div
-        className={cn(
-          'flex-shrink-0 px-4 py-3',
-          'border-b border-mono-glass-border',
-          'flex items-center justify-between'
-        )}
-      >
-        <div>
-          <h2 className="text-base font-semibold text-mono-text">
-            {roomName}
-          </h2>
-        </div>
-        <div className="flex gap-2">
-          <ChromeButton
-            variant="circle"
-            className="min-h-[40px] min-w-[40px] flex items-center justify-center"
-            aria-label="Room info"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </ChromeButton>
-        </div>
-      </div>
+
 
       {/* Messages Container */}
       <ul

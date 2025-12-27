@@ -17,6 +17,7 @@ interface SidebarProps {
   selectedRoomId?: string;
   onRoomSelect: (roomId: string) => void;
   onCreateRoom?: () => void;
+  onToggleSidebar?: () => void;
   className?: string;
 }
 
@@ -32,6 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   rooms,
   selectedRoomId,
   onRoomSelect,
+  onToggleSidebar,
   className,
 }) => {
   const [activeTab, setActiveTab] = useState<'chats' | 'search' | 'requests'>('chats');
@@ -105,9 +107,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           <CosmicLogo size="sm" />
           <ChromeButton
             variant="circle"
-            className="hidden md:flex min-w-[32px] min-h-[32px] text-mono-muted hover:text-mono-text"
-            title="Menu"
+            className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-mono-muted hover:text-mono-text md:flex"
             aria-label="Menu"
+            onClick={onToggleSidebar}
           >
             <Menu className="w-4 h-4" />
           </ChromeButton>
