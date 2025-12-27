@@ -91,7 +91,7 @@ export class MessageRepository {
         JOIN users u ON m.sender_id = u.id
         WHERE m.room_id = $1 AND m.deleted_at IS NULL
         ORDER BY m.created_at DESC
-        LIMIT $1
+        LIMIT $2
       `;
             params = [roomId, limit + 1];
         }

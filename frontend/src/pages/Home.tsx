@@ -379,9 +379,10 @@ function Home() {
                 mimetype: uploaded.mimetype,
                 size: uploaded.size
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error('Upload failed', err);
-            errorToast('Failed to upload file');
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to upload file';
+            errorToast(errorMessage);
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = '';
         }

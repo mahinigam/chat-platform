@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { cn, formatTimestamp, getStatusAriaLabel, getAriaLabel } from '../utils/theme';
 import ChromeButton from './ChromeButton';
 import ResonanceCard from './ResonanceCard';
+import AetherWaves from './AetherWaves';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -72,10 +73,9 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
         );
       case 'audio':
         return (
-          <audio
-            src={message.metadata?.url || message.content}
-            controls
-            className="w-[250px]"
+          <AetherWaves
+            audioUrl={message.metadata?.url || message.content}
+            fileName={message.metadata?.originalName || 'Audio File'}
           />
         );
       case 'file':
