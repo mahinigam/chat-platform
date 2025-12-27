@@ -53,10 +53,25 @@ const Composer: React.FC<ComposerProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Send on Ctrl/Cmd + Enter
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    // Enter sends message (without modifier keys)
+    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       handleSubmit();
+    }
+    // Ctrl/Cmd + Enter inserts a newline
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      const textarea = textareaRef.current;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const newValue = content.substring(0, start) + '\n' + content.substring(end);
+        setContent(newValue);
+        // Set cursor position after the newline
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 1;
+        }, 0);
+      }
     }
     // Allow Shift + Enter for newline
     if (e.shiftKey && e.key === 'Enter') {
