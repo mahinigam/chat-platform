@@ -592,29 +592,31 @@ function Home() {
                     </div>
 
                     {/* Header Actions */}
-                    <div className="flex gap-2 flex-shrink-0">
-                        <ChromeButton
-                            variant="circle"
-                            className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
-                            aria-label="Video Call"
-                        >
-                            <Video className="w-5 h-5" />
-                        </ChromeButton>
-                        <ChromeButton
-                            variant="circle"
-                            className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
-                            aria-label="Voice Call"
-                        >
-                            <Phone className="w-5 h-5" />
-                        </ChromeButton>
-                        <ChromeButton
-                            variant="circle"
-                            className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
-                            aria-label="Search"
-                        >
-                            <Search className="w-5 h-5" />
-                        </ChromeButton>
-                    </div>
+                    {currentRoom && (
+                        <div className="flex gap-2 flex-shrink-0">
+                            <ChromeButton
+                                variant="circle"
+                                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                                aria-label="Video Call"
+                            >
+                                <Video className="w-5 h-5" />
+                            </ChromeButton>
+                            <ChromeButton
+                                variant="circle"
+                                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                                aria-label="Voice Call"
+                            >
+                                <Phone className="w-5 h-5" />
+                            </ChromeButton>
+                            <ChromeButton
+                                variant="circle"
+                                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                                aria-label="Search"
+                            >
+                                <Search className="w-5 h-5" />
+                            </ChromeButton>
+                        </div>
+                    )}
                 </div>
 
                 {/* Messages */}
@@ -646,7 +648,7 @@ function Home() {
                 </div>
 
                 {/* Composer */}
-                {!isAudioRecording && (
+                {currentRoom && !isAudioRecording && (
                     <Composer
                         onSendMessage={(content) => handleSendMessage(content)}
                         onAttachmentSelect={handleAttachmentSelect}
