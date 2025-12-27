@@ -33,6 +33,38 @@ const ParticleBackground: React.FC = () => {
     const AWAKEN_SPEED_MULTIPLIER = 8;
     const PARALLAX_STRENGTH = 15; // How much mouse moves them
 
+    // Offscreen sprite for performance
+    const spriteRef = useRef<HTMLCanvasElement | null>(null);
+
+    // Initialize Sprite (The glowing star texture)
+    useEffect(() => {
+        const sprite = document.createElement('canvas');
+        sprite.width = 30;
+        sprite.height = 30;
+        const ctx = sprite.getContext('2d');
+        if (ctx) {
+            const centerX = sprite.width / 2;
+            const centerY = sprite.height / 2;
+            const radius = 4; // Core size
+
+            // Draw glowing star
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            // Heavy glow baked in
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(220, 230, 255, 0.8)';
+            ctx.fill();
+
+            // Extra subtle glow ring for outer softness
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(220, 230, 255, 0.1)';
+            ctx.fill();
+        }
+        spriteRef.current = sprite;
+    }, []);
+
     const initParticles = (width: number, height: number) => {
         particles.current = [];
         for (let i = 0; i < STAR_COUNT; i++) {
@@ -159,23 +191,20 @@ const ParticleBackground: React.FC = () => {
 
             particles.current.forEach((p) => {
                 // 0. Context Awareness (Sidebar vs Chat)
-                // Sidebar is typically < 320px logic, simplified here by x position
                 const isSidebar = p.x < 320;
 
                 // 1. Movement Logic
                 let speedMultiplier = isAwakening.current ? AWAKEN_SPEED_MULTIPLIER : 1;
 
-                // Sidebar: "Calmer, heavier" -> slower base speed, less vertical movement
                 if (isSidebar) {
                     p.x += (p.vx * 0.5) * speedMultiplier;
-                    p.y += (p.vy * 0.3) * speedMultiplier; // Very little vertical drift
+                    p.y += (p.vy * 0.3) * speedMultiplier;
                 } else {
-                    // Chat: "Freer" -> normal speed
                     p.x += p.vx * speedMultiplier;
                     p.y += p.vy * speedMultiplier;
                 }
 
-                // 2. Parallax (Gentle opposite movement based on depth)
+                // 2. Parallax
                 const targetX = p.x + (mouse.current.x * PARALLAX_STRENGTH * p.z);
                 const targetY = p.y + (mouse.current.y * PARALLAX_STRENGTH * p.z);
 
@@ -189,28 +218,33 @@ const ParticleBackground: React.FC = () => {
                 if (p.type === 'star') {
                     p.opacity = p.baseOpacity + Math.sin(time * p.pulseSpeed * 100) * 0.05;
                 } else if (p.type === 'burst' && p.life !== undefined) {
-                    p.life -= 0.03; // Fade out faster
+                    p.life -= 0.03;
                     p.opacity = p.life;
                     p.x += p.vx;
                     p.y += p.vy;
                 }
 
-                if (p.opacity <= 0 && p.type === 'burst') return; // Skip drawing dead particles
+                if (p.opacity <= 0 && p.type === 'burst') return;
 
-                // Draw
-                // Use targetX/Y for rendering to enable smooth parallax
-                ctx.beginPath();
-                ctx.fillStyle = `rgba(220, 230, 255, ${p.opacity})`;
-                ctx.shadowBlur = p.size * 2;
-                ctx.shadowColor = `rgba(220, 230, 255, ${p.opacity * 0.5})`;
+                // Draw using Optimized Sprite approach
+                if (spriteRef.current) {
+                    // Safe globalAlpha check
+                    const alpha = Math.max(0, Math.min(1, p.opacity));
+                    ctx.globalAlpha = alpha;
 
-                if (isAwakening.current) {
-                    // Draw slight streak when awakening
-                    ctx.ellipse(targetX, targetY, p.size * 3, p.size * 0.5, Math.atan2(p.vy, p.vx), 0, Math.PI * 2);
-                } else {
-                    ctx.arc(targetX, targetY, p.size, 0, Math.PI * 2);
+                    // Draw image centered at target coordinates
+                    const drawSize = p.size * 5; // Scale factor relative to sprite core
+                    ctx.drawImage(
+                        spriteRef.current,
+                        targetX - drawSize / 2,
+                        targetY - drawSize / 2,
+                        drawSize, // width
+                        drawSize  // height
+                    );
+
+                    // Reset alpha for next iteration
+                    ctx.globalAlpha = 1.0;
                 }
-                ctx.fill();
             });
 
             // Cleanup dead particles

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, LogOut, User, Moon, Sun } from 'lucide-react';
+import { Settings, LogOut, User } from 'lucide-react';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
 import Avatar from './Avatar';
@@ -45,10 +45,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, onLogout, className }
 
             {isOpen && (
                 <div className={cn(
-                    "absolute bottom-full left-0 mb-3 w-64",
+                    "absolute bottom-full right-0 mb-3 w-64",
                     "bg-mono-bg/95 backdrop-blur-xl border border-mono-glass-border",
                     "rounded-2xl shadow-2xl overflow-hidden",
-                    "animate-scale-up origin-bottom-left z-50",
+                    "animate-scale-up origin-bottom-right z-50",
                     "divide-y divide-mono-glass-border"
                 )}>
                     {/* User Info Header */}
@@ -58,9 +58,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, onLogout, className }
                             <p className="text-sm font-semibold text-mono-text truncate">
                                 {user?.name || 'User'}
                             </p>
-                            <p className="text-xs text-mono-muted truncate">
-                                {user?.email || 'user@example.com'}
-                            </p>
+                            {/* Email removed for privacy */}
                         </div>
                     </div>
 
@@ -69,10 +67,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, onLogout, className }
                         <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left">
                             <User className="w-4 h-4 text-mono-muted" />
                             <span>Edit Profile</span>
-                        </button>
-                        <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left">
-                            <Moon className="w-4 h-4 text-mono-muted" />
-                            <span>Appearance</span>
                         </button>
                     </div>
 
