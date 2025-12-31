@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { cn, focusElement } from '../utils/theme';
 import AttachmentMenu from './AttachmentMenu';
 import ChromeButton from './ChromeButton';
+import EmojiPickerWrapper from './EmojiPickerWrapper';
 
 interface ComposerProps {
   onSendMessage: (content: string) => void;
@@ -25,6 +26,7 @@ const Composer: React.FC<ComposerProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // Auto-expand textarea
   useEffect(() => {
@@ -49,6 +51,23 @@ const Composer: React.FC<ComposerProps> = ({
         textareaRef.current.style.height = 'auto';
         focusElement(textareaRef.current);
       }
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newContent = content.substring(0, start) + emoji + content.substring(end);
+      setContent(newContent);
+      // Move cursor after emoji
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+        textarea.focus();
+      }, 0);
+    } else {
+      setContent(prev => prev + emoji);
     }
   };
 
@@ -163,11 +182,14 @@ const Composer: React.FC<ComposerProps> = ({
           />
 
           {/* Emoji Button (Right inside pill) - Hidden in compact */}
-          <div className={cn("transition-all duration-300 overflow-hidden", isCompact ? "w-0 opacity-0" : "w-[36px] opacity-100")}>
+          <div className={cn("relative transition-all duration-300 overflow-hidden", isCompact ? "w-0 opacity-0" : "w-[36px] opacity-100")}>
             <ChromeButton
-              onClick={() => { }}
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               variant="circle"
-              className="flex-shrink-0 min-h-[36px] min-w-[36px] text-mono-muted hover:text-mono-text"
+              className={cn(
+                "flex-shrink-0 min-h-[36px] min-w-[36px] text-mono-muted hover:text-mono-text",
+                showEmojiPicker && "text-mono-text bg-mono-surface"
+              )}
               aria-label="Emoji picker"
               title="Emoji picker"
               disabled={isLoading}
@@ -187,6 +209,13 @@ const Composer: React.FC<ComposerProps> = ({
                 />
               </svg>
             </ChromeButton>
+            <EmojiPickerWrapper
+              isOpen={showEmojiPicker}
+              onClose={() => setShowEmojiPicker(false)}
+              onEmojiSelect={handleEmojiSelect}
+              position="top"
+              align="right"
+            />
           </div>
         </div>
 

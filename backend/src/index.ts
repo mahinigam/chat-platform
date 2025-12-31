@@ -55,12 +55,14 @@ if (process.env.NODE_ENV === 'development') {
 // Routes
 // ============================================
 import contactRoutes from './routes/contacts';
+import reactionRoutes from './routes/reactions';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/reactions', reactionRoutes);
 
 // Health check endpoint
 app.get('/health', async (_req: Request, res: Response) => {
@@ -112,6 +114,8 @@ const io = initializeSocket(httpServer);
 // ============================================
 // Start Server
 // ============================================
+import { ReactionRepository } from './repositories/ReactionRepository';
+
 async function startServer() {
     try {
         // Test database connection
@@ -120,6 +124,10 @@ async function startServer() {
             throw new Error('Database connection failed');
         }
         console.log('Database connected');
+
+        // Initialize reactions table
+        await ReactionRepository.initTable();
+        console.log('Reactions table initialized');
 
         // Test Redis connection
         const redisHealthy = await RedisService.healthCheck();

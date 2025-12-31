@@ -11,6 +11,7 @@ interface MessageListProps {
   roomName?: string;
   className?: string;
   onPollVote?: (pollId: string, optionIndex: number) => void;
+  onReaction?: (messageId: string, emoji: string) => void;
 }
 
 const LOAD_MORE_THRESHOLD = 200; // pixels from top
@@ -23,6 +24,7 @@ const MessageList: React.FC<MessageListProps> = ({
   roomName = 'Chat',
   className,
   onPollVote,
+  onReaction,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLUListElement>(null);
@@ -158,7 +160,7 @@ const MessageList: React.FC<MessageListProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
             >
-              <MessageItem message={message} onPollVote={onPollVote} />
+              <MessageItem message={message} onPollVote={onPollVote} onReaction={onReaction} />
             </motion.li>
           ))}
         </AnimatePresence>

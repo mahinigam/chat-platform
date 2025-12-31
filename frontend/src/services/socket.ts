@@ -148,6 +148,18 @@ class SocketService {
     }
 
     /**
+     * Toggle reaction on a message (add if not exists, remove if exists)
+     */
+    toggleReaction(
+        messageId: string,
+        roomId: number,
+        emoji: string,
+        callback: (response: { success: boolean; added?: boolean; reactions?: any[]; error?: string }) => void
+    ): void {
+        this.socket?.emit('reaction:toggle', { messageId, roomId, emoji }, callback);
+    }
+
+    /**
      * Listen to events
      */
     on(event: string, callback: (...args: any[]) => void): void {

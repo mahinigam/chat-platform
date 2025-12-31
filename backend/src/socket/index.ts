@@ -9,6 +9,7 @@ import typingHandler from './handlers/typingHandler';
 import presenceHandler from './handlers/presenceHandler';
 import roomHandler from './handlers/roomHandler';
 import pollHandler from './handlers/pollHandler';
+import reactionHandler from './handlers/reactionHandler';
 
 export interface AuthenticatedSocket extends Socket {
     userId: number;
@@ -86,6 +87,14 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             // Polls
             socket.on('poll:vote', (data) =>
                 pollHandler.handleVote(authSocket, data)
+            );
+
+            // Reactions
+            socket.on('reaction:toggle', (data, callback) =>
+                reactionHandler.handleToggleReaction(authSocket, data, callback)
+            );
+            socket.on('reaction:get', (data, callback) =>
+                reactionHandler.handleGetReactions(authSocket, data, callback)
             );
 
             // Typing Indicators

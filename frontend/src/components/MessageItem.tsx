@@ -4,6 +4,8 @@ import ChromeButton from './ChromeButton';
 import ResonanceCard from './ResonanceCard';
 import AetherWaves from './AetherWaves';
 import MessageOptionsMenu from './MessageOptionsMenu';
+import EmojiPickerWrapper from './EmojiPickerWrapper';
+import { getRecentEmojis, addRecentEmoji } from '../api/reactions';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -43,12 +45,27 @@ export interface Message {
 interface MessageItemProps {
   message: Message;
   onPollVote?: (pollId: string, optionIndex: number) => void;
+  onReaction?: (messageId: string, emoji: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
-  const [showReactions, setShowReactions] = useState(false);
+const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote, onReaction }) => {
   const [showOptions, setShowOptions] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [recentEmojis, setRecentEmojis] = useState<string[]>(getRecentEmojis());
   const timestamp = formatTimestamp(message.timestamp);
+
+  const handleReaction = (emoji: string) => {
+    // Update recent emojis in localStorage
+    const updated = addRecentEmoji(emoji);
+    setRecentEmojis(updated);
+
+    // Call the reaction handler from parent
+    if (onReaction) {
+      onReaction(message.id, emoji);
+    }
+
+    setShowEmojiPicker(false);
+  };
 
   const renderContent = () => {
     switch (message.messageType) {
@@ -323,7 +340,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
           </div>
         )}
 
-        {/* Hover Actions */}
+        {/* Hover Actions - Inline Reaction Bar */}
         <div
           className={cn(
             'flex gap-1 opacity-0 group-hover:opacity-100',
@@ -331,16 +348,45 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote }) => {
             'px-1'
           )}
         >
-          <ChromeButton
-            variant="circle"
-            className="p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center"
-            aria-label="Add reaction"
-            onClick={() => setShowReactions(!showReactions)}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </ChromeButton>
+          {/* Quick React - Recent Emojis */}
+          {recentEmojis.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => handleReaction(emoji)}
+              className={cn(
+                'w-8 h-8 rounded-full flex items-center justify-center',
+                'bg-transparent hover:bg-mono-surface/80',
+                'text-lg transition-all hover:scale-110'
+              )}
+              aria-label={`React with ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
+
+          {/* Plus Button for Full Picker */}
+          <div className="relative">
+            <ChromeButton
+              variant="circle"
+              className={cn(
+                "p-1.5 min-h-[32px] min-w-[32px] flex items-center justify-center",
+                showEmojiPicker && "bg-mono-surface"
+              )}
+              aria-label="Add reaction"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </ChromeButton>
+            <EmojiPickerWrapper
+              isOpen={showEmojiPicker}
+              onClose={() => setShowEmojiPicker(false)}
+              onEmojiSelect={handleReaction}
+              position="top"
+              align={message.isOwn ? "right" : "left"}
+            />
+          </div>
 
           <div className="relative">
             <ChromeButton

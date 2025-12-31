@@ -49,7 +49,7 @@ const ResonanceCard: React.FC<ResonanceCardProps> = ({
 
     // Progress Interval
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: ReturnType<typeof setInterval>;
         if (isPlaying && playerRef.current) {
             interval = setInterval(() => {
                 const currentTime = playerRef.current.getCurrentTime();

@@ -280,12 +280,33 @@ function Home() {
             }
         }
 
+        // Handle real-time reaction updates
+        const handleReactionUpdate = (data: any) => {
+            if (selectedRoomId && data.messageId) {
+                setMessages(prev => prev.map(msg => {
+                    if (msg.id === data.messageId) {
+                        return {
+                            ...msg,
+                            reactions: data.reactions.map((r: any) => ({
+                                emoji: r.emoji,
+                                count: r.count,
+                                by: r.users || []
+                            }))
+                        };
+                    }
+                    return msg;
+                }));
+            }
+        };
+
         socketService.on('message:new', handleNewMessage);
         socketService.on('poll:updated', handlePollUpdate);
+        socketService.on('reaction:update', handleReactionUpdate);
 
         return () => {
             socketService.off('message:new', handleNewMessage);
             socketService.off('poll:updated', handlePollUpdate);
+            socketService.off('reaction:update', handleReactionUpdate);
         };
     }, [selectedRoomId, currentUser]);
 
@@ -440,6 +461,45 @@ function Home() {
     const handlePollVote = (pollId: string, optionIndex: number) => {
         socketService.emit('poll:vote', { pollId, optionIndex });
     };
+
+    // Handle emoji reaction toggle
+    const handleReaction = useCallback((messageId: string, emoji: string) => {
+        if (!selectedRoomId) return;
+
+        // Optimistically update UI
+        setMessages(prev => prev.map(msg => {
+            if (msg.id === messageId) {
+                const existingReactions = msg.reactions || [];
+                const existingReaction = existingReactions.find(r => r.emoji === emoji);
+
+                let newReactions;
+                if (existingReaction) {
+                    // Toggle off if user already reacted (optimistic)
+                    if (existingReaction.count === 1) {
+                        newReactions = existingReactions.filter(r => r.emoji !== emoji);
+                    } else {
+                        newReactions = existingReactions.map(r =>
+                            r.emoji === emoji ? { ...r, count: r.count - 1 } : r
+                        );
+                    }
+                } else {
+                    // Add new reaction
+                    newReactions = [...existingReactions, { emoji, count: 1, by: [currentUser?.username || ''] }];
+                }
+
+                return { ...msg, reactions: newReactions };
+            }
+            return msg;
+        }));
+
+        // Send to server
+        socketService.toggleReaction(messageId, selectedRoomId, emoji, (response) => {
+            if (!response.success) {
+                errorToast(response.error || 'Failed to update reaction');
+                // TODO: Could revert optimistic update here if needed
+            }
+        });
+    }, [selectedRoomId, currentUser, errorToast]);
 
     const handleRoomSelect = useCallback((roomId: string) => {
         setSelectedRoomId(parseInt(roomId));
@@ -634,6 +694,7 @@ function Home() {
                         roomName={currentRoom?.name}
                         className="h-full"
                         onPollVote={handlePollVote}
+                        onReaction={handleReaction}
                     />
 
                     {/* Audio Recorder Overlay */}
