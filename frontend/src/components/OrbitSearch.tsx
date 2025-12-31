@@ -85,7 +85,7 @@ const OrbitSearch: React.FC<OrbitSearchProps> = ({ onSelect, onClose }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="flex flex-col h-full max-h-[600px] w-full max-w-2xl bg-mono-bg/95 backdrop-blur-xl border border-mono-glass-border rounded-3xl shadow-2xl overflow-hidden"
+            className="flex flex-col h-full max-h-[600px] w-full max-w-2xl bg-mono-bg/95 backdrop-blur-glass border border-mono-glass-border rounded-3xl shadow-2xl overflow-hidden"
         >
             {/* Header */}
             <div className="p-4 border-b border-mono-glass-border flex items-center gap-3">

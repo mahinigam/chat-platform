@@ -97,7 +97,7 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({ onSelect, className }) 
                         exit="exit"
                         className={cn(
                             'absolute bottom-full left-0 mb-3 w-56',
-                            'bg-mono-bg/95 backdrop-blur-xl border border-mono-glass-border',
+                            'bg-mono-bg/95 backdrop-blur-glass border border-mono-glass-border',
                             'rounded-2xl shadow-2xl overflow-hidden',
                             'z-50 p-1'
                         )}

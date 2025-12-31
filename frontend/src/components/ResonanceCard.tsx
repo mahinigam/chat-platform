@@ -147,7 +147,7 @@ const ResonanceCard: React.FC<ResonanceCardProps> = ({
                                 onClick={togglePlay}
                                 className={cn(
                                     "absolute inset-0 m-auto w-8 h-8 rounded-full",
-                                    "bg-white/20 backdrop-blur-md border border-white/30 shadow-lg",
+                                    "bg-white/20 backdrop-blur-glass border border-white/30 shadow-lg",
                                     "flex items-center justify-center text-white hover:scale-110 transition-transform",
                                     "z-20 cursor-pointer"
                                 )}

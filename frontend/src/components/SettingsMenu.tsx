@@ -35,7 +35,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, onLogout, className }
         hidden: {
             opacity: 0,
             scale: 0.98,
-            backdropFilter: "blur(20px)",
+            // P2: Removed animated backdropFilter - causes GPU thrashing
             transition: {
                 duration: 0.15,
                 ease: "easeOut" as const
@@ -44,20 +44,20 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, onLogout, className }
         visible: {
             opacity: 1,
             scale: 1,
-            backdropFilter: "blur(12px)",
+            // P2: Removed animated backdropFilter
             transition: {
                 type: "spring",
                 stiffness: 300,
                 damping: 34,
                 mass: 1,
                 staggerChildren: 0.08,
-                delayChildren: 0.05 // Entry starts after container is ~40% formed
+                delayChildren: 0.05
             }
         },
         exit: {
             opacity: 0,
             scale: 0.98,
-            backdropFilter: "blur(20px)",
+            // P2: Removed animated backdropFilter
             transition: {
                 duration: 0.15,
                 ease: "easeIn" as const

@@ -194,7 +194,7 @@ const AetherWaves: React.FC<AetherWavesProps> = ({ audioUrl, fileName, className
             className={cn(
                 "relative w-[280px] h-[100px]",
                 "rounded-2xl overflow-hidden",
-                "bg-white/5 backdrop-blur-xl border border-white/10", // Frosted glass
+                "bg-white/5 backdrop-blur-glass border border-white/10", // Frosted glass
                 className
             )}
         >
@@ -209,7 +209,7 @@ const AetherWaves: React.FC<AetherWavesProps> = ({ audioUrl, fileName, className
                 <div className="flex items-center gap-3">
                     <button
                         onClick={togglePlay}
-                        className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                        className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-glass flex items-center justify-center text-white hover:bg-white/20 transition-colors"
                     >
                         {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
                     </button>
