@@ -131,7 +131,7 @@ const Composer: React.FC<ComposerProps> = ({
         {/* The Pill: Attachment + Input + Emoji */}
         <div
           className={cn(
-            'flex-1 flex gap-2 items-end',
+            'relative flex-1 flex gap-2 items-end',
             'backdrop-blur-glass bg-mono-surface border',
             'transition-all duration-500 ease-in-out',
             isCompact ? 'px-4 py-2 rounded-full justify-center cursor-pointer hover:bg-mono-surface/80' : 'px-3 py-1.5 rounded-3xl',
@@ -182,7 +182,7 @@ const Composer: React.FC<ComposerProps> = ({
           />
 
           {/* Emoji Button (Right inside pill) - Hidden in compact */}
-          <div className={cn("relative transition-all duration-300 overflow-hidden", isCompact ? "w-0 opacity-0" : "w-[36px] opacity-100")}>
+          <div className={cn("relative transition-all duration-300", isCompact ? "w-0 opacity-0 overflow-hidden" : "w-[36px] opacity-100")}>
             <ChromeButton
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               variant="circle"
@@ -209,14 +209,17 @@ const Composer: React.FC<ComposerProps> = ({
                 />
               </svg>
             </ChromeButton>
-            <EmojiPickerWrapper
-              isOpen={showEmojiPicker}
-              onClose={() => setShowEmojiPicker(false)}
-              onEmojiSelect={handleEmojiSelect}
-              position="top"
-              align="right"
-            />
           </div>
+
+          {/* Emoji Picker - positioned relative to the pill, not the button */}
+          <EmojiPickerWrapper
+            isOpen={showEmojiPicker}
+            onClose={() => setShowEmojiPicker(false)}
+            onEmojiSelect={handleEmojiSelect}
+            position="top"
+            align="right"
+            className="absolute right-0 bottom-full mb-2"
+          />
         </div>
 
         {/* Send Button (Floating Outside Right) - Hidden in compact */}
