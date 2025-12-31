@@ -46,7 +46,7 @@ const ChromeButton: React.FC<ChromeButtonProps> = ({
                 // 1. CORE MATERIAL IDENTITY (Default State)
                 // Glass-first, metallic undertone. Quiet.
                 'bg-mono-surface/5', // Very faint glass base
-                'backdrop-blur-[4px]', // Static gentle blur (Performance: Low cost if static)
+                // P2: Removed backdrop-blur for performance - buttons don't need blur
                 'border border-white/5', // Faint edge memory
 
                 // Text

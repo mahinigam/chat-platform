@@ -39,17 +39,18 @@
 
   /* Layer 2: Liquid Glass Panel with Metallic Edge */
   .glass-panel {
-    @apply backdrop-blur-xl bg-mono-surface border border-white/10 shadow-glass rounded-xl relative overflow-hidden transition-all duration-500 ease-glass;
+    @apply backdrop-blur-glass bg-mono-surface border border-white/10 shadow-glass rounded-xl relative overflow-hidden transition-all duration-500 ease-glass;
     box-shadow:
       0 4px 30px rgba(0, 0, 0, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.06),
       inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   }
 
-  /* Adaptive Blur: Stronger on hover/focus */
+  /* Adaptive Blur: Slightly stronger on hover/focus */
   .glass-panel:hover,
   .glass-panel:focus-within {
-    backdrop-filter: blur(24px);
+    backdrop-filter: blur(10px);
+    /* P2: Reduced from 24px */
     box-shadow:
       0 8px 40px rgba(0, 0, 0, 0.25),
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -210,25 +211,28 @@
   /* Input Glass - Metallic edge enhancement */
   .input-glass {
     @apply w-full px-4 py-3 rounded-lg bg-white/10 border border-white/10 text-mono-text placeholder-mono-muted focus:outline-none transition-all duration-300 ease-glass;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(4px);
+    /* P2: Reduced from 10px */
     box-shadow: var(--metal-inset), 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   .input-glass:focus {
     @apply bg-white/10 border-white/20;
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(6px);
+    /* P2: Reduced from 16px */
     box-shadow: var(--metal-inset), 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(255, 255, 255, 0.04);
   }
 
   /* Layer 2: Message Tiles (Floating Glass) */
   .message-bubble {
     @apply px-4 py-2.5 rounded-lg max-w-[480px] break-words relative text-[15px] leading-relaxed border border-white/5 shadow-sm transition-all duration-300;
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(6px);
+    /* P2: Reduced from 15px */
   }
 
   .message-bubble:hover {
-    backdrop-filter: blur(20px);
-    /* Subtle adaptive blur */
+    backdrop-filter: blur(8px);
+    /* P2: Reduced from 20px */
   }
 
   .message-sent {
