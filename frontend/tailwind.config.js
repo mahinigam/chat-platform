@@ -30,9 +30,9 @@ export default {
                 display: ['Manrope', 'sans-serif'],
             },
             backdropBlur: {
-                glass: '24px',          // Heavier blur for "liquid" feel
-                'glass-light': '12px',
-                'glass-strong': '40px', // VisionOS style deep depth
+                glass: '8px',          // P2: Reduced from 24px for performance
+                'glass-light': '6px',  // P2: Reduced from 12px
+                'glass-strong': '12px', // P2: Reduced from 40px
             },
             boxShadow: {
                 'glass-sm': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 0 20px rgba(255,255,255,0.02)',

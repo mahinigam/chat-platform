@@ -27,11 +27,19 @@ const ParticleBackground: React.FC = () => {
     const isAwakening = useRef(false);
     const mouse = useRef({ x: 0, y: 0 });
 
+    // P0: Performance optimization state
+    const isVisible = useRef(true);
+    const lastMouseMove = useRef(Date.now());
+    const isIdle = useRef(false);
+    const frameCount = useRef(0);
+
     // Configuration
     const STAR_COUNT = window.innerWidth < 768 ? 15 : 35; // Very sparse
     const BASE_SPEED = 0.05; // Almost frozen
     const AWAKEN_SPEED_MULTIPLIER = 8;
     const PARALLAX_STRENGTH = 15; // How much mouse moves them
+    const IDLE_THRESHOLD = 3000; // 3 seconds before throttling
+    const IDLE_FRAME_SKIP = 3; // Only render every 4th frame when idle (15fps)
 
     // Offscreen sprite for performance
     const spriteRef = useRef<HTMLCanvasElement | null>(null);
@@ -98,12 +106,27 @@ const ParticleBackground: React.FC = () => {
         return () => clearTimeout(timer);
     }, [location.pathname]);
 
+    // P0: Visibility API - pause when tab is hidden
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            isVisible.current = !document.hidden;
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
+    // P6: Removed click burst particles for GPU savings
+    // Keeping only the cosmic:input ripple effect (on send message)
     useEffect(() => {
         const handleCosmicInput = () => {
-            // Ripple effect: add transient particles at bottom center
+            // Ripple effect: add transient particles at bottom center (reduced count)
             const centerX = window.innerWidth / 2;
             const height = window.innerHeight;
-            for (let i = 0; i < 5; i++) {
+            // P6: Reduced from 5 to 2 particles
+            for (let i = 0; i < 2; i++) {
                 particles.current.push({
                     x: centerX,
                     y: height - 50,
@@ -111,8 +134,8 @@ const ParticleBackground: React.FC = () => {
                     size: Math.random() * 2 + 1,
                     baseX: centerX,
                     baseY: height - 50,
-                    vx: (Math.random() - 0.5) * 2, // Fast spread
-                    vy: (Math.random() * -1) - 1, // Upwards
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() * -1) - 1,
                     opacity: 0.8,
                     baseOpacity: 0,
                     pulseSpeed: 0,
@@ -122,32 +145,10 @@ const ParticleBackground: React.FC = () => {
             }
         };
 
-        const handleClick = (e: MouseEvent) => {
-            // Click burst
-            for (let i = 0; i < 3; i++) {
-                particles.current.push({
-                    x: e.clientX,
-                    y: e.clientY,
-                    z: 1,
-                    size: Math.random() * 2,
-                    baseX: e.clientX,
-                    baseY: e.clientY,
-                    vx: (Math.random() - 0.5) * 1.5,
-                    vy: (Math.random() - 0.5) * 1.5,
-                    opacity: 0.8,
-                    baseOpacity: 0,
-                    pulseSpeed: 0,
-                    type: 'burst',
-                    life: 1.0
-                });
-            }
-        };
-
+        // P6: Removed click handler entirely - no more click bursts
         window.addEventListener('cosmic:input', handleCosmicInput);
-        window.addEventListener('click', handleClick);
         return () => {
             window.removeEventListener('cosmic:input', handleCosmicInput);
-            window.removeEventListener('click', handleClick);
         };
     }, []);
 
@@ -157,17 +158,11 @@ const ParticleBackground: React.FC = () => {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Handle Resolution
+        // P1: Handle Resolution - Use dpr=1 for particles (no Retina scaling needed)
         const handleResize = () => {
-            const dpr = window.devicePixelRatio || 1;
-            // Set actual size in memory (scaled to account for extra pixel density)
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-
-            // Normalize coordinate system to use css pixels
-            ctx.scale(dpr, dpr);
-
-            // Fix visual size
+            // P1: Removed devicePixelRatio - particles don't need Retina precision
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             canvas.style.width = `${window.innerWidth}px`;
             canvas.style.height = `${window.innerHeight}px`;
 
@@ -178,14 +173,36 @@ const ParticleBackground: React.FC = () => {
             // Normalize mouse -1 to 1
             mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1;
+            // P0: Reset idle timer on mouse move
+            lastMouseMove.current = Date.now();
+            isIdle.current = false;
         };
 
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('mousemove', handleMouseMove);
+        // P5: Use passive listeners for better scroll performance
+        window.addEventListener('resize', handleResize, { passive: true });
+        window.addEventListener('mousemove', handleMouseMove, { passive: true });
         handleResize();
 
         let time = 0;
         const animate = () => {
+            // P0: Don't animate if tab is hidden
+            if (!isVisible.current) {
+                animationFrameId.current = requestAnimationFrame(animate);
+                return;
+            }
+
+            // P0: Check if idle (no mouse movement for IDLE_THRESHOLD ms)
+            if (Date.now() - lastMouseMove.current > IDLE_THRESHOLD) {
+                isIdle.current = true;
+            }
+
+            // P0: When idle, skip frames (render at ~15fps instead of 60fps)
+            frameCount.current++;
+            if (isIdle.current && frameCount.current % (IDLE_FRAME_SKIP + 1) !== 0) {
+                animationFrameId.current = requestAnimationFrame(animate);
+                return;
+            }
+
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
             time += 0.01;
 

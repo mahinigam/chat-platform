@@ -156,6 +156,7 @@ const MessageList: React.FC<MessageListProps> = ({
               key={message.id}
               ref={index === messages.length - 1 ? lastMessageRef : undefined}
               role="listitem"
+              layout={false}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
