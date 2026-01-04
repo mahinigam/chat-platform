@@ -118,7 +118,7 @@ const SearchUsers: React.FC = () => {
                         )}
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-mono-surface-2 to-mono-glass-highlight flex items-center justify-center text-mono-text font-semibold">
                                 {user.avatar_url ? (
                                     <img src={user.avatar_url} alt={user.username} className="w-full h-full rounded-full object-cover" />
                                 ) : (
