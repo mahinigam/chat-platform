@@ -67,7 +67,7 @@ function App() {
         <Router>
             {/* Static Background - Zero GPU Cost */}
             <div className="fixed inset-0 bg-gradient-to-br from-black via-[#0a0a0c] to-[#050508] z-[-1]" />
-            <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent z-[-1]" />
+            <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900/10 via-transparent to-transparent z-[-1]" />
 
             {/* <div className="cosmic-noise" /> */}
             {/* <ParticleBackground /> */}
