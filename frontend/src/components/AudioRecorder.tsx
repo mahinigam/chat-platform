@@ -71,7 +71,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, onCa
 
     return (
         <div className="flex items-center gap-4 px-4 py-2 bg-mono-surface rounded-glass border border-white/20 animate-fade-up">
-            <div className="w-3 h-3 rounded-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+            <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(255,50,50,0.5)]" />
             <span className="text-mono-text font-mono">{formatDuration(duration)}</span>
             <ChromeButton
                 onClick={() => {

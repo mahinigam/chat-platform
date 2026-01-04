@@ -89,7 +89,7 @@ const OrbitSearch: React.FC<OrbitSearchProps> = ({ onSelect, onClose }) => {
         >
             {/* Header */}
             <div className="p-4 border-b border-mono-glass-border flex items-center gap-3">
-                <Music2 className="w-6 h-6 text-mono-highlight animate-pulse" />
+                <Music2 className={`w-6 h-6 text-mono-highlight ${isSearching ? 'animate-pulse' : ''}`} />
                 <h2 className="text-lg font-semibold text-mono-text">Orbit (Hybrid)</h2>
                 <div className="flex-1" />
                 <button onClick={onClose} className="text-mono-muted hover:text-mono-text">✕</button>
@@ -145,7 +145,7 @@ const OrbitSearch: React.FC<OrbitSearchProps> = ({ onSelect, onClose }) => {
                                         className={`w-full h-full object-cover rounded-md shadow-md ${isResolving ? 'opacity-50' : ''}`}
                                     />
                                     {isResolving && (
-                                        <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/20 via-transparent to-blue-900/20 opacity-30">
                                             <Loader2 className="w-6 h-6 text-white animate-spin" />
                                         </div>
                                     )}

@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import logoSvg from '../assets/logo.svg';
 
 interface CosmicLogoProps {
@@ -7,20 +7,18 @@ interface CosmicLogoProps {
     size?: 'sm' | 'md' | 'lg';
     /** Optional className for additional styling */
     className?: string;
-    /** Enable distortion animation */
-    distortion?: boolean;
 }
 
 /**
- * CosmicLogo - Displays the Aether logo with optional space distortion effect
- * Uses SVG displacement mapping to create a gravitational lensing illusion
+ * CosmicLogo - Displays the Aether logo with hover-activated distortion effect
+ * Uses SVG displacement mapping to create a gravitational lensing illusion ON HOVER ONLY
  */
 const CosmicLogo: React.FC<CosmicLogoProps> = ({
     size = 'md',
     className = '',
-    distortion = true,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [isHovered, setIsHovered] = useState(false);
 
     // Size configurations (maintaining 116:37 aspect ratio)
     const sizeConfig = {
@@ -39,63 +37,54 @@ const CosmicLogo: React.FC<CosmicLogoProps> = ({
             ref={containerRef}
             className={`relative inline-flex items-center justify-center ${className}`}
             style={{ width, height }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
-            {/* SVG Filter Definition for Gravitational Distortion */}
-            {distortion && (
-                <svg
-                    className="absolute w-0 h-0 overflow-hidden"
-                    aria-hidden="true"
-                >
-                    <defs>
-                        <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
-                            {/* Turbulence for organic distortion pattern */}
-                            <feTurbulence
-                                type="fractalNoise"
-                                baseFrequency="0.018"
-                                numOctaves="2"
-                                result="turbulence"
-                            >
-                                {/* Animate the turbulence for subtle movement */}
-                                <animate
-                                    attributeName="baseFrequency"
-                                    values="0.016;0.022;0.016"
-                                    dur="7s"
-                                    repeatCount="indefinite"
-                                />
-                            </feTurbulence>
-                            {/* Displacement mapping - warps pixels based on turbulence */}
-                            <feDisplacementMap
-                                in="SourceGraphic"
-                                in2="turbulence"
-                                scale="4"
-                                xChannelSelector="R"
-                                yChannelSelector="G"
-                            />
-                        </filter>
-                    </defs>
-                </svg>
-            )}
+            {/* SVG Filter Definition for Gravitational Distortion - Always present but only applied on hover */}
+            <svg
+                className="absolute w-0 h-0 overflow-hidden"
+                aria-hidden="true"
+            >
+                <defs>
+                    <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
+                        {/* Turbulence for organic distortion pattern - STATIC, no animate */}
+                        <feTurbulence
+                            type="fractalNoise"
+                            baseFrequency="0.018"
+                            numOctaves="2"
+                            result="turbulence"
+                        />
+                        {/* Displacement mapping - warps pixels based on turbulence */}
+                        <feDisplacementMap
+                            in="SourceGraphic"
+                            in2="turbulence"
+                            scale="4"
+                            xChannelSelector="R"
+                            yChannelSelector="G"
+                        />
+                    </filter>
+                </defs>
+            </svg>
 
-            {/* Outer Glow - Event Horizon Effect */}
-            <motion.div
-                className="absolute inset-0 rounded-full opacity-30"
-                style={{
-                    background: `radial-gradient(ellipse at center, rgba(240, 240, 240, 0.15) 0%, transparent 70%)`,
-                    filter: 'blur(8px)',
-                    transform: 'scale(2)',
-                }}
-                animate={{
-                    opacity: [0.2, 0.35, 0.2],
-                    scale: [1.8, 2.1, 1.8],
-                }}
-                transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                }}
-            />
+            {/* Outer Glow - Event Horizon Effect - ON HOVER ONLY */}
+            <AnimatePresence>
+                {isHovered && (
+                    <motion.div
+                        className="absolute inset-0 rounded-full pointer-events-none"
+                        style={{
+                            background: `radial-gradient(ellipse at center, rgba(240, 240, 240, 0.2) 0%, transparent 70%)`,
+                            filter: 'blur(8px)',
+                            transform: 'scale(2)',
+                        }}
+                        initial={{ opacity: 0, scale: 1.5 }}
+                        animate={{ opacity: 0.4, scale: 2 }}
+                        exit={{ opacity: 0, scale: 1.5 }}
+                        transition={{ duration: 0.4, ease: 'easeOut' }}
+                    />
+                )}
+            </AnimatePresence>
 
-            {/* The Logo Image */}
+            {/* The Logo Image - Static, High Performance */}
             <motion.img
                 src={logoSvg}
                 alt="Aether"
@@ -103,11 +92,12 @@ const CosmicLogo: React.FC<CosmicLogoProps> = ({
                 style={{
                     width,
                     height,
-                    filter: distortion ? `url(#${filterId})` : undefined,
+                    filter: isHovered ? `url(#${filterId})` : undefined,
                 }}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, ease: [0.2, 0.9, 0.2, 1] }}
+                whileHover={{ scale: 1.02, filter: `url(#${filterId}) brightness(1.1)` }}
             />
         </div>
     );

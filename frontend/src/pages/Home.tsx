@@ -538,8 +538,7 @@ function Home() {
                     {[0, 1, 2].map((i) => (
                         <div
                             key={i}
-                            className="w-3 h-3 rounded-full bg-mono-muted/60 animate-pulse"
-                            style={{ animationDelay: `${i * 100}ms` }}
+                            className="w-3 h-3 rounded-full bg-mono-muted/40"
                         />
                     ))}
                 </div>

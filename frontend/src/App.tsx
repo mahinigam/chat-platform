@@ -6,10 +6,10 @@ import Home from './pages/Home';
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
     <motion.div
-        initial={{ opacity: 0, filter: 'blur(10px)', scale: 0.99 }}
-        animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
-        exit={{ opacity: 0, filter: 'blur(10px)', scale: 0.99 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} // "Cosmic" ease
+        initial={{ opacity: 0, scale: 0.99 }} // Removed filter: blur(10px) to prevent GPU layer promotion
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.99 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="w-full h-full"
     >
         {children}
@@ -65,9 +65,12 @@ function App() {
 
     return (
         <Router>
-            {/* Background layers - always visible */}
-            <div className="cosmic-noise" />
-            <ParticleBackground />
+            {/* Static Background - Zero GPU Cost */}
+            <div className="fixed inset-0 bg-gradient-to-br from-black via-[#0a0a0c] to-[#050508] z-[-1]" />
+            <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent z-[-1]" />
+
+            {/* <div className="cosmic-noise" /> */}
+            {/* <ParticleBackground /> */}
 
             {/* Main App - Always rendered, visible underneath intro */}
             <AnimatedRoutes />

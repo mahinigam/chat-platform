@@ -103,8 +103,7 @@ const ResonanceCard: React.FC<ResonanceCardProps> = ({
             {/* 1. Background - Deep Cosmic Purple (Matches 'This Summer' dark tones) */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#1a103c] via-[#2D1B69] to-[#1a103c]">
                 {/* Subtle Aurora Pulse */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/20 via-transparent to-blue-900/20 opacity-50 animate-pulse"
-                    style={{ animationDuration: '6s' }} />
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/20 via-transparent to-blue-900/20 opacity-30" />
             </div>
 
             {/* Glass Texture */}
@@ -118,7 +117,7 @@ const ResonanceCard: React.FC<ResonanceCardProps> = ({
                     <motion.div
                         animate={{ rotate: isPlaying ? 360 : 0 }}
                         transition={{
-                            repeat: Infinity,
+                            repeat: isPlaying ? Infinity : 0,
                             duration: 6,
                             ease: "linear"
                         }}

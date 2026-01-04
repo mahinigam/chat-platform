@@ -33,13 +33,20 @@
     height: 100%;
     pointer-events: none;
     z-index: 9999;
-    opacity: 0.03;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+    /* Hack: Use a static noise image instead of live filter if possible, 
+       but for now optimizing the filter properties or usage. 
+       Actually, switching to a simpler pattern is better. */
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAGFBMVEUAAAA5OTkAAAAAAAAAAABMTExERERmZmZnATESAAAACHRSTlMAMwA5MzMzM7MzMzMAAAABMQAAACwAAAAAMgAyAAACeIyPqcvtD6OctNqLs968+w+G4kiW5omm6sq27gvH8kzX9o3n+s73/g8MCofEovGITCqXzKbzCY1Kp9Sq9YrNarfcrvcLDovH5LL5jM5qt9yu9wsOi8fksvmMzmq33K73Cw6Lx+Sy+YzOarfcrcAD");
+    background-repeat: repeat;
   }
 
   /* Layer 2: Liquid Glass Panel with Metallic Edge */
   .glass-panel {
-    @apply backdrop-blur-glass bg-mono-surface border border-white/10 shadow-glass rounded-xl relative overflow-hidden transition-all duration-500 ease-glass;
+    @apply bg-black/90 border border-white/10 shadow-glass rounded-xl relative overflow-hidden transition-all duration-500 ease-glass;
+    /* backdrop-filter: blur(10px); -- REMOVED GLOBALLY */
+    /* apply backdrop-blur-glass -- REMOVED */
     box-shadow:
       0 4px 30px rgba(0, 0, 0, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.06),
@@ -49,10 +56,12 @@
   /* Adaptive Blur: Slightly stronger on hover/focus */
   .glass-panel:hover,
   .glass-panel:focus-within {
-    backdrop-filter: blur(10px);
-    /* P2: Reduced from 24px */
+    /* Stabilize blur - don't change it on hover to avoid GPU recalc */
+    /* backdrop-filter: blur(10px); */
+
+    /* P2: Reduced shadow spread significantly */
     box-shadow:
-      0 8px 40px rgba(0, 0, 0, 0.25),
+      0 8px 20px rgba(0, 0, 0, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
       inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
@@ -95,23 +104,17 @@
   }
 
   /* Chromatic/prismatic edge - subtle visible by default */
+  /* Simplified .btn-glass::after - No Rainbow */
   .btn-glass::after {
     content: '';
     position: absolute;
-    inset: -3px;
+    inset: 0;
     border-radius: inherit;
-    background: conic-gradient(from 180deg,
-        rgba(100, 150, 255, 0.25) 0deg,
-        rgba(255, 100, 150, 0.2) 60deg,
-        rgba(255, 200, 100, 0.2) 120deg,
-        rgba(100, 255, 150, 0.2) 180deg,
-        rgba(200, 100, 255, 0.2) 240deg,
-        rgba(255, 150, 100, 0.2) 300deg,
-        rgba(100, 150, 255, 0.25) 360deg);
-    opacity: 0.4;
-    filter: blur(2px);
-    z-index: -2;
+    /* Static Metallic Sheen */
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+    opacity: 0;
     transition: opacity 0.3s ease;
+    pointer-events: none;
   }
 
   .btn-glass:hover::before {
@@ -119,7 +122,7 @@
   }
 
   .btn-glass:hover::after {
-    opacity: 0.7;
+    opacity: 1;
   }
 
   .btn-glass:hover {
@@ -130,19 +133,10 @@
       0 4px 16px rgba(0, 0, 0, 0.5);
   }
 
+  /* No active scale or brightness shifts */
   .btn-glass:active {
-    @apply scale-95;
-    background: #0a0a0a;
-    /* Deep pressed well */
-    box-shadow:
-      inset 0 4px 12px rgba(0, 0, 0, 0.9),
-      /* Deep top shadow */
-      inset 0 1px 3px rgba(0, 0, 0, 0.8),
-      /* Sharp inner lip */
-      0 0 0 transparent;
-    /* No outer shadow */
-    transform: translateY(1px) scale(0.96);
-    /* Physical press feel */
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 
   /* Dim the chrome rim slightly when pressed */
@@ -153,72 +147,41 @@
 
   /* ===== CIRCULAR CHROME BUTTON ===== */
   /* For action buttons like Send, matching reference images */
+  /* Simplified .btn-chrome-circle - No Chromatic Aberration */
   .btn-chrome-circle {
     @apply flex items-center justify-center text-mono-text transition-all duration-300 ease-glass disabled:opacity-40;
     width: 44px;
     height: 44px;
     border-radius: 50%;
     background: rgba(20, 20, 20, 0.9);
-    border: 2px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
-    box-shadow:
-      inset 0 2px 4px rgba(255, 255, 255, 0.08),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.4),
-      0 4px 12px rgba(0, 0, 0, 0.5);
-  }
-
-  /* Chrome rim with metallic gradient */
-  .btn-chrome-circle::before {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border-radius: 50%;
-    background: var(--metal-rim);
-    z-index: -2;
-    transition: all 0.3s ease;
-  }
-
-  /* Chromatic aberration layer */
-  .btn-chrome-circle::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    background: var(--chromatic-edge);
-    opacity: 0;
-    filter: blur(4px);
-    z-index: -3;
-    transition: opacity 0.4s ease;
-  }
-
-  .btn-chrome-circle:hover::after,
-  .btn-chrome-circle:focus::after {
-    opacity: 0.6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .btn-chrome-circle:hover {
-    box-shadow:
-      inset 0 2px 6px rgba(255, 255, 255, 0.12),
-      inset 0 -2px 6px rgba(0, 0, 0, 0.5),
-      0 6px 20px rgba(0, 0, 0, 0.6),
-      0 0 15px rgba(255, 255, 255, 0.05);
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
   }
 
   .btn-chrome-circle:active {
-    transform: scale(0.95);
+    background: rgba(10, 10, 10, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+    /* No scale */
   }
 
   /* Input Glass - Metallic edge enhancement */
   .input-glass {
     @apply w-full px-4 py-3 rounded-lg bg-white/10 border border-white/10 text-mono-text placeholder-mono-muted focus:outline-none transition-all duration-300 ease-glass;
-    backdrop-filter: blur(4px);
+    /* backdrop-filter: blur(4px); -- Removed for GPU performance */
     /* P2: Reduced from 10px */
     box-shadow: var(--metal-inset), 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   .input-glass:focus {
     @apply bg-white/10 border-white/20;
-    backdrop-filter: blur(6px);
+    /* backdrop-filter: blur(6px); -- Removed */
     /* P2: Reduced from 16px */
     box-shadow: var(--metal-inset), 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(255, 255, 255, 0.04);
   }
@@ -226,12 +189,11 @@
   /* Layer 2: Message Tiles (Floating Glass) */
   .message-bubble {
     @apply px-4 py-2.5 rounded-lg max-w-[480px] break-words relative text-[15px] leading-relaxed border border-white/5 shadow-sm transition-all duration-300;
-    backdrop-filter: blur(6px);
-    /* P2: Reduced from 15px */
+    /* backdrop-filter: blur(6px); -- Removed for GPU performance (Layer Explosion) */
   }
 
   .message-bubble:hover {
-    backdrop-filter: blur(8px);
+    /* backdrop-filter: blur(8px); -- Removed */
     /* P2: Reduced from 20px */
   }
 
@@ -323,13 +285,5 @@
     background: radial-gradient(circle, rgba(255, 150, 50, 0.15) 0%, transparent 70%);
   }
 
-  @keyframes spin-slow {
-    0% {
-      transform: rotate(0deg);
-    }
 
-    100% {
-      transform: rotate(360deg);
-    }
-  }
 }

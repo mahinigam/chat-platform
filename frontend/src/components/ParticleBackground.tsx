@@ -31,15 +31,14 @@ const ParticleBackground: React.FC = () => {
     const isVisible = useRef(true);
     const lastMouseMove = useRef(Date.now());
     const isIdle = useRef(false);
-    const frameCount = useRef(0);
 
     // Configuration
-    const STAR_COUNT = window.innerWidth < 768 ? 15 : 35; // Very sparse
+    const STAR_COUNT = 20; // Ultra-optimized count
     const BASE_SPEED = 0.05; // Almost frozen
     const AWAKEN_SPEED_MULTIPLIER = 8;
     const PARALLAX_STRENGTH = 15; // How much mouse moves them
-    const IDLE_THRESHOLD = 3000; // 3 seconds before throttling
-    const IDLE_FRAME_SKIP = 3; // Only render every 4th frame when idle (15fps)
+    const IDLE_THRESHOLD = 3000; // 3 seconds before STOPPING animation
+    const isAnimating = useRef(true); // Track if animation loop is running
 
     // Offscreen sprite for performance
     const spriteRef = useRef<HTMLCanvasElement | null>(null);
@@ -106,18 +105,6 @@ const ParticleBackground: React.FC = () => {
         return () => clearTimeout(timer);
     }, [location.pathname]);
 
-    // P0: Visibility API - pause when tab is hidden
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            isVisible.current = !document.hidden;
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, []);
-
     // P6: Removed click burst particles for GPU savings
     // Keeping only the cosmic:input ripple effect (on send message)
     useEffect(() => {
@@ -176,31 +163,44 @@ const ParticleBackground: React.FC = () => {
             // P0: Reset idle timer on mouse move
             lastMouseMove.current = Date.now();
             isIdle.current = false;
+
+            // P0: Restart animation if it was stopped
+            if (!isAnimating.current && isVisible.current) {
+                isAnimating.current = true;
+                animationFrameId.current = requestAnimationFrame(animate);
+            }
         };
 
         // P5: Use passive listeners for better scroll performance
         window.addEventListener('resize', handleResize, { passive: true });
         window.addEventListener('mousemove', handleMouseMove, { passive: true });
+
+        // P0: Handle visibility changes - restart when tab becomes visible
+        const handleVisibility = () => {
+            isVisible.current = !document.hidden;
+            if (!document.hidden && !isAnimating.current) {
+                isAnimating.current = true;
+                lastMouseMove.current = Date.now();
+                requestAnimationFrame(animate);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
         handleResize();
 
         let time = 0;
         const animate = () => {
-            // P0: Don't animate if tab is hidden
+            // P0: COMPLETELY STOP if tab is hidden (no more rAF calls)
             if (!isVisible.current) {
-                animationFrameId.current = requestAnimationFrame(animate);
-                return;
+                isAnimating.current = false;
+                return; // EXIT - no more rAF scheduled
             }
 
-            // P0: Check if idle (no mouse movement for IDLE_THRESHOLD ms)
+            // P0: COMPLETELY STOP if idle for IDLE_THRESHOLD ms
             if (Date.now() - lastMouseMove.current > IDLE_THRESHOLD) {
                 isIdle.current = true;
-            }
-
-            // P0: When idle, skip frames (render at ~15fps instead of 60fps)
-            frameCount.current++;
-            if (isIdle.current && frameCount.current % (IDLE_FRAME_SKIP + 1) !== 0) {
-                animationFrameId.current = requestAnimationFrame(animate);
-                return;
+                isAnimating.current = false;
+                return; // EXIT - no more rAF scheduled, mouse move will restart
             }
 
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -274,6 +274,7 @@ const ParticleBackground: React.FC = () => {
         return () => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('visibilitychange', handleVisibility);
             if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
         };
     }, []);
