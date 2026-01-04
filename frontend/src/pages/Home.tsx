@@ -1,14 +1,10 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Video, Phone, Search } from 'lucide-react';
+import { Video, Phone, Search, Loader2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import MessageList from '../components/MessageList';
 import Composer from '../components/Composer';
 import Modal from '../components/Modal';
-import PollCreator from '../components/PollCreator';
-import LocationPicker from '../components/LocationPicker';
-import GifPicker from '../components/GifPicker';
-import OrbitSearch from '../components/OrbitSearch';
 import AudioRecorder from '../components/AudioRecorder';
 import { useToast } from '../hooks/useToast';
 import { cn } from '../utils/theme';
@@ -18,6 +14,19 @@ import { uploadFile } from '../api/upload';
 import { useNavigate } from 'react-router-dom';
 import ToastContainer from '../components/Toast';
 import ChromeButton from '../components/ChromeButton';
+
+// Lazy load heavy components (code splitting)
+const PollCreator = React.lazy(() => import('../components/PollCreator'));
+const LocationPicker = React.lazy(() => import('../components/LocationPicker'));
+const GifPicker = React.lazy(() => import('../components/GifPicker'));
+const OrbitSearch = React.lazy(() => import('../components/OrbitSearch'));
+
+// Loading fallback for lazy components
+const LazyFallback = () => (
+    <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-6 h-6 text-mono-muted animate-spin" />
+    </div>
+);
 
 
 interface Room {
@@ -726,25 +735,31 @@ function Home() {
                 onChange={handleFileUpload}
             />
 
-            {/* Modals */}
-            <PollCreator
-                isOpen={isPollCreatorOpen}
-                onClose={() => setIsPollCreatorOpen(false)}
-                onSubmit={handlePollSubmit}
-            />
+            {/* Modals - Lazy loaded with Suspense */}
+            <Suspense fallback={<LazyFallback />}>
+                <PollCreator
+                    isOpen={isPollCreatorOpen}
+                    onClose={() => setIsPollCreatorOpen(false)}
+                    onSubmit={handlePollSubmit}
+                />
+            </Suspense>
 
             {isLocationPickerOpen && (
-                <LocationPicker
-                    onLocationSelect={handleLocationSelect}
-                    onCancel={() => setIsLocationPickerOpen(false)}
-                />
+                <Suspense fallback={<LazyFallback />}>
+                    <LocationPicker
+                        onLocationSelect={handleLocationSelect}
+                        onCancel={() => setIsLocationPickerOpen(false)}
+                    />
+                </Suspense>
             )}
 
             {isGifPickerOpen && (
-                <GifPicker
-                    onSelect={handleGifSelect}
-                    onClose={() => setIsGifPickerOpen(false)}
-                />
+                <Suspense fallback={<LazyFallback />}>
+                    <GifPicker
+                        onSelect={handleGifSelect}
+                        onClose={() => setIsGifPickerOpen(false)}
+                    />
+                </Suspense>
             )}
 
             {isOrbitSearchOpen && (
@@ -753,10 +768,12 @@ function Home() {
                     onClick={() => setIsOrbitSearchOpen(false)}
                 >
                     <div onClick={e => e.stopPropagation()} className="w-full max-w-2xl h-[70vh]">
-                        <OrbitSearch
-                            onSelect={handleOrbitSelect}
-                            onClose={() => setIsOrbitSearchOpen(false)}
-                        />
+                        <Suspense fallback={<LazyFallback />}>
+                            <OrbitSearch
+                                onSelect={handleOrbitSelect}
+                                onClose={() => setIsOrbitSearchOpen(false)}
+                            />
+                        </Suspense>
                     </div>
                 </div>
             )}
