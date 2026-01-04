@@ -20,6 +20,7 @@ const PollCreator = React.lazy(() => import('../components/PollCreator'));
 const LocationPicker = React.lazy(() => import('../components/LocationPicker'));
 const GifPicker = React.lazy(() => import('../components/GifPicker'));
 const OrbitSearch = React.lazy(() => import('../components/OrbitSearch'));
+const ChatSearch = React.lazy(() => import('../components/ChatSearch'));
 
 // Loading fallback for lazy components
 const LazyFallback = () => (
@@ -86,6 +87,7 @@ function Home() {
     const [isOrbitSearchOpen, setIsOrbitSearchOpen] = useState(false);
     const [isAudioRecording, setIsAudioRecording] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
@@ -318,6 +320,19 @@ function Home() {
             socketService.off('reaction:update', handleReactionUpdate);
         };
     }, [selectedRoomId, currentUser]);
+
+    // Keyboard shortcut for search (Cmd+F / Ctrl+F)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'f' && selectedRoomId) {
+                e.preventDefault();
+                setIsSearchOpen(true);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedRoomId]);
 
 
     const handleSendMessage = useCallback(
@@ -680,6 +695,7 @@ function Home() {
                                 variant="circle"
                                 className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
                                 aria-label="Search"
+                                onClick={() => setIsSearchOpen(true)}
                             >
                                 <Search className="w-5 h-5" />
                             </ChromeButton>
@@ -689,6 +705,26 @@ function Home() {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-hidden relative">
+                    {/* Chat Search Overlay */}
+                    {selectedRoomId && (
+                        <Suspense fallback={null}>
+                            <ChatSearch
+                                roomId={selectedRoomId}
+                                isOpen={isSearchOpen}
+                                onClose={() => setIsSearchOpen(false)}
+                                onNavigateToMessage={(messageId) => {
+                                    // Scroll to message and briefly highlight
+                                    const element = document.getElementById(`message-${messageId}`);
+                                    if (element) {
+                                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        element.classList.add('bg-mono-surface-2/50');
+                                        setTimeout(() => element.classList.remove('bg-mono-surface-2/50'), 2000);
+                                    }
+                                }}
+                            />
+                        </Suspense>
+                    )}
+
                     <MessageList
                         messages={messages.map(m => ({
                             ...m,

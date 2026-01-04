@@ -154,12 +154,14 @@ const MessageList: React.FC<MessageListProps> = ({
           {messages.map((message, index) => (
             <motion.li
               key={message.id}
+              id={`message-${message.id}`}
               ref={index === messages.length - 1 ? lastMessageRef : undefined}
               role="listitem"
               layout={false}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
+              className="transition-colors duration-500"
             >
               <MessageItem message={message} onPollVote={onPollVote} onReaction={onReaction} />
             </motion.li>

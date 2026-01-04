@@ -56,6 +56,7 @@ if (process.env.NODE_ENV === 'development') {
 // ============================================
 import contactRoutes from './routes/contacts';
 import reactionRoutes from './routes/reactions';
+import searchRoutes from './routes/search';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
@@ -63,6 +64,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/reactions', reactionRoutes);
+app.use('/api/search', searchRoutes);
 
 // Health check endpoint
 app.get('/health', async (_req: Request, res: Response) => {
