@@ -1,126 +1,216 @@
-# High-Scale Real-Time Chat Application
+# Aether
 
-A production-grade, horizontally scalable real-time chat application built to handle **10,000+ concurrent WebSocket connections**.
+<p align="center">
+  <strong>A real-time chat platform built for scale, designed for calm.</strong>
+</p>
+
+<p align="center">
+  <em>"Silent at rest. Alive on touch."</em>
+</p>
+
+---
+
+## Overview
+
+**Aether** is a production-grade, horizontally scalable real-time chat application. It is engineered to handle **10,000+ concurrent WebSocket connections** while maintaining a premium, distraction-free user experience.
+
+The UI follows the **Obsidian Chrome** design system — a monochrome, performance-first aesthetic that prioritizes restraint over visual noise.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Design System: Obsidian Chrome](#design-system-obsidian-chrome)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Local Development](#local-development)
+- [API Reference](#api-reference)
+- [Performance](#performance)
+- [Security](#security)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Features
 
-### Core Functionality
-- **Real-Time Messaging**: Bi-directional communication using WebSockets (Socket.io)
-- **Room Architecture**: Support for 1-on-1 DMs and Group Chats
-- **Message Status**: Sent → Delivered → Read receipts (WhatsApp-style)
-- **Offline Support**: Messages queued in DB and delivered on reconnection
+### Core Messaging
+| Feature | Description |
+|---------|-------------|
+| **Real-Time Messaging** | Sub-100ms delivery via Socket.io + Redis Pub/Sub |
+| **Message Receipts** | Sent → Delivered → Read status indicators |
+| **Offline Support** | Messages queued and delivered on reconnection |
+| **Typing Indicators** | Debounced "User is typing..." with auto-stop |
 
-### Advanced "Standout" Features
-- **Horizontal Scaling**: Multiple server instances with Redis Adapter for cross-server communication
-- **Optimistic UI Updates**: Messages appear instantly before server confirmation
-- **Typing Indicators**: Debounced "User is typing..." with auto-stop
-- **Cursor-Based Pagination**: Infinite scroll loading 50 messages at a time
-- **Thundering Herd Protection**: Rate limiting, exponential backoff, jittered reconnection
-- **Production-Ready**: Docker containers, health checks, graceful shutdown
+### Rich Media
+| Feature | Description |
+|---------|-------------|
+| **Orbit Search** | Integrated music search (Spotify → YouTube audio) |
+| **Voice Messages** | High-fidelity audio recording with waveform visualization |
+| **Polls** | Real-time collaborative voting |
+| **GIFs** | Giphy integration |
+| **Location Sharing** | OpenStreetMap-based location picker |
+| **File Uploads** | Images, videos, and documents |
 
-## Architecture Highlights
+### Advanced Engineering
+| Feature | Description |
+|---------|-------------|
+| **Horizontal Scaling** | Multiple server instances synchronized via Redis Adapter |
+| **Optimistic UI** | Messages appear instantly before server confirmation |
+| **Cursor Pagination** | Infinite scroll with stable message ordering |
+| **Thundering Herd Protection** | Exponential backoff + jitter for mass reconnections |
+| **Graceful Shutdown** | Clean connection draining on deployment |
 
-- **Backend**: Node.js + TypeScript + Express + Socket.io
-- **Frontend**: React + TypeScript + Tailwind CSS + Zustand
-- **Database**: PostgreSQL with write-optimized schema (composite indexes)
-- **Cache/Pub-Sub**: Redis for session management and message brokering
-- **Load Balancer**: NGINX with sticky sessions for WebSocket support
-- **Containers**: Docker Compose for multi-service orchestration
+---
+
+## Design System: Obsidian Chrome
+
+Aether's UI follows the **Obsidian Chrome** design philosophy, which emphasizes:
+
+### Core Principles
+
+1.  **Monochrome Void**
+    -   Pure black and gray palette (`mono-*` tokens).
+    -   No accent colors except for semantic purposes (Red = Destructive, Green = Online).
+    -   The interface disappears so conversations stand out.
+
+2.  **Physical Interactions**
+    -   Buttons (`ChromeButton`) feel heavy and deliberate.
+    -   No bounce, no glow abuse. Interactions use subtle shadows and opacity shifts.
+    -   State changes are driven by user action, not time.
+
+3.  **Zero-Cost Idle**
+    -   Near-zero GPU usage when the user is not interacting.
+    -   No infinite animations (`animate-pulse`, `repeat: Infinity`).
+    -   Canvas/particle effects halt completely after 3 seconds of inactivity.
+
+### Component Library
+
+| Component | Purpose |
+|-----------|---------|
+| `ChromeButton` | Primary button with metallic rim and pressure-like active state |
+| `GlassPanel` | Container with subtle borders and shadow |
+| `Modal` | Focus-trapped dialog with smooth scale transition |
+| `Toast` | Non-blocking notifications |
+| `CosmicLogo` | Brand logo with hover-triggered distortion effect |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                           NGINX                                 │
+│                     (Load Balancer + Sticky Sessions)           │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+┌───────────────┐       ┌───────────────┐       ┌───────────────┐
+│  Backend #1   │       │  Backend #2   │       │  Backend #N   │
+│  (Socket.io)  │◄─────►│  (Socket.io)  │◄─────►│  (Socket.io)  │
+└───────┬───────┘       └───────┬───────┘       └───────┬───────┘
+        │                       │                       │
+        └───────────────────────┼───────────────────────┘
+                                │ Redis Pub/Sub
+                                ▼
+                        ┌───────────────┐
+                        │     Redis     │
+                        │ (Session/Pub) │
+                        └───────────────┘
+                                │
+                                ▼
+                        ┌───────────────┐
+                        │  PostgreSQL   │
+                        │  (Messages)   │
+                        └───────────────┘
+```
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, TypeScript, Tailwind CSS, Framer Motion |
+| **Backend** | Node.js, Express, Socket.io, TypeScript |
+| **Database** | PostgreSQL (write-optimized schema) |
+| **Cache/Broker** | Redis (Cluster-ready) |
+| **Load Balancer** | NGINX (sticky sessions for WebSocket) |
+| **Orchestration** | Docker Compose |
+
+---
 
 ## Project Structure
 
 ```
-chat_platform/
+aether/
 ├── backend/
 │   ├── src/
-│   │   ├── config/           # Database & Redis configuration
+│   │   ├── config/           # Database & Redis setup
 │   │   ├── middleware/       # Auth, rate limiting
 │   │   ├── repositories/     # Data access layer
 │   │   ├── routes/           # REST API endpoints
 │   │   ├── socket/           # WebSocket handlers
-│   │   │   ├── handlers/     # Message, typing, presence handlers
-│   │   │   └── index.ts      # Socket.io + Redis Adapter setup
-│   │   └── index.ts          # Express server
+│   │   └── index.ts          # Server entrypoint
 │   ├── Dockerfile
 │   └── package.json
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/       # React components (ChatRoom, MessageList)
-│   │   ├── services/         # WebSocket client with reconnection logic
-│   │   ├── stores/           # Zustand state management (optimistic UI)
-│   │   ├── App.tsx
-│   │   └── main.tsx
+│   │   ├── components/       # UI components (Obsidian Chrome)
+│   │   ├── pages/            # Login, Register, Home
+│   │   ├── services/         # Socket client, API calls
+│   │   ├── styles/           # Design tokens, global CSS
+│   │   └── App.tsx
 │   ├── Dockerfile
 │   └── package.json
 │
 ├── database/
-│   └── schema.sql            # PostgreSQL schema with indexes
+│   └── schema.sql            # PostgreSQL schema
 │
 ├── nginx/
-│   └── nginx.conf            # Load balancer configuration
+│   └── nginx.conf            # Load balancer config
 │
-├── docker-compose.yml        # Multi-container orchestration
-├── ARCHITECTURE.md           # Detailed architecture documentation
+├── docker-compose.yml
+├── ARCHITECTURE.md
 └── README.md
 ```
 
-## Quick Start
+---
+
+## Getting Started
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for local development)
+
+-   Docker & Docker Compose
+-   Node.js 18+ (for local development)
 
 ### Run with Docker (Recommended)
 
 ```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd chat_platform
+# Clone the repository
+git clone https://github.com/mahinigam/chat-platform.git
+cd chat-platform
 
-# 2. Copy environment file
+# Copy environment file
 cp backend/.env.example backend/.env
 
-# 3. Start all services
-docker-compose up -d
-
-# 4. Access the application
-# Frontend: http://localhost
-# Backend API: http://localhost:3000
-# PostgreSQL: localhost:5432
-# Redis: localhost:6379
-```
-
-### Test Horizontal Scaling
-
-```bash
-# Scale backend to 4 instances
+# Start all services (scale backend to 4 instances)
 docker-compose up -d --scale backend=4
 
-# Connect clients to different servers
-# Messages are synchronized via Redis Pub/Sub!
-```
-
-### View Logs
-
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f backend
-docker-compose logs -f redis
+# Access
+# Frontend: http://localhost
+# Backend:  http://localhost:3000
 ```
 
 ### Stop Services
 
 ```bash
-# Stop all
-docker-compose down
-
-# Stop and remove volumes (clean slate)
-docker-compose down -v
+docker-compose down       # Stop
+docker-compose down -v    # Stop and remove volumes
 ```
+
+---
 
 ## Local Development
 
@@ -129,7 +219,7 @@ docker-compose down -v
 ```bash
 cd backend
 npm install
-npm run dev  # Runs on port 3000
+npm run dev   # Runs on port 3000
 ```
 
 ### Frontend
@@ -137,217 +227,117 @@ npm run dev  # Runs on port 3000
 ```bash
 cd frontend
 npm install
-npm run dev  # Runs on port 5173
+npm run dev   # Runs on port 5173
 ```
 
-### Database Setup
+### Database
 
 ```bash
-# Connect to PostgreSQL
 psql -h localhost -U postgres -d chat_platform
-
-# Run schema
 \i database/schema.sql
 ```
 
-## Documentation
+---
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)**: Comprehensive architecture guide with:
-  - System overview and diagrams
-  - PostgreSQL schema with indexing strategy
-  - Horizontal scaling with Redis Adapter explained
-  - Complete message delivery flow (Client A → Redis → Client B)
-  - Thundering herd mitigation strategies
-  - Performance metrics and bottleneck analysis
+## API Reference
 
-## Key Technical Decisions
+### WebSocket Events
 
-### 1. Horizontal Scaling with Redis Adapter
+| Direction | Event | Description |
+|-----------|-------|-------------|
+| **Client → Server** | `message:send` | Send a new message |
+| | `message:delivered` | Mark as delivered |
+| | `message:read` | Mark as read |
+| | `typing:start` | User started typing |
+| | `typing:stop` | User stopped typing |
+| **Server → Client** | `message:new` | New message received |
+| | `message:status` | Status update |
+| | `typing:start` | Someone is typing |
+| | `presence:change` | Online/offline status |
 
-**Problem**: How do users on different server instances communicate?
+### REST Endpoints
 
-**Solution**: Socket.io Redis Adapter uses Pub/Sub to broadcast messages across all servers.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/register` | Register new user |
+| `POST` | `/api/auth/login` | Login |
+| `GET` | `/api/rooms` | Get user's rooms |
+| `POST` | `/api/rooms` | Create new room |
+| `GET` | `/api/messages/room/:id` | Get messages (cursor pagination) |
 
-```typescript
-import { createAdapter } from '@socket.io/redis-adapter';
+---
 
-io.adapter(createAdapter(redisPubClient, redisSubClient));
-// Now all socket.emit() calls work across all server instances!
-```
+## Performance
 
-### 2. Optimistic UI Updates
+### Scalability Targets
 
-**User Experience**: Messages appear instantly, not after server confirmation.
+| Metric | Single Instance | 4 Instances |
+|--------|-----------------|-------------|
+| Concurrent Connections | ~2,500 | **10,000+** |
+| Messages/Second | ~1,000 | ~4,000 |
+| RAM | ~512MB | ~2GB |
+| CPU | 2 cores @ 60% | 8 cores |
 
-```typescript
-// Frontend immediately shows message as "sending"
-addOptimisticMessage(message);
+### Frontend Performance
 
-// Send to server
-socket.emit('message:send', message, (response) => {
-  if (response.success) {
-    confirmMessage(response.message); // Update to "sent"
-  } else {
-    markMessageFailed(response.error); // Show error
-  }
-});
-```
+| Metric | Target |
+|--------|--------|
+| Idle GPU Usage | < 5% |
+| Time to Interactive | < 2s |
+| Lighthouse Score | 90+ |
 
-### 3. Cursor-Based Pagination
+---
 
-**Why not offset?**: Offsets break when new messages arrive during scrolling.
+## Security
 
-```typescript
-// Load messages older than cursor (message ID)
-GET /api/messages/room/:roomId?cursor=msg-uuid-123&limit=50
+-   **Authentication**: JWT (access + refresh tokens)
+-   **Rate Limiting**: Per-IP and per-user limits
+-   **Input Validation**: Joi schemas
+-   **SQL Injection**: Parameterized queries only
+-   **Headers**: Helmet.js security headers
+-   **CORS**: Strict origin whitelist
 
-// Response includes nextCursor for infinite scroll
-{ messages: [...], nextCursor: "msg-uuid-456" }
-```
-
-### 4. Thundering Herd Protection
-
-When 10,000 users reconnect after server restart:
-
-- **Connection Rate Limit**: Max 100 new connections/sec per server
-- **Exponential Backoff**: 1s → 2s → 4s → 8s retry delays
-- **Jittered Delay**: Random 0-5s to prevent synchronized retries
-- **Batched Offline Messages**: Deliver in chunks of 50, not all at once
-- **DB Connection Pool**: Max 50 connections per instance (never exhausted)
-
-Result: **Graceful reconnection over ~25 seconds instead of instant crash**
-
-## Performance Metrics
-
-### Single Server Instance
-- Max concurrent connections: ~2,500
-- Messages per second: ~1,000
-- RAM: ~512MB
-- CPU: 2 cores @ 60%
-
-### 4 Server Instances (Recommended)
-- Max concurrent connections: **10,000**
-- Messages per second: **4,000**
-- RAM: ~2GB total
-- CPU: 8 cores distributed
-
-### Database
-- Write throughput: 5,000 inserts/sec
-- Read latency: <10ms (with indexes)
-- Storage: ~1GB per 1M messages
-
-### Redis
-- Pub/Sub latency: <5ms
-- Memory: ~100MB for 10k sessions
-- Throughput: 50,000 ops/sec
-
-## Security Features
-
-- JWT authentication for WebSocket and REST API
-- Rate limiting (connection + message)
-- Input validation with Joi
-- SQL injection protection (parameterized queries)
-- Helmet.js security headers
-- CORS configuration
-
-## Testing
-
-### Manual Testing
-
-1. **Optimistic UI**: Disconnect internet, send message → appears immediately
-2. **Horizontal Scaling**: Connect 2 clients to different servers → they can chat
-3. **Offline Messages**: Send to offline user → delivered when they reconnect
-4. **Typing Indicators**: Type in one client → shows in other client
-5. **Cursor Pagination**: Scroll up in chat → loads previous messages
-
-### Load Testing (Future)
-
-```bash
-# Install Artillery
-npm install -g artillery
-
-# Run load test
-artillery run load-test.yml
-# Simulates 10,000 concurrent connections
-```
+---
 
 ## Deployment
 
 ### Production Checklist
 
-- [ ] Change `JWT_SECRET` in environment variables
+- [ ] Generate new `JWT_SECRET`
 - [ ] Set `NODE_ENV=production`
 - [ ] Configure PostgreSQL backups
-- [ ] Set up Redis persistence (AOF + RDB)
-- [ ] Configure NGINX SSL/TLS certificates
-- [ ] Set up monitoring (Prometheus + Grafana)
-- [ ] Configure log aggregation (ELK stack)
-- [ ] Set up auto-scaling (Kubernetes HPA)
+- [ ] Enable Redis persistence (AOF + RDB)
+- [ ] Set up SSL/TLS via NGINX
+- [ ] Configure monitoring (Prometheus + Grafana)
+- [ ] Set up log aggregation
 
-### Cloud Deployment
+### Cloud Platforms
 
-**AWS**:
-- ECS for backend containers
-- RDS for PostgreSQL
-- ElastiCache for Redis
-- ALB for load balancing
-
-**Google Cloud**:
-- GKE for Kubernetes
-- Cloud SQL for PostgreSQL
-- Memorystore for Redis
-- Cloud Load Balancing
-
-## API Documentation
-
-### WebSocket Events
-
-**Client → Server**:
-- `message:send` - Send new message
-- `message:delivered` - Mark message as delivered
-- `message:read` - Mark message as read
-- `typing:start` - User started typing
-- `typing:stop` - User stopped typing
-- `room:join` - Join a room
-- `room:leave` - Leave a room
-
-**Server → Client**:
-- `message:new` - New message received
-- `message:status` - Message status update (delivered/read)
-- `typing:start` - User is typing
-- `typing:stop` - User stopped typing
-- `presence:change` - User online/offline status
-- `messages:offline` - Batch of offline messages
-
-### REST API
-
-```
-POST   /api/auth/register     - Register new user
-POST   /api/auth/login        - Login
-GET    /api/rooms             - Get user's rooms
-POST   /api/rooms             - Create new room
-GET    /api/messages/room/:id - Get messages (cursor pagination)
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Acknowledgments
-
-Built with industry best practices from:
-- WhatsApp's real-time architecture
-- Slack's scaling strategies
-- Discord's message delivery patterns
+| AWS | GCP |
+|-----|-----|
+| ECS for containers | GKE for Kubernetes |
+| RDS for PostgreSQL | Cloud SQL |
+| ElastiCache for Redis | Memorystore |
+| ALB for load balancing | Cloud Load Balancing |
 
 ---
 
-**Built to impress. Scaled to perform. Ready for production.**
+## Contributing
+
+1.  Fork the repository
+2.  Create a feature branch (`git checkout -b feature/amazing-feature`)
+3.  Commit your changes
+4.  Push to the branch
+5.  Open a Pull Request
+
+---
+
+## License
+
+MIT License. See [LICENSE](./LICENSE) for details.
+
+---
+
+<p align="center">
+  <strong>Built for performance. Designed for peace.</strong>
+</p>
