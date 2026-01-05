@@ -303,6 +303,8 @@ OrbitSearch.js     6 KB (lazy-loaded)
 - Single-character search (e.g., `"j"` returns all matches)
 - Filters: `from:user`, `before:date`, `after:date`
 - Recent searches stored in localStorage
+- **Debounced input** (300ms) to reduce API calls
+- **Text highlighting** in messages matching search query
 
 ### Theme Performance (Obsidian Chrome)
 
