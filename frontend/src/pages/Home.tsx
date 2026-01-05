@@ -827,12 +827,9 @@ function Home() {
                 {currentRoom && !isAudioRecording && (
                     <Composer
                         onSendMessage={(content) => {
-                            if (isScheduleModalOpen) {
-                                setScheduleContent(content);
-                            } else {
-                                handleSendMessage(content); // type defaults to 'text'
-                            }
+                            handleSendMessage(content); // type defaults to 'text'
                         }}
+                        onContentChange={(content) => setScheduleContent(content)}
                         onAttachmentSelect={handleAttachmentSelect}
                         placeholder="Type a message..."
                         isSidebarOpen={isSidebarOpen}

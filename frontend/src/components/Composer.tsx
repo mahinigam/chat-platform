@@ -7,6 +7,7 @@ import EmojiPickerWrapper from './EmojiPickerWrapper';
 interface ComposerProps {
   onSendMessage: (content: string) => void;
   onAttachmentSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music' | 'schedule') => void;
+  onContentChange?: (content: string) => void;
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
@@ -16,6 +17,7 @@ interface ComposerProps {
 const Composer: React.FC<ComposerProps> = ({
   onSendMessage,
   onAttachmentSelect,
+  onContentChange,
   isLoading = false,
   placeholder = 'Type a message...',
   className,
@@ -28,7 +30,7 @@ const Composer: React.FC<ComposerProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  // Auto-expand textarea
+  // Auto-expand textarea and notify parent of content changes
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -37,7 +39,10 @@ const Composer: React.FC<ComposerProps> = ({
         120
       )}px`;
     }
-  }, [content]);
+    if (onContentChange) {
+      onContentChange(content);
+    }
+  }, [content, onContentChange]);
 
   const handleSubmit = () => {
     if (content.trim() && !isLoading) {
