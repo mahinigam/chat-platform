@@ -269,22 +269,56 @@ psql -h localhost -U postgres -d chat_platform
 
 ## Performance
 
+Aether applies industry-standard optimizations validated through Lighthouse auditing.
+
+### Lighthouse Optimizations Applied
+
+| Optimization | Technique | Impact |
+|-------------|-----------|--------|
+| **Code Splitting** | `React.lazy()` for pages & heavy components | Reduced initial bundle from 862KB → 299KB |
+| **Lazy Loading** | Deferred loading of GifPicker, LocationPicker, OrbitSearch, ChatSearch | Only loads when user accesses feature |
+| **Skeleton Screens** | `MessageListSkeleton` during page transitions | Improved perceived load time |
+| **Preconnect Hints** | `<link rel="preconnect">` for Giphy, Spotify, YouTube APIs | Faster third-party asset loading |
+| **Static Assets** | Production build with minification | Gzipped bundles (~98KB main chunk) |
+
+### Bundle Analysis
+
+```
+index.js         299 KB (main bundle)
+Home.js          565 KB (lazy-loaded)
+GifPicker.js     102 KB (lazy-loaded)
+ChatSearch.js      4 KB (lazy-loaded)
+OrbitSearch.js     6 KB (lazy-loaded)
+```
+
+### Search Architecture
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Primary** | Elasticsearch (ngram tokenizer) | Substring search, fuzzy matching |
+| **Fallback** | PostgreSQL ILIKE | Graceful degradation if ES unavailable |
+| **Sync** | Real-time indexing on message send | Instant searchability |
+
+**Features:**
+- Single-character search (e.g., `"j"` returns all matches)
+- Filters: `from:user`, `before:date`, `after:date`
+- Recent searches stored in localStorage
+
+### Theme Performance (Obsidian Chrome)
+
+| Principle | Implementation | GPU Impact |
+|-----------|----------------|------------|
+| No continuous animations | Removed `animate-pulse`, `repeat: Infinity` | ~0% idle |
+| State-driven motion only | Animations trigger on hover/interaction | Brief spike, returns to 0% |
+| Canvas particle halt | Stops after 3s of inactivity | Zero background GPU |
+
 ### Scalability Targets
 
-| Metric | Single Instance | 4 Instances |
-|--------|-----------------|-------------|
-| Concurrent Connections | ~2,500 | **10,000+** |
+| Metric | Single Instance | 4 Instances (via Redis Adapter) |
+|--------|-----------------|----------------------------------|
+| Concurrent WebSocket Connections | ~2,500 | **10,000+** |
 | Messages/Second | ~1,000 | ~4,000 |
-| RAM | ~512MB | ~2GB |
-| CPU | 2 cores @ 60% | 8 cores |
-
-### Frontend Performance
-
-| Metric | Target |
-|--------|--------|
-| Idle GPU Usage | < 5% |
-| Time to Interactive | < 2s |
-| Lighthouse Score | 90+ |
+| RAM Usage | ~512MB | ~2GB |
 
 ---
 
