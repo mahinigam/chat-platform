@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock } from 'lucide-react';
 import ChromeButton from './ChromeButton';
 import { cn } from '../utils/theme';
-import CosmicWheel from './CosmicWheel';
 
 interface ScheduleModalProps {
     isOpen: boolean;
@@ -18,72 +17,43 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     onSchedule,
     isLoading = false
 }) => {
-    // Initialize with current time rounded to next 5 minutes
-    const getInitialDate = () => {
+    // Get default datetime (5 minutes from now, rounded)
+    const getDefaultDateTime = () => {
         const d = new Date();
-        const coeff = 1000 * 60 * 5;
-        return new Date(Math.ceil(d.getTime() / coeff) * coeff);
+        d.setMinutes(d.getMinutes() + 5);
+        // Format for datetime-local input: YYYY-MM-DDTHH:MM
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
-    const [selectedDate, setSelectedDate] = useState(getInitialDate());
+    const [dateTimeValue, setDateTimeValue] = useState(getDefaultDateTime());
 
-    // Memoized data generation helpers
-    const years = React.useMemo(() => Array.from({ length: 5 }, (_, i) => {
-        const y = new Date().getFullYear() + i;
-        return { label: y.toString(), value: y };
-    }), []);
-
-    const months = React.useMemo(() => [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ].map((m, i) => ({ label: m, value: i })), []);
-
-    const getDaysInMonth = (year: number, month: number) => {
-        return new Date(year, month + 1, 0).getDate();
-    };
-
-    const days = React.useMemo(() => {
-        const count = getDaysInMonth(selectedDate.getFullYear(), selectedDate.getMonth());
-        return Array.from({ length: count }, (_, i) => ({
-            label: (i + 1).toString().padStart(2, '0'),
-            value: i + 1
-        }));
-    }, [selectedDate.getFullYear(), selectedDate.getMonth()]);
-
-    const hours = React.useMemo(() => Array.from({ length: 24 }, (_, i) => ({
-        label: i.toString().padStart(2, '0'),
-        value: i
-    })), []);
-
-    const minutes = React.useMemo(() => Array.from({ length: 12 }, (_, i) => ({
-        label: (i * 5).toString().padStart(2, '0'),
-        value: i * 5
-    })), []);
-
-    // Update handlers
-    const updateDate = (field: 'year' | 'month' | 'date' | 'hours' | 'minutes', value: number) => {
-        const newDate = new Date(selectedDate);
-
-        if (field === 'year') newDate.setFullYear(value);
-        if (field === 'month') newDate.setMonth(value);
-        if (field === 'date') newDate.setDate(value);
-        if (field === 'hours') newDate.setHours(value);
-        if (field === 'minutes') newDate.setMinutes(value);
-
-        setSelectedDate(newDate);
-    };
-
-    // Ensure date is valid when month changes (e.g., sticking to 31st when moving to Feb)
+    // Reset when modal opens
     useEffect(() => {
-        const daysInMonth = getDaysInMonth(selectedDate.getFullYear(), selectedDate.getMonth());
-        if (selectedDate.getDate() > daysInMonth) {
-            updateDate('date', daysInMonth);
+        if (isOpen) {
+            setDateTimeValue(getDefaultDateTime());
         }
-    }, [selectedDate.getMonth(), selectedDate.getFullYear()]);
+    }, [isOpen]);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = () => {
+        const selectedDate = new Date(dateTimeValue);
+        console.log('[ScheduleModal] Submitting date:', selectedDate.toISOString());
         onSchedule(selectedDate);
+    };
+
+    // Get minimum datetime (now)
+    const getMinDateTime = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
     return (
@@ -124,59 +94,43 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                             </button>
                         </div>
 
-                        {/* Cosmic Wheels Container */}
+                        {/* Date/Time Picker */}
                         <div className="p-6 bg-black/20">
-                            <div className="flex justify-center gap-2 h-48 relative">
-                                {/* Date Section */}
-                                <div className="flex gap-1">
-                                    <CosmicWheel
-                                        items={months}
-                                        value={selectedDate.getMonth()}
-                                        onChange={(v) => updateDate('month', Number(v))}
-                                        label="MON"
-                                        className="w-16"
-                                    />
-                                    <CosmicWheel
-                                        items={days}
-                                        value={selectedDate.getDate()}
-                                        onChange={(v) => updateDate('date', Number(v))}
-                                        label="DAY"
-                                        className="w-16"
-                                    />
-                                    <CosmicWheel
-                                        items={years}
-                                        value={selectedDate.getFullYear()}
-                                        onChange={(v) => updateDate('year', Number(v))}
-                                        label="YEAR"
-                                        className="w-20"
-                                    />
+                            <div className="flex flex-col gap-4">
+                                <label className="text-sm text-white/60 uppercase tracking-wider">
+                                    Select Date & Time
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={dateTimeValue}
+                                    onChange={(e) => {
+                                        console.log('[ScheduleModal] Input changed to:', e.target.value);
+                                        setDateTimeValue(e.target.value);
+                                    }}
+                                    min={getMinDateTime()}
+                                    className={cn(
+                                        "w-full px-4 py-3 rounded-xl",
+                                        "bg-white/5 border border-white/10",
+                                        "text-white text-lg font-medium",
+                                        "focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-accent-cyan/30",
+                                        "transition-all duration-200",
+                                        "[color-scheme:dark]"
+                                    )}
+                                />
+
+                                {/* Preview */}
+                                <div className="text-center text-sm text-white/40 mt-2">
+                                    Scheduled for{' '}
+                                    <span className="text-accent-cyan font-medium">
+                                        {new Date(dateTimeValue).toLocaleString([], {
+                                            weekday: 'short',
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </span>
                                 </div>
-
-                                {/* Divider */}
-                                <div className="w-px bg-white/10 mx-2 self-center h-24" />
-
-                                {/* Time Section */}
-                                <div className="flex gap-1">
-                                    <CosmicWheel
-                                        items={hours}
-                                        value={selectedDate.getHours()}
-                                        onChange={(v) => updateDate('hours', Number(v))}
-                                        label="HR"
-                                        className="w-16"
-                                    />
-                                    <CosmicWheel
-                                        items={minutes}
-                                        value={selectedDate.getMinutes() - (selectedDate.getMinutes() % 5)}
-                                        onChange={(v) => updateDate('minutes', Number(v))}
-                                        label="MIN"
-                                        className="w-16"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Info Text */}
-                            <div className="text-center mt-6 text-sm text-white/40">
-                                Scheduled for <span className="text-accent-cyan">{selectedDate.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                         </div>
 
@@ -190,10 +144,8 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                                 Cancel
                             </ChromeButton>
                             <ChromeButton
-                                onClick={(e?: any) => {
-                                    if (e && e.preventDefault) e.preventDefault();
-                                    handleSubmit(e || { preventDefault: () => { } });
-                                }}
+                                type="button"
+                                onClick={handleSubmit}
                                 disabled={isLoading}
                                 className="flex-1 bg-accent-cyan/20 hover:bg-accent-cyan/30 text-accent-cyan border-accent-cyan/50"
                             >
@@ -208,4 +160,3 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
 };
 
 export default ScheduleModal;
-
