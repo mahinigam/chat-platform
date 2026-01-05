@@ -1,17 +1,26 @@
 import { Router, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { MessageRepository } from '../repositories/MessageRepository';
+import { MessageDeleteRepository } from '../repositories/MessageDeleteRepository';
 
 const router = Router();
 
-// Simple auth middleware for REST API (can be extracted to shared middleware)
+// Auth middleware with user extraction
 const authMiddleware = (req: Request, res: Response, next: any): void => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
     }
-    // JWT verification would go here
-    next();
+
+    try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+        (req as any).userId = decoded.userId;
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Invalid token' });
+    }
 };
 
 /**
@@ -50,4 +59,83 @@ router.get('/:messageId/receipts', authMiddleware, async (req: Request, res: Res
     }
 });
 
+/**
+ * Delete a message
+ * DELETE /api/messages/:id
+ * Body: { mode: 'me' | 'everyone', roomId: number }
+ */
+router.delete('/:messageId', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const messageId = req.params.messageId;
+        const userId = (req as any).userId;
+        const { mode, roomId } = req.body;
+
+        if (!mode || !['me', 'everyone'].includes(mode)) {
+            res.status(400).json({ error: 'Invalid delete mode' });
+            return;
+        }
+
+        // Get message to verify ownership
+        const message = await MessageRepository.getMessageById(messageId);
+        if (!message) {
+            res.status(404).json({ error: 'Message not found' });
+            return;
+        }
+
+        if (mode === 'me') {
+            // Hide message for current user only
+            await MessageDeleteRepository.hideForUser(messageId, userId);
+            res.json({ success: true });
+        } else {
+            // Delete for everyone - only sender can do this
+            if (message.sender_id !== userId) {
+                res.status(403).json({ error: 'Only the sender can delete for everyone' });
+                return;
+            }
+
+            // Schedule deletion with 7s undo window
+            const { undoToken, expiresAt } = await MessageDeleteRepository.scheduleDelete(
+                messageId,
+                userId,
+                roomId || message.room_id,
+                message
+            );
+
+            res.json({
+                success: true,
+                undoToken,
+                expiresAt: expiresAt.toISOString()
+            });
+        }
+
+    } catch (error) {
+        console.error('Delete message error:', error);
+        res.status(500).json({ error: 'Failed to delete message' });
+    }
+});
+
+/**
+ * Undo a pending delete
+ * POST /api/messages/:undoToken/undo
+ */
+router.post('/:undoToken/undo', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const undoToken = req.params.undoToken;
+        const userId = (req as any).userId;
+
+        const success = await MessageDeleteRepository.undoDelete(undoToken, userId);
+
+        if (success) {
+            res.json({ success: true });
+        } else {
+            res.status(400).json({ error: 'Undo expired or not found' });
+        }
+
+    } catch (error) {
+        console.error('Undo delete error:', error);
+        res.status(500).json({ error: 'Failed to undo delete' });
+    }
+});
+
 export default router;
+

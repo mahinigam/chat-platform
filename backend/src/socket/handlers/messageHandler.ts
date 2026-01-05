@@ -231,6 +231,65 @@ class MessageHandler {
             console.error('Error queuing for offline users:', error);
         }
     }
+
+    /**
+     * Handle message delete request via socket
+     * Broadcasts deletion to all room members
+     */
+    async handleDeleteMessage(
+        socket: AuthenticatedSocket,
+        data: { messageId: string; roomId: number; mode: 'me' | 'everyone' },
+        callback?: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const { messageId, roomId, mode } = data;
+
+            if (mode === 'everyone') {
+                // Broadcast to room that message was deleted
+                socket.to(`room:${roomId}`).emit('message:deleted', {
+                    messageId,
+                    roomId,
+                    deletedBy: userId,
+                    deletedAt: new Date()
+                });
+            }
+
+            callback?.({ success: true });
+
+        } catch (error) {
+            console.error('Error handling delete message:', error);
+            callback?.({ success: false, error: 'Failed to delete message' });
+        }
+    }
+
+    /**
+     * Handle undo delete via socket
+     * Broadcasts restoration to room
+     */
+    async handleUndoDelete(
+        socket: AuthenticatedSocket,
+        data: { messageId: string; roomId: number },
+        callback?: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { messageId, roomId } = data;
+
+            // Broadcast to room that message was restored
+            socket.to(`room:${roomId}`).emit('message:restored', {
+                messageId,
+                roomId,
+                restoredAt: new Date()
+            });
+
+            callback?.({ success: true });
+
+        } catch (error) {
+            console.error('Error handling undo delete:', error);
+            callback?.({ success: false, error: 'Failed to undo delete' });
+        }
+    }
 }
 
 export default new MessageHandler();
+

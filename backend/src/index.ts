@@ -117,6 +117,7 @@ const io = initializeSocket(httpServer);
 // Start Server
 // ============================================
 import { ReactionRepository } from './repositories/ReactionRepository';
+import { MessageDeleteRepository } from './repositories/MessageDeleteRepository';
 import { initializeElasticsearchIndex } from './config/elasticsearch';
 
 async function startServer() {
@@ -132,6 +133,10 @@ async function startServer() {
         await ReactionRepository.initTable();
         console.log('Reactions table initialized');
 
+        // Initialize message delete tables
+        await MessageDeleteRepository.initTables();
+        console.log('Message delete tables initialized');
+
         // Test Redis connection
         const redisHealthy = await RedisService.healthCheck();
         if (!redisHealthy) {
@@ -142,6 +147,18 @@ async function startServer() {
         initializeElasticsearchIndex().catch(err => {
             console.warn('Elasticsearch init skipped (will use PostgreSQL fallback):', err.message);
         });
+
+        // Background job: Process expired deletes every 2 seconds
+        setInterval(async () => {
+            try {
+                const count = await MessageDeleteRepository.processExpiredDeletes();
+                if (count > 0) {
+                    console.log(`Hard deleted ${count} expired messages`);
+                }
+            } catch (err) {
+                console.error('Error processing expired deletes:', err);
+            }
+        }, 2000);
 
         httpServer.listen(PORT, () => {
             console.log('='.repeat(50));

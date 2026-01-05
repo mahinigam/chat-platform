@@ -48,9 +48,10 @@ interface MessageItemProps {
   searchQuery?: string;
   onPollVote?: (pollId: string, optionIndex: number) => void;
   onReaction?: (messageId: string, emoji: string) => void;
+  onDelete?: (messageId: string, mode: 'me' | 'everyone') => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollVote, onReaction }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollVote, onReaction, onDelete: _onDelete }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [recentEmojis, setRecentEmojis] = useState<string[]>(getRecentEmojis());
