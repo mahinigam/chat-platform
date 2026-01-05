@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Loader2, History } from 'lucide-react';
 import { cn } from '../utils/theme';
+import { parseSearchFilters, getRecentSearches, addRecentSearch } from '../utils/search';
 import axios from 'axios';
 
 interface SearchResult {
@@ -17,6 +18,7 @@ interface ChatSearchProps {
     roomId: number;
     isOpen: boolean;
     onClose: () => void;
+    onQueryChange?: (query: string) => void;
     onNavigateToMessage: (messageId: string) => void;
 }
 
@@ -24,6 +26,7 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
     roomId,
     isOpen,
     onClose,
+    onQueryChange,
     onNavigateToMessage
 }) => {
     const [query, setQuery] = useState('');
@@ -31,8 +34,15 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
     const [total, setTotal] = useState(0);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
+    const [showRecent, setShowRecent] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<NodeJS.Timeout>();
+
+    // Load recent searches on mount
+    useEffect(() => {
+        setRecentSearches(getRecentSearches());
+    }, []);
 
     // Focus input when opened
     useEffect(() => {
@@ -48,10 +58,11 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
             setResults([]);
             setTotal(0);
             setCurrentIndex(0);
+            setShowRecent(false);
         }
     }, [isOpen]);
 
-    // Debounced search
+    // Debounced search with filter parsing
     const performSearch = useCallback(async (searchQuery: string) => {
         if (!searchQuery.trim()) {
             setResults([]);
@@ -59,11 +70,25 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
             return;
         }
 
+        // Parse filters from query
+        const { text, sender, before, after } = parseSearchFilters(searchQuery);
+
+        // Save to recent searches
+        addRecentSearch(searchQuery);
+        setRecentSearches(getRecentSearches());
+
         setIsLoading(true);
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get('/api/search/messages', {
-                params: { q: searchQuery, roomId, limit: 50 },
+                params: {
+                    q: text,
+                    roomId,
+                    limit: 50,
+                    sender,
+                    before,
+                    after
+                },
                 headers: { Authorization: `Bearer ${token}` }
             });
             setResults(response.data.results);
@@ -85,6 +110,11 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setQuery(value);
+        setShowRecent(false);
+
+        // Extract text part for highlighting (without filters)
+        const { text } = parseSearchFilters(value);
+        onQueryChange?.(text);
 
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
@@ -93,6 +123,15 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
         debounceRef.current = setTimeout(() => {
             performSearch(value);
         }, 300);
+    };
+
+    // Handle recent search click
+    const handleRecentClick = (search: string) => {
+        setQuery(search);
+        setShowRecent(false);
+        const { text } = parseSearchFilters(search);
+        onQueryChange?.(text);
+        performSearch(search);
     };
 
     // Navigate between results
@@ -156,7 +195,8 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
                         value={query}
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
-                        placeholder="Search in conversation..."
+                        onFocus={() => !query && setShowRecent(true)}
+                        placeholder="Search... (try from:user or before:2024-01-01)"
                         className={cn(
                             "flex-1 bg-transparent",
                             "text-mono-text placeholder:text-mono-muted",
@@ -216,8 +256,33 @@ const ChatSearch: React.FC<ChatSearchProps> = ({
                     </button>
                 </div>
 
+                {/* Recent Searches Dropdown */}
+                {showRecent && recentSearches.length > 0 && (
+                    <div className="px-4 pb-3">
+                        <div className="flex items-center gap-2 text-mono-muted text-xs mb-2">
+                            <History className="w-3 h-3" />
+                            <span>Recent</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {recentSearches.map((search, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handleRecentClick(search)}
+                                    className={cn(
+                                        "px-2 py-1 rounded-md text-xs",
+                                        "bg-mono-surface-2 text-mono-text",
+                                        "hover:bg-mono-surface-3 transition-colors"
+                                    )}
+                                >
+                                    {search}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* No Results Message */}
-                {query && !isLoading && results.length === 0 && (
+                {query && !isLoading && results.length === 0 && !showRecent && (
                     <div className="px-4 pb-3 text-mono-muted text-sm">
                         No messages found
                     </div>

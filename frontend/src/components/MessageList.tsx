@@ -10,6 +10,7 @@ interface MessageListProps {
   onLoadMore?: () => void;
   roomName?: string;
   className?: string;
+  searchQuery?: string;
   onPollVote?: (pollId: string, optionIndex: number) => void;
   onReaction?: (messageId: string, emoji: string) => void;
 }
@@ -23,6 +24,7 @@ const MessageList: React.FC<MessageListProps> = ({
   onLoadMore,
   roomName = 'Chat',
   className,
+  searchQuery,
   onPollVote,
   onReaction,
 }) => {
@@ -163,7 +165,7 @@ const MessageList: React.FC<MessageListProps> = ({
               transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
               className="transition-colors duration-500"
             >
-              <MessageItem message={message} onPollVote={onPollVote} onReaction={onReaction} />
+              <MessageItem message={message} searchQuery={searchQuery} onPollVote={onPollVote} onReaction={onReaction} />
             </motion.li>
           ))}
         </AnimatePresence>

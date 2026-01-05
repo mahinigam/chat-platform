@@ -88,6 +88,7 @@ function Home() {
     const [isAudioRecording, setIsAudioRecording] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [activeSearchQuery, setActiveSearchQuery] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
@@ -711,7 +712,11 @@ function Home() {
                             <ChatSearch
                                 roomId={selectedRoomId}
                                 isOpen={isSearchOpen}
-                                onClose={() => setIsSearchOpen(false)}
+                                onClose={() => {
+                                    setIsSearchOpen(false);
+                                    setActiveSearchQuery('');
+                                }}
+                                onQueryChange={setActiveSearchQuery}
                                 onNavigateToMessage={(messageId) => {
                                     // Scroll to message and briefly highlight
                                     const element = document.getElementById(`message-${messageId}`);
@@ -737,6 +742,7 @@ function Home() {
                         isLoading={isLoadingMessages}
                         roomName={currentRoom?.name}
                         className="h-full"
+                        searchQuery={activeSearchQuery}
                         onPollVote={handlePollVote}
                         onReaction={handleReaction}
                     />

@@ -24,26 +24,34 @@ const authMiddleware = (req: Request, res: Response, next: any): void => {
 
 /**
  * Search messages within a room
- * GET /api/search/messages?q=<query>&roomId=<roomId>&limit=20&offset=0
+ * GET /api/search/messages?q=<query>&roomId=<roomId>&sender=<username>&before=<date>&after=<date>&limit=20&offset=0
  */
 router.get('/messages', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const query = req.query.q as string;
+        const query = req.query.q as string || '';
         const roomId = parseInt(req.query.roomId as string);
         const limit = parseInt(req.query.limit as string) || 20;
         const offset = parseInt(req.query.offset as string) || 0;
 
-        if (!query || query.trim().length === 0) {
-            res.status(400).json({ error: 'Search query is required' });
-            return;
-        }
+        // Parse filters
+        const filters = {
+            sender: req.query.sender as string | undefined,
+            before: req.query.before as string | undefined,
+            after: req.query.after as string | undefined
+        };
 
         if (!roomId) {
             res.status(400).json({ error: 'Room ID is required' });
             return;
         }
 
-        const result = await SearchRepository.searchInRoom(roomId, query.trim(), limit, offset);
+        // Allow empty query if filters are provided
+        if (!query.trim() && !filters.sender && !filters.before && !filters.after) {
+            res.status(400).json({ error: 'Search query or filters are required' });
+            return;
+        }
+
+        const result = await SearchRepository.searchInRoom(roomId, query.trim(), limit, offset, filters);
 
         res.json({
             results: result.results,

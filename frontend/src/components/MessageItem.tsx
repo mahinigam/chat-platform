@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn, formatTimestamp, getStatusAriaLabel, getAriaLabel } from '../utils/theme';
+import { highlightText } from '../utils/search';
 import ChromeButton from './ChromeButton';
 import ResonanceCard from './ResonanceCard';
 import AetherWaves from './AetherWaves';
@@ -44,11 +45,12 @@ export interface Message {
 
 interface MessageItemProps {
   message: Message;
+  searchQuery?: string;
   onPollVote?: (pollId: string, optionIndex: number) => void;
   onReaction?: (messageId: string, emoji: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote, onReaction }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollVote, onReaction }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [recentEmojis, setRecentEmojis] = useState<string[]>(getRecentEmojis());
@@ -195,7 +197,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, onPollVote, onReacti
       default:
         return (
           <p className="text-sm text-mono-text whitespace-pre-wrap break-words leading-normal">
-            {message.content}
+            {searchQuery ? highlightText(message.content, searchQuery) : message.content}
           </p>
         );
     }
