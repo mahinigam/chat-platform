@@ -7,6 +7,7 @@ import Composer from '../components/Composer';
 import Modal from '../components/Modal';
 import AudioRecorder from '../components/AudioRecorder';
 import { useToast } from '../hooks/useToast';
+import { useMessageDelete } from '../hooks/useMessageDelete';
 import { cn } from '../utils/theme';
 import socketService from '../services/socket';
 import axios from 'axios';
@@ -92,6 +93,7 @@ function Home() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
+    const { deleteForMe, deleteForEveryone } = useMessageDelete();
 
     const API_URL = import.meta.env.VITE_API_URL || `http://localhost:3000/api`;
 
@@ -745,6 +747,23 @@ function Home() {
                         searchQuery={activeSearchQuery}
                         onPollVote={handlePollVote}
                         onReaction={handleReaction}
+                        onDelete={async (messageId: string, mode: 'me' | 'everyone') => {
+                            if (!selectedRoomId) return;
+                            try {
+                                if (mode === 'me') {
+                                    await deleteForMe(messageId, selectedRoomId);
+                                    setMessages(prev => prev.filter(m => m.id !== messageId));
+                                    success('Message deleted for you');
+                                } else {
+                                    await deleteForEveryone(messageId, selectedRoomId);
+                                    setMessages(prev => prev.filter(m => m.id !== messageId));
+                                    // Socket will broadcast to others
+                                    socketService.emit('message:delete', { messageId, roomId: selectedRoomId, mode: 'everyone' });
+                                }
+                            } catch (err) {
+                                errorToast('Failed to delete message');
+                            }
+                        }}
                     />
 
                     {/* Audio Recorder Overlay */}

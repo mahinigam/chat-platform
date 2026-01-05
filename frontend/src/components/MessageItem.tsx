@@ -414,7 +414,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollV
                 navigator.clipboard.writeText(message.content);
                 console.log('Copied', message.id);
               }}
-              onDelete={() => console.log('Delete', message.id)}
+              onDeleteForMe={() => _onDelete?.(message.id, 'me')}
+              onDeleteForEveryone={() => _onDelete?.(message.id, 'everyone')}
               onSelect={() => console.log('Select messages', message.id)}
             />
           </div>

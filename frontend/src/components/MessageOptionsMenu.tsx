@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { cn } from '../utils/theme';
-import { Reply, Star, Pin, Forward, Copy, Trash2, CheckSquare } from 'lucide-react';
+import { Reply, Star, Pin, Forward, Copy, CheckSquare, User, Users } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 interface MessageOptionsMenuProps {
@@ -11,7 +11,8 @@ interface MessageOptionsMenuProps {
     onPin?: () => void;
     onForward?: () => void;
     onCopy?: () => void;
-    onDelete?: () => void;
+    onDeleteForMe?: () => void;
+    onDeleteForEveryone?: () => void;
     onSelect?: () => void;
     isOwn?: boolean;
     className?: string;
@@ -25,7 +26,8 @@ const MessageOptionsMenu: React.FC<MessageOptionsMenuProps> = ({
     onPin,
     onForward,
     onCopy,
-    onDelete,
+    onDeleteForMe,
+    onDeleteForEveryone,
     onSelect,
     isOwn = false,
     className
@@ -54,7 +56,8 @@ const MessageOptionsMenu: React.FC<MessageOptionsMenuProps> = ({
         { key: 'forward', label: 'Forward', icon: <Forward className="w-4 h-4" />, action: onForward },
         { key: 'copy', label: 'Copy', icon: <Copy className="w-4 h-4" />, action: onCopy },
         { key: 'divider1', divider: true },
-        { key: 'delete', label: 'Delete', icon: <Trash2 className="w-4 h-4" />, action: onDelete, danger: true },
+        { key: 'deleteForMe', label: 'Delete for Me', icon: <User className="w-4 h-4" />, action: onDeleteForMe, danger: true },
+        ...(isOwn ? [{ key: 'deleteForEveryone', label: 'Delete for Everyone', icon: <Users className="w-4 h-4" />, action: onDeleteForEveryone, danger: true }] : []),
         { key: 'divider2', divider: true },
         { key: 'select', label: 'Select messages', icon: <CheckSquare className="w-4 h-4" />, action: onSelect },
     ];
