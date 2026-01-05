@@ -22,6 +22,7 @@ const LocationPicker = React.lazy(() => import('../components/LocationPicker'));
 const GifPicker = React.lazy(() => import('../components/GifPicker'));
 const OrbitSearch = React.lazy(() => import('../components/OrbitSearch'));
 const ChatSearch = React.lazy(() => import('../components/ChatSearch'));
+import UndoToast from '../components/UndoToast';
 
 // Loading fallback for lazy components
 const LazyFallback = () => (
@@ -93,7 +94,9 @@ function Home() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
-    const { deleteForMe, deleteForEveryone } = useMessageDelete();
+    const { deleteForMe, deleteForEveryone, undoDelete, pendingDelete, clearPendingDelete } = useMessageDelete();
+    const [showUndoToast, setShowUndoToast] = useState(false);
+    const [lastDeletedMessageId, setLastDeletedMessageId] = useState<string | null>(null);
 
     const API_URL = import.meta.env.VITE_API_URL || `http://localhost:3000/api`;
 
@@ -757,6 +760,8 @@ function Home() {
                                 } else {
                                     await deleteForEveryone(messageId, selectedRoomId);
                                     setMessages(prev => prev.filter(m => m.id !== messageId));
+                                    setLastDeletedMessageId(messageId);
+                                    setShowUndoToast(true);
                                     // Socket will broadcast to others
                                     socketService.emit('message:delete', { messageId, roomId: selectedRoomId, mode: 'everyone' });
                                 }
@@ -888,6 +893,25 @@ function Home() {
                 />
             </Modal>
             <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+            <UndoToast
+                isVisible={showUndoToast && !!pendingDelete}
+                duration={7000}
+                onUndo={async () => {
+                    if (pendingDelete) {
+                        const restored = await undoDelete(pendingDelete.undoToken);
+                        if (restored && lastDeletedMessageId) {
+                            // Re-fetch messages to restore the deleted one
+                            success('Message restored');
+                        }
+                    }
+                    setShowUndoToast(false);
+                }}
+                onExpire={() => {
+                    setShowUndoToast(false);
+                    clearPendingDelete();
+                }}
+                onDismiss={() => setShowUndoToast(false)}
+            />
         </div>
     );
 }
