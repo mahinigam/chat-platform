@@ -96,7 +96,7 @@ function Home() {
     const { toasts, dismissToast, success, error: errorToast } = useToast();
     const { deleteForMe, deleteForEveryone, undoDelete, pendingDelete, clearPendingDelete } = useMessageDelete();
     const [showUndoToast, setShowUndoToast] = useState(false);
-    const [lastDeletedMessageId, setLastDeletedMessageId] = useState<string | null>(null);
+    const [lastDeletedMessage, setLastDeletedMessage] = useState<Message | null>(null);
 
     const API_URL = import.meta.env.VITE_API_URL || `http://localhost:3000/api`;
 
@@ -758,9 +758,12 @@ function Home() {
                                     setMessages(prev => prev.filter(m => m.id !== messageId));
                                     success('Message deleted for you');
                                 } else {
+                                    // Store message before deleting (for undo)
+                                    const msgToDelete = messages.find(m => m.id === messageId);
+                                    if (msgToDelete) setLastDeletedMessage(msgToDelete);
+
                                     await deleteForEveryone(messageId, selectedRoomId);
                                     setMessages(prev => prev.filter(m => m.id !== messageId));
-                                    setLastDeletedMessageId(messageId);
                                     setShowUndoToast(true);
                                     // Socket will broadcast to others
                                     socketService.emit('message:delete', { messageId, roomId: selectedRoomId, mode: 'everyone' });
@@ -899,9 +902,13 @@ function Home() {
                 onUndo={async () => {
                     if (pendingDelete) {
                         const restored = await undoDelete(pendingDelete.undoToken);
-                        if (restored && lastDeletedMessageId) {
-                            // Re-fetch messages to restore the deleted one
+                        if (restored && lastDeletedMessage) {
+                            // Re-add message to local state
+                            setMessages(prev => [...prev, lastDeletedMessage].sort((a, b) =>
+                                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                            ));
                             success('Message restored');
+                            setLastDeletedMessage(null);
                         }
                     }
                     setShowUndoToast(false);
@@ -909,6 +916,7 @@ function Home() {
                 onExpire={() => {
                     setShowUndoToast(false);
                     clearPendingDelete();
+                    setLastDeletedMessage(null);
                 }}
                 onDismiss={() => setShowUndoToast(false)}
             />
