@@ -27,35 +27,38 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
     const [selectedDate, setSelectedDate] = useState(getInitialDate());
 
-    // Data generation helpers
-    const years = Array.from({ length: 5 }, (_, i) => {
+    // Memoized data generation helpers
+    const years = React.useMemo(() => Array.from({ length: 5 }, (_, i) => {
         const y = new Date().getFullYear() + i;
         return { label: y.toString(), value: y };
-    });
+    }), []);
 
-    const months = [
+    const months = React.useMemo(() => [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ].map((m, i) => ({ label: m, value: i }));
+    ].map((m, i) => ({ label: m, value: i })), []);
 
     const getDaysInMonth = (year: number, month: number) => {
         return new Date(year, month + 1, 0).getDate();
     };
 
-    const days = Array.from({ length: getDaysInMonth(selectedDate.getFullYear(), selectedDate.getMonth()) }, (_, i) => ({
-        label: (i + 1).toString().padStart(2, '0'),
-        value: i + 1
-    }));
+    const days = React.useMemo(() => {
+        const count = getDaysInMonth(selectedDate.getFullYear(), selectedDate.getMonth());
+        return Array.from({ length: count }, (_, i) => ({
+            label: (i + 1).toString().padStart(2, '0'),
+            value: i + 1
+        }));
+    }, [selectedDate.getFullYear(), selectedDate.getMonth()]);
 
-    const hours = Array.from({ length: 24 }, (_, i) => ({
+    const hours = React.useMemo(() => Array.from({ length: 24 }, (_, i) => ({
         label: i.toString().padStart(2, '0'),
         value: i
-    }));
+    })), []);
 
-    const minutes = Array.from({ length: 12 }, (_, i) => ({
+    const minutes = React.useMemo(() => Array.from({ length: 12 }, (_, i) => ({
         label: (i * 5).toString().padStart(2, '0'),
         value: i * 5
-    }));
+    })), []);
 
     // Update handlers
     const updateDate = (field: 'year' | 'month' | 'date' | 'hours' | 'minutes', value: number) => {
@@ -187,7 +190,10 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                                 Cancel
                             </ChromeButton>
                             <ChromeButton
-                                onClick={(e?: any) => handleSubmit(e || { preventDefault: () => { } })}
+                                onClick={(e?: any) => {
+                                    if (e && e.preventDefault) e.preventDefault();
+                                    handleSubmit(e || { preventDefault: () => { } });
+                                }}
                                 disabled={isLoading}
                                 className="flex-1 bg-accent-cyan/20 hover:bg-accent-cyan/30 text-accent-cyan border-accent-cyan/50"
                             >
