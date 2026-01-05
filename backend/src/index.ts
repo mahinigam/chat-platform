@@ -117,6 +117,7 @@ const io = initializeSocket(httpServer);
 // Start Server
 // ============================================
 import { ReactionRepository } from './repositories/ReactionRepository';
+import { initializeElasticsearchIndex } from './config/elasticsearch';
 
 async function startServer() {
     try {
@@ -136,6 +137,11 @@ async function startServer() {
         if (!redisHealthy) {
             throw new Error('Redis connection failed');
         }
+
+        // Initialize Elasticsearch (non-blocking, app works without it)
+        initializeElasticsearchIndex().catch(err => {
+            console.warn('Elasticsearch init skipped (will use PostgreSQL fallback):', err.message);
+        });
 
         httpServer.listen(PORT, () => {
             console.log('='.repeat(50));

@@ -1,6 +1,7 @@
 import { AuthenticatedSocket } from '../index';
 import { MessageRepository } from '../../repositories/MessageRepository';
 import { RoomRepository } from '../../repositories/RoomRepository';
+import { SearchRepository } from '../../repositories/SearchRepository';
 import { RedisService } from '../../config/redis';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -88,6 +89,17 @@ class MessageHandler {
 
             // Cache message in Redis for fast retrieval
             await RedisService.cacheMessage(roomId, message);
+
+            // Index message to Elasticsearch for search (non-blocking)
+            SearchRepository.indexMessage({
+                id: messageId,
+                room_id: roomId,
+                sender_id: userId,
+                sender_username: username,
+                content,
+                message_type: messageType,
+                created_at: message.created_at
+            }).catch(err => console.warn('ES index skipped:', err.message));
 
             // ============================================
             // CRITICAL: Emit to room
