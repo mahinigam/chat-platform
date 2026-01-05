@@ -24,6 +24,7 @@ const OrbitSearch = React.lazy(() => import('../components/OrbitSearch'));
 const ChatSearch = React.lazy(() => import('../components/ChatSearch'));
 import UndoToast from '../components/UndoToast';
 import ScheduleModal from '../components/ScheduleModal';
+import RoomOptionsMenu from '../components/RoomOptionsMenu';
 
 // Loading fallback for lazy components
 const LazyFallback = () => (
@@ -740,6 +741,11 @@ function Home() {
                             >
                                 <Search className="w-5 h-5" />
                             </ChromeButton>
+                            <RoomOptionsMenu
+                                roomId={selectedRoomId!}
+                                roomName={currentRoom?.name || 'Chat'}
+                                token={token || ''}
+                            />
                         </div>
                     )}
                 </div>

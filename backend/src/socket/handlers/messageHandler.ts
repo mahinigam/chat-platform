@@ -2,6 +2,7 @@ import { AuthenticatedSocket } from '../index';
 import { MessageRepository } from '../../repositories/MessageRepository';
 import { RoomRepository } from '../../repositories/RoomRepository';
 import { SearchRepository } from '../../repositories/SearchRepository';
+import { BlockRepository } from '../../repositories/BlockRepository';
 import { RedisService } from '../../config/redis';
 import { v4 as uuidv4 } from 'uuid';
 
