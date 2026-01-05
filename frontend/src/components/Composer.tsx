@@ -6,7 +6,7 @@ import EmojiPickerWrapper from './EmojiPickerWrapper';
 
 interface ComposerProps {
   onSendMessage: (content: string) => void;
-  onAttachmentSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music') => void;
+  onAttachmentSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music' | 'schedule') => void;
   isLoading?: boolean;
   placeholder?: string;
   className?: string;

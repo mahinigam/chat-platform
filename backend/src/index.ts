@@ -112,13 +112,20 @@ app.use((err: Error, _req: Request, res: Response, _next: any) => {
 // Initialize Socket.io with Redis Adapter
 // ============================================
 const io = initializeSocket(httpServer);
+global.io = io;
 
 // ============================================
 // Start Server
 // ============================================
 import { ReactionRepository } from './repositories/ReactionRepository';
 import { MessageDeleteRepository } from './repositories/MessageDeleteRepository';
+import { ScheduledMessageRepository } from './repositories/ScheduledMessageRepository';
 import { initializeElasticsearchIndex } from './config/elasticsearch';
+
+// Declare global io
+declare global {
+    var io: any;
+}
 
 async function startServer() {
     try {
@@ -159,6 +166,55 @@ async function startServer() {
                 console.error('Error processing expired deletes:', err);
             }
         }, 2000);
+
+        // Background job: Process scheduled messages every 10 seconds
+        setInterval(async () => {
+            try {
+                // Poll for due messages (concurrency safe via SKIP LOCKED)
+                const dueMessages = await ScheduledMessageRepository.pollDueMessages(50);
+
+                if (dueMessages.length > 0) {
+                    console.log(`Processing ${dueMessages.length} scheduled messages`);
+
+                    for (const msg of dueMessages) {
+                        try {
+                            // 1. Create the actual message
+                            const result = await Database.query(
+                                `INSERT INTO messages (room_id, user_id, content, media_url, created_at)
+                                 VALUES ($1, $2, $3, $4, $5)
+                                 RETURNING *`,
+                                [msg.room_id, msg.sender_id, msg.content, msg.media_url, new Date()]
+                            );
+                            const newMessage = result.rows[0];
+
+                            // 2. Fetch sender info for socket event
+                            const sender = await Database.query('SELECT username FROM users WHERE id = $1', [msg.sender_id]);
+                            const username = sender.rows[0]?.username || 'User';
+
+                            // 3. Emit via Socket.io
+                            if (global.io) {
+                                global.io.to(`room:${msg.room_id}`).emit('message:new', {
+                                    ...newMessage,
+                                    sender: {
+                                        id: msg.sender_id,
+                                        username: username,
+                                    },
+                                });
+                            }
+
+                            // 4. Mark as sent
+                            await ScheduledMessageRepository.markAsSent(msg.id);
+
+                        } catch (err) {
+                            console.error(`Failed to send scheduled message ${msg.id}:`, err);
+                            await ScheduledMessageRepository.markAsFailed(msg.id, err instanceof Error ? err.message : 'Unknown error');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error processing scheduled messages:', err);
+            }
+        }, 10000);
 
         httpServer.listen(PORT, () => {
             console.log('='.repeat(50));

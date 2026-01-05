@@ -23,6 +23,7 @@ const GifPicker = React.lazy(() => import('../components/GifPicker'));
 const OrbitSearch = React.lazy(() => import('../components/OrbitSearch'));
 const ChatSearch = React.lazy(() => import('../components/ChatSearch'));
 import UndoToast from '../components/UndoToast';
+import ScheduleModal from '../components/ScheduleModal';
 
 // Loading fallback for lazy components
 const LazyFallback = () => (
@@ -91,6 +92,10 @@ function Home() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [activeSearchQuery, setActiveSearchQuery] = useState('');
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [isScheduling, setIsScheduling] = useState(false);
+    const [scheduleContent, setScheduleContent] = useState('');
+
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
@@ -389,8 +394,11 @@ function Home() {
         [selectedRoomId, currentUser, errorToast]
     );
 
-    const handleAttachmentSelect = (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music') => {
+    const handleAttachmentSelect = (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music' | 'schedule') => {
         switch (type) {
+            case 'schedule':
+                setIsScheduleModalOpen(true);
+                break;
             case 'poll':
                 setIsPollCreatorOpen(true);
                 break;
@@ -540,6 +548,32 @@ function Home() {
     const handleCreateRoom = useCallback(() => {
         setIsModalOpen(true);
     }, []);
+
+    const handleScheduleMessage = async (date: Date) => {
+        if (!selectedRoomId || !scheduleContent) return;
+
+        setIsScheduling(true);
+        try {
+            await axios.post(`${API_URL}/messages/schedule`, {
+                roomId: selectedRoomId,
+                content: scheduleContent,
+                scheduledAt: date.toISOString()
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            success(`Message scheduled for ${date.toLocaleString()}`);
+            setIsScheduleModalOpen(false);
+            setScheduleContent('');
+        } catch (err) {
+            console.error('Schedule error:', err);
+            errorToast('Failed to schedule message');
+        } finally {
+            setIsScheduling(false);
+        }
+    };
+
+
 
     const createRoom = async (name: string) => {
         try {
@@ -792,7 +826,13 @@ function Home() {
                 {/* Composer */}
                 {currentRoom && !isAudioRecording && (
                     <Composer
-                        onSendMessage={(content) => handleSendMessage(content)}
+                        onSendMessage={(content) => {
+                            if (isScheduleModalOpen) {
+                                setScheduleContent(content);
+                            } else {
+                                handleSendMessage(content); // type defaults to 'text'
+                            }
+                        }}
                         onAttachmentSelect={handleAttachmentSelect}
                         placeholder="Type a message..."
                         isSidebarOpen={isSidebarOpen}
@@ -931,6 +971,12 @@ function Home() {
                     setLastDeletedMessage(null);
                 }}
                 onDismiss={() => setShowUndoToast(false)}
+            />
+            <ScheduleModal
+                isOpen={isScheduleModalOpen}
+                onClose={() => setIsScheduleModalOpen(false)}
+                onSchedule={handleScheduleMessage}
+                isLoading={isScheduling}
             />
         </div>
     );

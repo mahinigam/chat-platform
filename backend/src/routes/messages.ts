@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { MessageRepository } from '../repositories/MessageRepository';
 import { MessageDeleteRepository } from '../repositories/MessageDeleteRepository';
+import { ScheduledMessageRepository } from '../repositories/ScheduledMessageRepository';
 
 const router = Router();
 
@@ -152,6 +153,49 @@ router.post('/:messageId/unhide', authMiddleware, async (req: Request, res: Resp
     } catch (error) {
         console.error('Unhide message error:', error);
         res.status(500).json({ error: 'Failed to unhide message' });
+    }
+});
+
+
+
+/**
+ * Schedule a message
+ * POST /api/messages/schedule
+ */
+router.post('/schedule', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).userId;
+        const { roomId, content, scheduledAt, mediaUrl } = req.body;
+
+        if (!roomId || !content || !scheduledAt) {
+            res.status(400).json({ error: 'Missing required fields' });
+            return;
+        }
+
+        const scheduledDate = new Date(scheduledAt);
+        if (isNaN(scheduledDate.getTime())) {
+            res.status(400).json({ error: 'Invalid scheduledAt date' });
+            return;
+        }
+
+        if (scheduledDate <= new Date()) {
+            res.status(400).json({ error: 'Scheduled time must be in the future' });
+            return;
+        }
+
+        const message = await ScheduledMessageRepository.scheduleMessage(
+            userId,
+            roomId,
+            content,
+            scheduledDate,
+            mediaUrl
+        );
+
+        res.json({ success: true, message });
+
+    } catch (error) {
+        console.error('Schedule message error:', error);
+        res.status(500).json({ error: 'Failed to schedule message' });
     }
 });
 

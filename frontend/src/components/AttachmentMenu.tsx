@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '../utils/theme';
-import { Image, FileText, BarChart2, MapPin, FileImage, Music } from 'lucide-react';
+import { Image, FileText, BarChart2, MapPin, FileImage, Music, Clock } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import ChromeButton from './ChromeButton';
 
 interface AttachmentMenuProps {
-    onSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music') => void;
+    onSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music' | 'schedule') => void;
     className?: string;
 }
 
@@ -33,6 +33,7 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({ onSelect, className }) 
         { type: 'location', label: 'Location', icon: <MapPin className="w-4 h-4" /> },
         { type: 'music', label: 'Orbit', icon: <Music className="w-4 h-4" /> },
         { type: 'gif', label: 'GIF', icon: <FileImage className="w-4 h-4" /> },
+        { type: 'schedule', label: 'Schedule', icon: <Clock className="w-4 h-4" /> },
     ] as const;
 
     // Animation Variants (Matches SettingsMenu)
