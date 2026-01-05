@@ -55,6 +55,16 @@ export class MessageDeleteRepository {
     }
 
     /**
+     * Unhide message for a specific user (undo "Delete for Me")
+     */
+    static async unhideForUser(messageId: string, userId: number): Promise<void> {
+        await Database.query(
+            `DELETE FROM message_hidden_for WHERE message_id = $1 AND user_id = $2`,
+            [messageId, userId]
+        );
+    }
+
+    /**
      * Check if message is hidden for user
      */
     static async isHiddenForUser(messageId: string, userId: number): Promise<boolean> {

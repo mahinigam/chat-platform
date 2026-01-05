@@ -137,5 +137,23 @@ router.post('/:undoToken/undo', authMiddleware, async (req: Request, res: Respon
     }
 });
 
+/**
+ * Unhide a message for user (undo "Delete for Me")
+ * POST /api/messages/:messageId/unhide
+ */
+router.post('/:messageId/unhide', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const messageId = req.params.messageId;
+        const userId = (req as any).userId;
+
+        await MessageDeleteRepository.unhideForUser(messageId, userId);
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('Unhide message error:', error);
+        res.status(500).json({ error: 'Failed to unhide message' });
+    }
+});
+
 export default router;
 

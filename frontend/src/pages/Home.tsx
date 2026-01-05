@@ -94,9 +94,10 @@ function Home() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
-    const { deleteForMe, deleteForEveryone, undoDelete, pendingDelete, clearPendingDelete } = useMessageDelete();
+    const { deleteForMe, deleteForEveryone, undoDelete, unhideForMe, pendingDelete, clearPendingDelete } = useMessageDelete();
     const [showUndoToast, setShowUndoToast] = useState(false);
     const [lastDeletedMessage, setLastDeletedMessage] = useState<Message | null>(null);
+    const [lastDeleteMode, setLastDeleteMode] = useState<'me' | 'everyone'>('me');
 
     const API_URL = import.meta.env.VITE_API_URL || `http://localhost:3000/api`;
 
@@ -753,15 +754,18 @@ function Home() {
                         onDelete={async (messageId: string, mode: 'me' | 'everyone') => {
                             if (!selectedRoomId) return;
                             try {
+                                // Store message before deleting (for undo)
+                                const msgToDelete = messages.find(m => m.id === messageId);
+                                if (msgToDelete) {
+                                    setLastDeletedMessage(msgToDelete);
+                                    setLastDeleteMode(mode);
+                                }
+
                                 if (mode === 'me') {
                                     await deleteForMe(messageId, selectedRoomId);
                                     setMessages(prev => prev.filter(m => m.id !== messageId));
-                                    success('Message deleted for you');
+                                    setShowUndoToast(true);
                                 } else {
-                                    // Store message before deleting (for undo)
-                                    const msgToDelete = messages.find(m => m.id === messageId);
-                                    if (msgToDelete) setLastDeletedMessage(msgToDelete);
-
                                     await deleteForEveryone(messageId, selectedRoomId);
                                     setMessages(prev => prev.filter(m => m.id !== messageId));
                                     setShowUndoToast(true);
@@ -897,12 +901,20 @@ function Home() {
             </Modal>
             <ToastContainer toasts={toasts} onDismiss={dismissToast} />
             <UndoToast
-                isVisible={showUndoToast && !!pendingDelete}
+                isVisible={showUndoToast && !!lastDeletedMessage}
                 duration={7000}
                 onUndo={async () => {
-                    if (pendingDelete) {
-                        const restored = await undoDelete(pendingDelete.undoToken);
-                        if (restored && lastDeletedMessage) {
+                    if (lastDeletedMessage) {
+                        let restored = false;
+                        if (lastDeleteMode === 'me') {
+                            // Undo Delete for Me - unhide the message
+                            restored = await unhideForMe(lastDeletedMessage.id);
+                        } else if (pendingDelete) {
+                            // Undo Delete for Everyone - use undo token
+                            restored = await undoDelete(pendingDelete.undoToken);
+                        }
+
+                        if (restored) {
                             // Re-add message to local state
                             setMessages(prev => [...prev, lastDeletedMessage].sort((a, b) =>
                                 new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()

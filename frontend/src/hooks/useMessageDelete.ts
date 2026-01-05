@@ -5,6 +5,7 @@ interface UseMessageDeleteReturn {
     deleteForMe: (messageId: string, roomId: number) => Promise<void>;
     deleteForEveryone: (messageId: string, roomId: number) => Promise<{ undoToken: string; expiresAt: Date }>;
     undoDelete: (undoToken: string) => Promise<boolean>;
+    unhideForMe: (messageId: string) => Promise<boolean>;
     pendingDelete: { undoToken: string; messageId: string; expiresAt: Date } | null;
     isDeleting: boolean;
     clearPendingDelete: () => void;
@@ -67,6 +68,18 @@ export const useMessageDelete = (): UseMessageDeleteReturn => {
         }
     }, []);
 
+    const unhideForMe = useCallback(async (messageId: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`/api/messages/${messageId}/unhide`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return true;
+        } catch {
+            return false;
+        }
+    }, []);
+
     const clearPendingDelete = useCallback(() => {
         setPendingDelete(null);
     }, []);
@@ -75,8 +88,10 @@ export const useMessageDelete = (): UseMessageDeleteReturn => {
         deleteForMe,
         deleteForEveryone,
         undoDelete,
+        unhideForMe,
         pendingDelete,
         isDeleting,
         clearPendingDelete
     };
 };
+
