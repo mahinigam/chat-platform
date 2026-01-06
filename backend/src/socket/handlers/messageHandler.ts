@@ -68,6 +68,20 @@ class MessageHandler {
                 return;
             }
 
+            // Block check for DM rooms: check if either user blocked the other
+            const room = await RoomRepository.getRoomById(roomId);
+            if (room?.room_type === 'direct') {
+                const members = await RoomRepository.getRoomMembers(roomId);
+                const otherUser = members.find(m => m.user_id !== userId);
+                if (otherUser) {
+                    const isBlocked = await BlockRepository.isEitherBlocked(userId, otherUser.user_id);
+                    if (isBlocked) {
+                        callback?.({ success: false, error: 'Cannot send message to this user' });
+                        return;
+                    }
+                }
+            }
+
             // Create message in database
             const messageId = uuidv4();
             const message = await MessageRepository.createMessage({

@@ -10,6 +10,7 @@ interface Room {
   snippet?: string;
   timestamp?: string;
   isOnline?: boolean;
+  isMuted?: boolean;
 }
 
 interface SidebarProps {
@@ -24,7 +25,7 @@ interface SidebarProps {
 import SearchUsers from './Connect/SearchUsers';
 import RequestList from './Connect/RequestList';
 import CosmicLogo from './CosmicLogo';
-import { MessageSquare, UserPlus, Users, Menu } from 'lucide-react';
+import { MessageSquare, UserPlus, Users, Menu, VolumeX } from 'lucide-react';
 import ChromeButton from './ChromeButton';
 import SettingsMenu from './SettingsMenu';
 import Avatar from './Avatar';
@@ -216,8 +217,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* Content */}
                         <div className="flex-1 min-w-0 text-left">
                           <div className="flex items-center justify-between mb-0.5">
-                            <h3 className="text-sm font-semibold text-mono-text truncate">
+                            <h3 className="text-sm font-semibold text-mono-text truncate flex items-center gap-1">
                               {room.name}
+                              {room.isMuted && <VolumeX className="w-3 h-3 text-mono-muted flex-shrink-0" />}
                             </h3>
                             {room.timestamp && (
                               <span className="text-[10px] text-mono-muted flex-shrink-0 ml-1">

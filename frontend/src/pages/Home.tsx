@@ -96,6 +96,7 @@ function Home() {
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [isScheduling, setIsScheduling] = useState(false);
     const [scheduleContent, setScheduleContent] = useState('');
+    const [blockedUserIds, setBlockedUserIds] = useState<number[]>([]);
 
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -197,6 +198,24 @@ function Home() {
 
         fetchRooms();
     }, [token, isConnected, API_URL, errorToast]);
+
+    // Fetch blocked users
+    useEffect(() => {
+        if (!token || !isConnected) return;
+
+        const fetchBlockedUsers = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/blocked`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setBlockedUserIds(response.data.map((b: { blocked_id: number }) => b.blocked_id));
+            } catch (err) {
+                console.error('Failed to fetch blocked users', err);
+            }
+        };
+
+        fetchBlockedUsers();
+    }, [token, isConnected, API_URL]);
 
     // Fetch messages
     useEffect(() => {
@@ -777,14 +796,16 @@ function Home() {
                     )}
 
                     <MessageList
-                        messages={messages.map(m => ({
-                            ...m,
-                            sender: {
-                                ...m.sender,
-                                id: m.sender.id.toString()
-                            },
-                            roomId: m.roomId.toString()
-                        }))}
+                        messages={messages
+                            .filter(m => !blockedUserIds.includes(m.sender.id)) // Filter blocked users
+                            .map(m => ({
+                                ...m,
+                                sender: {
+                                    ...m.sender,
+                                    id: m.sender.id.toString()
+                                },
+                                roomId: m.roomId.toString()
+                            }))}
                         isLoading={isLoadingMessages}
                         roomName={currentRoom?.name}
                         className="h-full"
