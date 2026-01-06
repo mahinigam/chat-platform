@@ -12,6 +12,9 @@ import authRoutes from './routes/auth';
 import messageRoutes from './routes/messages';
 import roomRoutes from './routes/rooms';
 import uploadRoutes from './routes/upload';
+import healthRoutes from './routes/health';
+import { logInfo } from './config/logger';
+import { errorHandler, requestIdMiddleware, notFoundHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -43,13 +46,23 @@ app.use(express.urlencoded({ extended: true }));
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Request logging in development
-if (process.env.NODE_ENV === 'development') {
-    app.use((req, _res, next) => {
-        console.log(`${req.method} ${req.path}`);
-        next();
+// Request ID middleware (for tracing)
+app.use(requestIdMiddleware);
+
+// Request logging
+app.use((req: Request, res: Response, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        logInfo('Request completed', {
+            requestId: (req as any).requestId,
+            method: req.method,
+            path: req.path,
+            statusCode: res.statusCode,
+            durationMs: Date.now() - start,
+        });
     });
-}
+    next();
+});
 
 // ============================================
 // Routes
@@ -68,47 +81,14 @@ app.use('/api/reactions', reactionRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api', blocksRoutes);  // /api/users/:id/block, /api/blocked, etc.
 
-// Health check endpoint
-app.get('/health', async (_req: Request, res: Response) => {
-    try {
-        const dbHealthy = await Database.healthCheck();
-        const redisHealthy = await RedisService.healthCheck();
-
-        const status = dbHealthy && redisHealthy ? 'healthy' : 'unhealthy';
-        const statusCode = dbHealthy && redisHealthy ? 200 : 503;
-
-        return res.status(statusCode).json({
-            status,
-            timestamp: new Date().toISOString(),
-            services: {
-                database: dbHealthy ? 'up' : 'down',
-                redis: redisHealthy ? 'up' : 'down',
-            },
-            server: process.env.SERVER_INSTANCE_ID || 'unknown',
-        });
-    } catch (error) {
-        console.error('Health check error:', error);
-        return res.status(503).json({
-            status: 'unhealthy',
-            error: 'Health check failed',
-        });
-    }
-});
+// Health check routes
+app.use('/health', healthRoutes);
 
 // 404 handler
-app.use((_req: Request, res: Response) => {
-    res.status(404).json({ error: 'Not found' });
-});
+app.use(notFoundHandler);
 
-// Error handler
-app.use((err: Error, _req: Request, res: Response, _next: any) => {
-    console.error('Error:', err);
-    res.status(500).json({
-        error: process.env.NODE_ENV === 'production'
-            ? 'Internal server error'
-            : err.message,
-    });
-});
+// Centralized error handler (must be last)
+app.use(errorHandler);
 
 // ============================================
 // Initialize Socket.io with Redis Adapter

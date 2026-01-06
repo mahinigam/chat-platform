@@ -6,5 +6,28 @@
     "puppeteer": "^24.31.0",
     "socket.io-client": "^4.8.1",
     "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.3.0",
+    "@commitlint/config-conventional": "^20.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "lint:backend": "cd backend && npx eslint src --fix",
+    "lint:frontend": "cd frontend && npx eslint src --fix",
+    "typecheck:backend": "cd backend && npx tsc --noEmit",
+    "typecheck:frontend": "cd frontend && npx tsc --noEmit"
+  },
+  "lint-staged": {
+    "backend/src/**/*.ts": [
+      "cd backend && npx eslint --fix",
+      "cd backend && npx prettier --write"
+    ],
+    "frontend/src/**/*.{ts,tsx}": [
+      "cd frontend && npx eslint --fix",
+      "cd frontend && npx prettier --write"
+    ]
   }
 }
