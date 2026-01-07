@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock } from 'lucide-react';
+import DatePicker from 'react-datepicker';
 import ChromeButton from './ChromeButton';
 import { cn } from '../utils/theme';
+
+import 'react-datepicker/dist/react-datepicker.css';
+import '../styles/datepicker-dark.css';
 
 interface ScheduleModalProps {
     isOpen: boolean;
@@ -17,43 +21,25 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
     onSchedule,
     isLoading = false
 }) => {
-    // Get default datetime (5 minutes from now, rounded)
+    // Get default datetime (5 minutes from now)
     const getDefaultDateTime = () => {
         const d = new Date();
         d.setMinutes(d.getMinutes() + 5);
-        // Format for datetime-local input: YYYY-MM-DDTHH:MM
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
+        return d;
     };
 
-    const [dateTimeValue, setDateTimeValue] = useState(getDefaultDateTime());
+    const [selectedDate, setSelectedDate] = useState<Date>(getDefaultDateTime());
 
     // Reset when modal opens
     useEffect(() => {
         if (isOpen) {
-            setDateTimeValue(getDefaultDateTime());
+            setSelectedDate(getDefaultDateTime());
         }
     }, [isOpen]);
 
     const handleSubmit = () => {
-        const selectedDate = new Date(dateTimeValue);
         console.log('[ScheduleModal] Submitting date:', selectedDate.toISOString());
         onSchedule(selectedDate);
-    };
-
-    // Get minimum datetime (now)
-    const getMinDateTime = () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
     return (
@@ -75,54 +61,53 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         className={cn(
-                            "relative w-full max-w-md overflow-hidden",
-                            "bg-glass-panel border border-glass-border/30 rounded-2xl",
+                            "relative w-full max-w-xs overflow-visible",
+                            "bg-glass-panel border border-glass-border/30 rounded-xl",
                             "shadow-2xl shadow-black/50"
                         )}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-white/5">
-                            <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-accent-cyan" />
+                        <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/5">
+                            <h3 className="text-sm font-medium text-white flex items-center gap-1.5">
+                                <Clock className="w-4 h-4 text-accent-cyan" />
                                 Schedule Message
                             </h3>
                             <button
                                 onClick={onClose}
-                                className="p-2 text-white/50 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                                className="p-1 text-white/50 hover:text-white rounded-full hover:bg-white/10 transition-colors"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         {/* Date/Time Picker */}
-                        <div className="p-6 bg-black/20">
-                            <div className="flex flex-col gap-4">
-                                <label className="text-sm text-white/60 uppercase tracking-wider">
+                        <div className="px-3 py-3 bg-black/20">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs text-white/60 uppercase tracking-wider">
                                     Select Date & Time
                                 </label>
-                                <input
-                                    type="datetime-local"
-                                    value={dateTimeValue}
-                                    onChange={(e) => {
-                                        console.log('[ScheduleModal] Input changed to:', e.target.value);
-                                        setDateTimeValue(e.target.value);
+                                <DatePicker
+                                    selected={selectedDate}
+                                    onChange={(date: Date | null) => {
+                                        if (date) {
+                                            console.log('[ScheduleModal] Date changed to:', date);
+                                            setSelectedDate(date);
+                                        }
                                     }}
-                                    min={getMinDateTime()}
-                                    className={cn(
-                                        "w-full px-4 py-3 rounded-xl",
-                                        "bg-white/5 border border-white/10",
-                                        "text-white text-lg font-medium",
-                                        "focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-accent-cyan/30",
-                                        "transition-all duration-200",
-                                        "[color-scheme:dark]"
-                                    )}
+                                    showTimeSelect
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    dateFormat="MMM d, yyyy h:mm aa"
+                                    minDate={new Date()}
+                                    placeholderText="Select date and time"
+                                    className="w-full"
                                 />
 
                                 {/* Preview */}
-                                <div className="text-center text-sm text-white/40 mt-2">
+                                <div className="text-center text-xs text-white/40 mt-1">
                                     Scheduled for{' '}
                                     <span className="text-accent-cyan font-medium">
-                                        {new Date(dateTimeValue).toLocaleString([], {
+                                        {selectedDate.toLocaleString([], {
                                             weekday: 'short',
                                             month: 'short',
                                             day: 'numeric',
@@ -135,11 +120,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-white/5 flex gap-3">
+                        <div className="px-3 py-2.5 border-t border-white/5 flex gap-2">
                             <ChromeButton
                                 type="button"
                                 onClick={onClose}
-                                className="flex-1 opacity-70 hover:opacity-100 bg-white/5 hover:bg-white/10"
+                                className="flex-1 text-sm py-1.5 opacity-70 hover:opacity-100 bg-white/5 hover:bg-white/10"
                             >
                                 Cancel
                             </ChromeButton>
@@ -147,7 +132,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={isLoading}
-                                className="flex-1 bg-accent-cyan/20 hover:bg-accent-cyan/30 text-accent-cyan border-accent-cyan/50"
+                                className="flex-1 text-sm py-1.5 bg-accent-cyan/20 hover:bg-accent-cyan/30 text-accent-cyan border-accent-cyan/50"
                             >
                                 {isLoading ? 'Scheduling...' : 'Confirm'}
                             </ChromeButton>
