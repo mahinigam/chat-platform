@@ -57,13 +57,14 @@
     background-color: transparent !important;
 }
 
-/* Emoji buttons - smaller and cuter */
+/* Emoji buttons - smaller and with breathing room */
 .EmojiPickerReact button.epr-emoji {
     border-radius: 0.4rem !important;
     transition: all 0.15s ease !important;
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 18px !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 20px !important;
+    margin: 2px !important;
 }
 
 .EmojiPickerReact button.epr-emoji:hover {
@@ -71,9 +72,15 @@
     transform: scale(1.15);
 }
 
+/* Emoji grid with gaps */
+.EmojiPickerReact .epr-emoji-list {
+    gap: 4px !important;
+    padding: 0.25rem !important;
+}
+
 /* Emoji body */
 .EmojiPickerReact .epr-body {
-    padding: 0.2rem !important;
+    padding: 0.25rem !important;
 }
 
 /* Scrollbar */
