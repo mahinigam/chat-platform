@@ -89,8 +89,8 @@ const EmojiPickerWrapper: React.FC<EmojiPickerWrapperProps> = ({
                         <EmojiPicker
                             theme={Theme.DARK}
                             onEmojiClick={handleEmojiClick}
-                            width={320}
-                            height={400}
+                            width={260}
+                            height={300}
                             searchPlaceHolder="Search emojis..."
                             previewConfig={{ showPreview: false }}
                             skinTonesDisabled
