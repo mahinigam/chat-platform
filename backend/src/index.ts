@@ -15,6 +15,8 @@ import uploadRoutes from './routes/upload';
 import healthRoutes from './routes/health';
 import { logInfo } from './config/logger';
 import { errorHandler, requestIdMiddleware, notFoundHandler } from './middleware/errorHandler';
+import { metricsMiddleware } from './middleware/metrics';
+import metricsRoutes from './routes/metrics';
 
 dotenv.config();
 
@@ -48,6 +50,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request ID middleware (for tracing)
 app.use(requestIdMiddleware);
+
+// Metrics middleware (collect HTTP metrics)
+app.use(metricsMiddleware);
 
 // Request logging
 app.use((req: Request, res: Response, next) => {
@@ -92,6 +97,9 @@ app.use('/api', blocksRoutes);  // /api/users/:id/block, /api/blocked, etc.
 
 // Health check routes
 app.use('/health', healthRoutes);
+
+// Metrics endpoint (for Prometheus scraping)
+app.use('/metrics', metricsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
