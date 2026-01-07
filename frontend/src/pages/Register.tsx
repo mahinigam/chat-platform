@@ -22,8 +22,11 @@ const Register: React.FC = () => {
         setIsLoading(true);
         try {
             const data = await register(username, email, password);
-            // Auto login after register
-            localStorage.setItem('token', data.token);
+            // Backend now returns accessToken instead of token
+            localStorage.setItem('token', data.accessToken || data.token);
+            if (data.refreshToken) {
+                localStorage.setItem('refreshToken', data.refreshToken);
+            }
             localStorage.setItem('user', JSON.stringify(data.user));
             success('Account created successfully!');
             navigate('/');

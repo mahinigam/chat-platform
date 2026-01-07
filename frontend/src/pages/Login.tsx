@@ -23,7 +23,11 @@ const Login: React.FC = () => {
         try {
             // Updated to send raw username/email input, supported by backend now
             const data = await login(username, password);
-            localStorage.setItem('token', data.token);
+            // Backend now returns accessToken instead of token
+            localStorage.setItem('token', data.accessToken || data.token);
+            if (data.refreshToken) {
+                localStorage.setItem('refreshToken', data.refreshToken);
+            }
             localStorage.setItem('user', JSON.stringify(data.user));
             success('Login successful!');
             navigate('/');
