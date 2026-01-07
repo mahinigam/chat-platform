@@ -93,9 +93,10 @@ app.use('/api/contacts', contactRoutes);
 app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/reactions', reactionRoutes);
 app.use('/api/search', searchLimiter, searchRoutes);
-app.use('/api', blocksRoutes);  // /api/users/:id/block, /api/blocked, etc.
+app.use('/api', blocksRoutes);  // /api/users/:id/block, /api/blocked, /api/users/:id/mute, /api/muted, etc.
 
 // Health check routes
+
 app.use('/health', healthRoutes);
 
 // Metrics endpoint (for Prometheus scraping)
