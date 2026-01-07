@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import EmojiPicker, { Theme, EmojiClickData } from 'emoji-picker-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
+import '../styles/emoji-picker-dark.css';
 
 interface EmojiPickerWrapperProps {
     isOpen: boolean;
