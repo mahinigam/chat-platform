@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MoreVertical, VolumeX, Volume2, Ban, UserCheck } from 'lucide-react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
 import MuteModal from './MuteModal';
@@ -106,12 +105,6 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
         }
     };
 
-    const menuVariants: Variants = {
-        hidden: { opacity: 0, scale: 0.95, y: 10 },
-        visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
-        exit: { opacity: 0, scale: 0.95, y: 10, transition: { duration: 0.15 } }
-    };
-
     return (
         <>
             <div className={cn("relative", className)} ref={menuRef}>
@@ -124,80 +117,73 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
                     <MoreVertical className="w-5 h-5" />
                 </ChromeButton>
 
-                <AnimatePresence>
-                    {isOpen && (
-                        <motion.div
-                            variants={menuVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
+                {isOpen && (
+                    <div
+                        className={cn(
+                            "absolute top-full right-0 mt-2 w-56",
+                            "bg-mono-bg/95 backdrop-blur-xl border border-mono-glass-border",
+                            "rounded-2xl shadow-2xl overflow-hidden z-[100] p-1"
+                        )}
+                    >
+                        {/* Mute Option */}
+                        <button
+                            onClick={() => {
+                                if (localMuted) {
+                                    handleUnmute();
+                                } else {
+                                    setIsOpen(false);
+                                    setIsMuteModalOpen(true);
+                                }
+                            }}
+                            disabled={isLoading}
                             className={cn(
-                                "absolute top-full right-0 mt-2 w-56",
-                                "bg-mono-bg/95 backdrop-blur-glass border border-mono-glass-border",
-                                "rounded-2xl shadow-2xl overflow-hidden z-50 p-1"
+                                "w-full flex items-center gap-3 px-3 py-2.5",
+                                "text-sm text-mono-text hover:bg-mono-surface",
+                                "rounded-xl transition-colors text-left group",
+                                isLoading && "opacity-50 cursor-not-allowed"
                             )}
-                            style={{ transformOrigin: "top right" }}
                         >
-                            {/* Mute Option */}
+                            {localMuted ? (
+                                <>
+                                    <Volume2 className="w-4 h-4 text-mono-muted group-hover:text-mono-text" />
+                                    <span>Unmute {roomName}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <VolumeX className="w-4 h-4 text-mono-muted group-hover:text-mono-text" />
+                                    <span>Mute {roomName}</span>
+                                </>
+                            )}
+                        </button>
+
+                        {/* Block Option */}
+                        {userId && (
                             <button
-                                onClick={() => {
-                                    if (localMuted) {
-                                        handleUnmute();
-                                    } else {
-                                        setIsOpen(false);
-                                        setIsMuteModalOpen(true);
-                                    }
-                                }}
+                                onClick={handleBlockUser}
                                 disabled={isLoading}
                                 className={cn(
                                     "w-full flex items-center gap-3 px-3 py-2.5",
-                                    "text-sm text-mono-text hover:bg-mono-surface",
+                                    "text-sm hover:bg-mono-surface",
                                     "rounded-xl transition-colors text-left group",
+                                    localBlocked ? "text-green-400 hover:text-green-300" : "text-red-400 hover:text-red-300",
                                     isLoading && "opacity-50 cursor-not-allowed"
                                 )}
                             >
-                                {localMuted ? (
+                                {localBlocked ? (
                                     <>
-                                        <Volume2 className="w-4 h-4 text-mono-muted group-hover:text-mono-text" />
-                                        <span>Unmute {roomName}</span>
+                                        <UserCheck className="w-4 h-4" />
+                                        <span>Unblock User</span>
                                     </>
                                 ) : (
                                     <>
-                                        <VolumeX className="w-4 h-4 text-mono-muted group-hover:text-mono-text" />
-                                        <span>Mute {roomName}</span>
+                                        <Ban className="w-4 h-4" />
+                                        <span>Block User</span>
                                     </>
                                 )}
                             </button>
-
-                            {/* Block Option */}
-                            {userId && (
-                                <button
-                                    onClick={handleBlockUser}
-                                    disabled={isLoading}
-                                    className={cn(
-                                        "w-full flex items-center gap-3 px-3 py-2.5",
-                                        "text-sm hover:bg-mono-surface",
-                                        "rounded-xl transition-colors text-left group",
-                                        localBlocked ? "text-green-400 hover:text-green-300" : "text-red-400 hover:text-red-300",
-                                        isLoading && "opacity-50 cursor-not-allowed"
-                                    )}
-                                >
-                                    {localBlocked ? (
-                                        <>
-                                            <UserCheck className="w-4 h-4" />
-                                            <span>Unblock User</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Ban className="w-4 h-4" />
-                                            <span>Block User</span>
-                                        </>
-                                    )}
-                                </button>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Mute Duration Modal */}
