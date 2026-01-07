@@ -71,14 +71,23 @@ import contactRoutes from './routes/contacts';
 import reactionRoutes from './routes/reactions';
 import searchRoutes from './routes/search';
 import blocksRoutes from './routes/blocks';
+import { authLimiter, messageLimiter, uploadLimiter, searchLimiter, standardLimiter } from './middleware/rateLimit';
 
+// Apply standard rate limiting to all routes
+app.use('/api', standardLimiter);
+
+// Auth routes with stricter rate limiting
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 app.use('/api/auth', authRoutes);
-app.use('/api/messages', messageRoutes);
+
+// Other routes with specific rate limits
+app.use('/api/messages', messageLimiter, messageRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/contacts', contactRoutes);
-app.use('/api/upload', uploadRoutes);
+app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/reactions', reactionRoutes);
-app.use('/api/search', searchRoutes);
+app.use('/api/search', searchLimiter, searchRoutes);
 app.use('/api', blocksRoutes);  // /api/users/:id/block, /api/blocked, etc.
 
 // Health check routes

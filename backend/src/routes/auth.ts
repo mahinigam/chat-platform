@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import Database from '../config/database';
+import { tokenService } from '../services/TokenService';
+import { authenticateTokenHTTP } from '../middleware/auth';
+import { logInfo, logWarn } from '../config/logger';
 
 const router = Router();
 
@@ -27,8 +29,8 @@ router.post('/register', async (req: Request, res: Response) => {
             return res.status(409).json({ error: 'User already exists' });
         }
 
-        // Hash password
-        const passwordHash = await bcrypt.hash(password, 10);
+        // Hash password with cost factor 12
+        const passwordHash = await bcrypt.hash(password, 12);
 
         // Create user
         const result = await Database.query(
@@ -42,13 +44,6 @@ router.post('/register', async (req: Request, res: Response) => {
 
         // Add user to default room (ID: 1)
         try {
-            // We import RoomRepository dynamically to avoid circular dependency if any, 
-            // though here it's fine. Or better, add import at top.
-            // But since I can't see imports easily in this chunk, I'll assume I need to add the import or use a raw query.
-            // To be safe and consistent, I'll use a raw query here to avoid import issues in this specific file 
-            // or just add the import in a separate step if needed. 
-            // Actually, I'll add the import in a separate edit if it's missing, but let's check if I can just use Database.query directly for simplicity here.
-
             await Database.query(
                 `INSERT INTO room_members (room_id, user_id, role)
                  VALUES (1, $1, 'member')
@@ -57,19 +52,18 @@ router.post('/register', async (req: Request, res: Response) => {
             );
         } catch (err) {
             console.error('Failed to add user to default room:', err);
-            // Continue anyway, don't fail registration
         }
 
-        // Generate JWT
-        const token = jwt.sign(
-            { userId: user.id, username: user.username },
-            process.env.JWT_SECRET as string,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-        );
+        // Generate token pair
+        const tokens = await tokenService.generateTokenPair(user.id, user.username);
+
+        logInfo('User registered', { userId: user.id, username: user.username });
 
         return res.status(201).json({
             user,
-            token,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: tokens.expiresIn,
         });
 
     } catch (error) {
@@ -92,10 +86,11 @@ router.post('/login', async (req: Request, res: Response) => {
         // Find user by email or username
         const result = await Database.query(
             'SELECT * FROM users WHERE email = $1 OR username = $1',
-            [email] // The 'email' variable here holds the input identifier (email or username)
+            [email]
         );
 
         if (result.rows.length === 0) {
+            logWarn('Login failed - user not found', { identifier: email });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
@@ -104,15 +99,14 @@ router.post('/login', async (req: Request, res: Response) => {
         // Verify password
         const isValid = await bcrypt.compare(password, user.password_hash);
         if (!isValid) {
+            logWarn('Login failed - invalid password', { userId: user.id });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        // Generate JWT
-        const token = jwt.sign(
-            { userId: user.id, username: user.username },
-            process.env.JWT_SECRET as string,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
-        );
+        // Generate token pair
+        const tokens = await tokenService.generateTokenPair(user.id, user.username);
+
+        logInfo('User logged in', { userId: user.id, username: user.username });
 
         return res.json({
             user: {
@@ -122,12 +116,102 @@ router.post('/login', async (req: Request, res: Response) => {
                 displayName: user.display_name,
                 avatarUrl: user.avatar_url,
             },
-            token,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: tokens.expiresIn,
         });
 
     } catch (error) {
         console.error('Login error:', error);
         return res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+/**
+ * Refresh access token
+ */
+router.post('/refresh', async (req: Request, res: Response) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({ error: 'Refresh token required' });
+        }
+
+        const tokens = await tokenService.refreshTokens(refreshToken);
+
+        if (!tokens) {
+            logWarn('Token refresh failed - invalid token');
+            return res.status(401).json({ error: 'Invalid refresh token' });
+        }
+
+        logInfo('Tokens refreshed');
+
+        return res.json({
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: tokens.expiresIn,
+        });
+
+    } catch (error) {
+        console.error('Refresh error:', error);
+        return res.status(500).json({ error: 'Token refresh failed' });
+    }
+});
+
+/**
+ * Logout - invalidate current session
+ */
+router.post('/logout', async (req: Request, res: Response) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (refreshToken) {
+            await tokenService.invalidateRefreshToken(refreshToken);
+        }
+
+        return res.json({ message: 'Logged out successfully' });
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        return res.status(500).json({ error: 'Logout failed' });
+    }
+});
+
+/**
+ * Logout everywhere - invalidate all sessions
+ */
+router.post('/logout-all', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const count = await tokenService.invalidateAllSessions(userId);
+
+        logInfo('User logged out everywhere', { userId, sessionsInvalidated: count });
+
+        return res.json({
+            message: 'All sessions invalidated',
+            sessionsInvalidated: count,
+        });
+
+    } catch (error) {
+        console.error('Logout all error:', error);
+        return res.status(500).json({ error: 'Failed to invalidate sessions' });
+    }
+});
+
+/**
+ * Get active session count
+ */
+router.get('/sessions', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const count = await tokenService.getActiveSessionCount(userId);
+
+        return res.json({ activeSessions: count });
+
+    } catch (error) {
+        console.error('Sessions error:', error);
+        return res.status(500).json({ error: 'Failed to get sessions' });
     }
 });
 
