@@ -5,19 +5,23 @@ interface AetherIntroProps {
     onComplete: () => void;
 }
 
-// Timing constants (in ms)
-const STAGE_1_DURATION = 800;   // Void: 0 - 0.8s
-const STAGE_2_DURATION = 1400;  // Corruption: 0.8s - 2.2s
-const STAGE_3_DURATION = 400;   // Revelation: 2.2s - 2.6s  
-const STAGE_4_DURATION = 1100;  // Gravity: 2.6s - 3.7s
+// Timing constants (in ms) - Total: 7 seconds
+const STAGE_1_DURATION = 1500;   // Void: 0 - 1.5s
+const STAGE_2_DURATION = 2800;  // Corruption: 1.5s - 4.3s
+const STAGE_3_DURATION = 700;   // Revelation: 4.3s - 5s  
+const STAGE_4_DURATION = 2000;  // Gravity: 5s - 7s
 const TOTAL_DURATION = STAGE_1_DURATION + STAGE_2_DURATION + STAGE_3_DURATION + STAGE_4_DURATION;
 
 type Stage = 'void' | 'corruption' | 'revelation' | 'gravity' | 'complete';
 
+// Logo size to match login page (lg size = 150px width)
+const LOGO_WIDTH = 150;
+const LOGO_HEIGHT = 48;
+
 // Particle component for the corruption effect
 const GlitchParticle: React.FC<{ index: number }> = ({ index }) => {
     const angle = (index / 20) * Math.PI * 2;
-    const radius = 80 + Math.random() * 60;
+    const radius = 120 + Math.random() * 80;
     const size = 2 + Math.random() * 3;
     const duration = 0.8 + Math.random() * 0.6;
     const delay = Math.random() * 0.3;
@@ -207,8 +211,10 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                     <motion.img
                         src="/src/assets/logo.svg"
                         alt=""
-                        className="absolute w-48 md:w-64 lg:w-80"
+                        className="absolute"
                         style={{
+                            width: LOGO_WIDTH,
+                            height: LOGO_HEIGHT,
                             filter: 'brightness(10) hue-rotate(-60deg) saturate(5)',
                             mixBlendMode: 'screen',
                             transform: `translateX(${-rgbSplit}px)`,
@@ -222,8 +228,10 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                     <motion.img
                         src="/src/assets/logo.svg"
                         alt=""
-                        className="absolute w-48 md:w-64 lg:w-80"
+                        className="absolute"
                         style={{
+                            width: LOGO_WIDTH,
+                            height: LOGO_HEIGHT,
                             filter: 'brightness(10) hue-rotate(180deg) saturate(5)',
                             mixBlendMode: 'screen',
                             transform: `translateX(${rgbSplit}px)`,
@@ -236,7 +244,11 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                 <motion.img
                     src="/src/assets/logo.svg"
                     alt="Aether"
-                    className="relative w-48 md:w-64 lg:w-80"
+                    className="relative"
+                    style={{
+                        width: LOGO_WIDTH,
+                        height: LOGO_HEIGHT,
+                    }}
                     variants={logoVariants}
                     initial="void"
                     animate={
@@ -246,8 +258,8 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                                     'gravity'
                     }
                     transition={{
-                        duration: stage === 'void' ? 0.6 :
-                            stage === 'revelation' ? 0.3 : 0.1,
+                        duration: stage === 'void' ? 1.0 :
+                            stage === 'revelation' ? 0.5 : 0.1,
                         ease: stage === 'revelation' ? [0.34, 1.56, 0.64, 1] : 'easeOut'
                     }}
                 />
@@ -272,8 +284,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                             <img
                                 src="/src/assets/logo.svg"
                                 alt=""
-                                className="w-48 md:w-64 lg:w-80"
-                                style={{ filter: 'brightness(10)' }}
+                                style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT, filter: 'brightness(10)' }}
                             />
                         </motion.div>
                         <motion.div
@@ -294,8 +305,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                             <img
                                 src="/src/assets/logo.svg"
                                 alt=""
-                                className="w-48 md:w-64 lg:w-80"
-                                style={{ filter: 'brightness(10)' }}
+                                style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT, filter: 'brightness(10)' }}
                             />
                         </motion.div>
                     </>
