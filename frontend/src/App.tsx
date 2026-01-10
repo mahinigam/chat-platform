@@ -7,7 +7,7 @@ import { MessageListSkeleton } from './components/Skeleton';
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
 const Home = React.lazy(() => import('./pages/Home'));
-const CosmicIntro = React.lazy(() => import('./components/CosmicIntro'));
+const AetherIntro = React.lazy(() => import('./components/AetherIntro'));
 
 // Page loading fallback - uses skeleton for better perceived performance
 const PageLoader = () => (
@@ -54,7 +54,7 @@ function App() {
     const [showIntro, setShowIntro] = useState(false);
 
     useEffect(() => {
-        const hasSeenIntro = sessionStorage.getItem('hasSeenCosmicIntro');
+        const hasSeenIntro = sessionStorage.getItem('hasSeenAetherIntro');
         if (!hasSeenIntro) {
             setShowIntro(true);
         }
@@ -62,7 +62,7 @@ function App() {
 
     const handleIntroComplete = () => {
         setShowIntro(false);
-        sessionStorage.setItem('hasSeenCosmicIntro', 'true');
+        sessionStorage.setItem('hasSeenAetherIntro', 'true');
     };
 
     return (
@@ -79,7 +79,7 @@ function App() {
             {/* Intro Overlay - Lazy loaded, only shown once per session */}
             {showIntro && (
                 <Suspense fallback={null}>
-                    <CosmicIntro onComplete={handleIntroComplete} />
+                    <AetherIntro onComplete={handleIntroComplete} />
                 </Suspense>
             )}
         </Router>
