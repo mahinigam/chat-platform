@@ -9,6 +9,13 @@ interface LeaveRoomData {
     roomId: number;
 }
 
+interface CreateSpaceData {
+    name: string;
+    description: string;
+    tone: string;
+    initialMembers: number[];
+}
+
 class RoomHandler {
     /**
      * Handle user joining a room
@@ -78,6 +85,174 @@ class RoomHandler {
 
         } catch (error) {
             console.error('Error handling leave room:', error);
+        }
+    }
+
+    /**
+     * Handle creating a new shared space
+     */
+    async handleCreateSpace(
+        socket: AuthenticatedSocket,
+        data: CreateSpaceData,
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const { name, description, tone, initialMembers } = data;
+
+            // Validate inputs
+            if (!name || !tone) {
+                callback({ error: 'Name and tone are required' });
+                return;
+            }
+
+            // Create the space
+            const space = await RoomRepository.createSpace(
+                name,
+                description,
+                tone,
+                userId,
+                initialMembers
+            );
+
+            // Notify creator immediately via callback
+            callback({ space });
+
+            // Notify other members (invite logic)
+            if (initialMembers && initialMembers.length > 0) {
+                initialMembers.forEach(memberId => {
+                    if (memberId !== userId) {
+                        socket.to(`user:${memberId}`).emit('space:invited', {
+                            spaceId: space.id,
+                            name: space.name,
+                            invitedBy: socket.username
+                        });
+                    }
+                });
+            }
+
+            console.log(`Space created: ${name} by ${socket.username}`);
+
+        } catch (error: any) {
+            console.error('Error creating space:', error?.message || error);
+            console.error('Error stack:', error?.stack);
+            callback({ error: 'Failed to create space: ' + (error?.message || 'Unknown error') });
+        }
+    }
+
+    /**
+     * Handle inviting a user to a space
+     */
+    async handleInviteToSpace(
+        socket: AuthenticatedSocket,
+        data: { spaceId: number; userId: number },
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId: inviterId, username: inviterName } = socket;
+            const { spaceId, userId: inviteeId } = data;
+
+            const isMember = await RoomRepository.isUserMemberOfRoom(inviterId, spaceId);
+            if (!isMember) {
+                callback({ error: 'You do not have permission to invite to this space.' });
+                return;
+            }
+
+            await RoomRepository.addUserToRoom(spaceId, inviteeId, 'member');
+            const space = await RoomRepository.getRoomById(spaceId);
+
+            socket.to(`user:${inviteeId}`).emit('space:invited', {
+                spaceId,
+                name: space?.name,
+                invitedBy: inviterName,
+                space: space
+            });
+
+            socket.emit('space:member_added', { spaceId, userId: inviteeId });
+            socket.to(`room:${spaceId}`).emit('space:member_added', { spaceId, userId: inviteeId });
+
+            callback({ success: true });
+            console.log(`User ${inviteeId} invited to space ${spaceId} by ${inviterName}`);
+
+        } catch (error) {
+            console.error('Error inviting to space:', error);
+            callback({ error: 'Failed to invite user' });
+        }
+    }
+
+    /**
+     * Handle leaving a space
+     */
+    async handleLeaveSpace(
+        socket: AuthenticatedSocket,
+        data: { spaceId: number },
+        callback?: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const { spaceId } = data;
+
+            await RoomRepository.removeUserFromRoom(spaceId, userId);
+            socket.leave(`room:${spaceId}`);
+            socket.to(`room:${spaceId}`).emit('space:member_left', { spaceId, userId });
+
+            if (callback) callback({ success: true });
+            console.log(`User ${userId} left space ${spaceId}`);
+
+        } catch (error) {
+            console.error('Error leaving space:', error);
+            if (callback) callback({ error: 'Failed to leave space' });
+        }
+    }
+
+    /**
+     * Handle updating space settings
+     */
+    async handleUpdateSpace(
+        socket: AuthenticatedSocket,
+        data: { spaceId: number; name?: string; description?: string; tone?: string; settings?: any },
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const { spaceId, name, description, tone, settings } = data;
+
+            const isMember = await RoomRepository.isUserMemberOfRoom(userId, spaceId);
+            if (!isMember) {
+                callback({ error: 'You do not have permission to update this space.' });
+                return;
+            }
+
+            await RoomRepository.updateSpace(spaceId, { name, description, tone, settings });
+            const updatedSpace = await RoomRepository.getRoomById(spaceId);
+
+            socket.emit('space:updated', { space: updatedSpace });
+            socket.to(`room:${spaceId}`).emit('space:updated', { space: updatedSpace });
+
+            callback({ success: true, space: updatedSpace });
+            console.log(`Space ${spaceId} updated by ${socket.username}`);
+
+        } catch (error) {
+            console.error('Error updating space:', error);
+            callback({ error: 'Failed to update space' });
+        }
+    }
+
+    /**
+     * Get space members
+     */
+    async handleGetSpaceMembers(
+        _socket: AuthenticatedSocket,
+        data: { spaceId: number },
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { spaceId } = data;
+            const members = await RoomRepository.getRoomMembers(spaceId);
+            callback({ members });
+        } catch (error) {
+            console.error('Error getting space members:', error);
+            callback({ error: 'Failed to get members' });
         }
     }
 }

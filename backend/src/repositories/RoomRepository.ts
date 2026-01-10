@@ -4,6 +4,10 @@ interface Room {
     id: number;
     name: string | null;
     room_type: 'direct' | 'group';
+    description?: string;
+    tone?: 'social' | 'focus' | 'work' | 'private';
+    settings?: any;
+    owner_id?: number;
     created_by: number | null;
     created_at: Date;
 }
@@ -23,16 +27,45 @@ export class RoomRepository {
     static async createRoom(
         roomType: 'direct' | 'group',
         createdBy: number,
-        name?: string
+        name?: string,
+        description?: string,
+        tone: string = 'social',
+        ownerId?: number
     ): Promise<Room> {
         const result = await Database.query(
-            `INSERT INTO rooms (room_type, created_by, name)
-       VALUES ($1, $2, $3)
+            `INSERT INTO rooms (room_type, created_by, name, description, tone, owner_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-            [roomType, createdBy, name || null]
+            [roomType, createdBy, name || null, description || null, tone, ownerId || null]
         );
 
         return result.rows[0];
+    }
+
+    /**
+     * Create a new Shared Space (Group)
+     */
+    static async createSpace(
+        name: string,
+        description: string,
+        tone: string,
+        ownerId: number,
+        initialMembers: number[] = []
+    ): Promise<Room> {
+        // Create the room
+        const room = await this.createRoom('group', ownerId, name, description, tone, ownerId);
+
+        // Add owner as admin
+        await this.addUserToRoom(room.id, ownerId, 'admin');
+
+        // Add initial members
+        for (const memberId of initialMembers) {
+            if (memberId !== ownerId) {
+                await this.addUserToRoom(room.id, memberId, 'member');
+            }
+        }
+
+        return room;
     }
 
     /**
@@ -141,6 +174,43 @@ export class RoomRepository {
         );
 
         return result.rows[0] || null;
+    }
+
+    /**
+     * Update space settings
+     */
+    static async updateSpace(
+        roomId: number,
+        updates: { name?: string; description?: string; tone?: string; settings?: any }
+    ): Promise<void> {
+        const setClauses: string[] = [];
+        const values: any[] = [];
+        let paramIndex = 1;
+
+        if (updates.name !== undefined) {
+            setClauses.push(`name = $${paramIndex++}`);
+            values.push(updates.name);
+        }
+        if (updates.description !== undefined) {
+            setClauses.push(`description = $${paramIndex++}`);
+            values.push(updates.description);
+        }
+        if (updates.tone !== undefined) {
+            setClauses.push(`tone = $${paramIndex++}`);
+            values.push(updates.tone);
+        }
+        if (updates.settings !== undefined) {
+            setClauses.push(`settings = $${paramIndex++}`);
+            values.push(JSON.stringify(updates.settings));
+        }
+
+        if (setClauses.length === 0) return;
+
+        values.push(roomId);
+        await Database.query(
+            `UPDATE rooms SET ${setClauses.join(', ')} WHERE id = $${paramIndex}`,
+            values
+        );
     }
 
     /**

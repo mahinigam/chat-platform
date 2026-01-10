@@ -148,6 +148,52 @@ class SocketService {
     }
 
     /**
+     * Create a new Shared Space
+     */
+    createSpace(
+        data: { name: string; description: string; tone: string; initialMembers: number[] },
+        callback: (response: any) => void
+    ): void {
+        this.socket?.emit('space:create', data, callback);
+    }
+
+    /**
+     * Invite a user to a space
+     */
+    inviteToSpace(
+        spaceId: number,
+        userId: number,
+        callback: (response: any) => void
+    ): void {
+        this.socket?.emit('space:invite', { spaceId, userId }, callback);
+    }
+
+    /**
+     * Leave a space
+     */
+    leaveSpace(spaceId: number, callback?: (response: any) => void): void {
+        this.socket?.emit('space:leave', { spaceId }, callback);
+    }
+
+    /**
+     * Update space settings
+     */
+    updateSpace(
+        spaceId: number,
+        updates: { name?: string; description?: string; tone?: string; settings?: any },
+        callback: (response: any) => void
+    ): void {
+        this.socket?.emit('space:update', { spaceId, ...updates }, callback);
+    }
+
+    /**
+     * Get space members
+     */
+    getSpaceMembers(spaceId: number, callback: (response: any) => void): void {
+        this.socket?.emit('space:members', { spaceId }, callback);
+    }
+
+    /**
      * Toggle reaction on a message (add if not exists, remove if exists)
      */
     toggleReaction(
@@ -157,6 +203,27 @@ class SocketService {
         callback: (response: { success: boolean; added?: boolean; reactions?: any[]; error?: string }) => void
     ): void {
         this.socket?.emit('reaction:toggle', { messageId, roomId, emoji }, callback);
+    }
+
+    /**
+     * Pin a message
+     */
+    pinMessage(messageId: string, roomId: number, callback: (response: any) => void): void {
+        this.socket?.emit('message:pin', { messageId, roomId }, callback);
+    }
+
+    /**
+     * Unpin a message
+     */
+    unpinMessage(messageId: string, roomId: number, callback: (response: any) => void): void {
+        this.socket?.emit('message:unpin', { messageId, roomId }, callback);
+    }
+
+    /**
+     * Get pinned messages for a room
+     */
+    getPinnedMessages(roomId: number, callback: (response: any) => void): void {
+        this.socket?.emit('message:get_pinned', { roomId }, callback);
     }
 
     /**

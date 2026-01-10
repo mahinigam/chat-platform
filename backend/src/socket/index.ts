@@ -76,6 +76,11 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             // Room Management
             socket.on('room:join', (data) => roomHandler.handleJoinRoom(authSocket, data));
             socket.on('room:leave', (data) => roomHandler.handleLeaveRoom(authSocket, data));
+            socket.on('space:create', (data, callback) => roomHandler.handleCreateSpace(authSocket, data, callback));
+            socket.on('space:invite', (data, callback) => roomHandler.handleInviteToSpace(authSocket, data, callback));
+            socket.on('space:leave', (data, callback) => roomHandler.handleLeaveSpace(authSocket, data, callback));
+            socket.on('space:update', (data, callback) => roomHandler.handleUpdateSpace(authSocket, data, callback));
+            socket.on('space:members', (data, callback) => roomHandler.handleGetSpaceMembers(authSocket, data, callback));
 
             // Messaging
             socket.on('message:send', (data, callback) =>
@@ -86,6 +91,15 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             );
             socket.on('message:read', (data) =>
                 messageHandler.handleMessageRead(authSocket, data)
+            );
+            socket.on('message:pin', (data, callback) =>
+                messageHandler.handlePinMessage(authSocket, data, callback)
+            );
+            socket.on('message:unpin', (data, callback) =>
+                messageHandler.handleUnpinMessage(authSocket, data, callback)
+            );
+            socket.on('message:get_pinned', (data, callback) =>
+                messageHandler.handleGetPinnedMessages(authSocket, data, callback)
             );
 
             // Polls

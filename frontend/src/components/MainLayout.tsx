@@ -135,10 +135,6 @@ const MainLayout: React.FC = () => {
     [success]
   );
 
-  const handleCreateRoom = useCallback(() => {
-    setIsModalOpen(true);
-  }, []);
-
   const handleRoomSelect = useCallback((roomId: string) => {
     setSelectedRoomId(roomId);
     setIsMobileMenuOpen(false);
@@ -165,7 +161,6 @@ const MainLayout: React.FC = () => {
             rooms={rooms}
             selectedRoomId={selectedRoomId}
             onRoomSelect={handleRoomSelect}
-            onCreateRoom={handleCreateRoom}
             onToggleSidebar={() => setIsSidebarOpen(false)}
           />
         </div>
@@ -314,7 +309,6 @@ const MainLayout: React.FC = () => {
               rooms={rooms}
               selectedRoomId={selectedRoomId}
               onRoomSelect={handleRoomSelect}
-              onCreateRoom={handleCreateRoom}
             />
           </div>
         </div>

@@ -304,6 +304,99 @@ class MessageHandler {
             callback?.({ success: false, error: 'Failed to undo delete' });
         }
     }
+
+    /**
+     * Handle pinning a message in a space
+     */
+    async handlePinMessage(
+        socket: AuthenticatedSocket,
+        data: { messageId: string; roomId: number },
+        callback?: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const { messageId, roomId } = data;
+
+            // Verify user is member
+            const isMember = await RoomRepository.isUserMemberOfRoom(userId, roomId);
+            if (!isMember) {
+                callback?.({ success: false, error: 'Not authorized' });
+                return;
+            }
+
+            await MessageRepository.pinMessage(messageId);
+
+            // Broadcast to room
+            socket.to(`room:${roomId}`).emit('message:pinned', { messageId, roomId });
+            socket.emit('message:pinned', { messageId, roomId });
+
+            callback?.({ success: true });
+            console.log(`Message ${messageId} pinned in room ${roomId}`);
+
+        } catch (error) {
+            console.error('Error pinning message:', error);
+            callback?.({ success: false, error: 'Failed to pin message' });
+        }
+    }
+
+    /**
+     * Handle unpinning a message
+     */
+    async handleUnpinMessage(
+        socket: AuthenticatedSocket,
+        data: { messageId: string; roomId: number },
+        callback?: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const { messageId, roomId } = data;
+
+            const isMember = await RoomRepository.isUserMemberOfRoom(userId, roomId);
+            if (!isMember) {
+                callback?.({ success: false, error: 'Not authorized' });
+                return;
+            }
+
+            await MessageRepository.unpinMessage(messageId);
+
+            socket.to(`room:${roomId}`).emit('message:unpinned', { messageId, roomId });
+            socket.emit('message:unpinned', { messageId, roomId });
+
+            callback?.({ success: true });
+            console.log(`Message ${messageId} unpinned in room ${roomId}`);
+
+        } catch (error) {
+            console.error('Error unpinning message:', error);
+            callback?.({ success: false, error: 'Failed to unpin message' });
+        }
+    }
+
+    /**
+     * Get pinned messages for a room
+     */
+    async handleGetPinnedMessages(
+        socket: AuthenticatedSocket,
+        data: { roomId: number },
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const { roomId } = data;
+
+            const isMember = await RoomRepository.isUserMemberOfRoom(userId, roomId);
+            if (!isMember) {
+                callback({ error: 'Not authorized' });
+                return;
+            }
+
+            const pinnedMessages = await MessageRepository.getPinnedMessages(roomId);
+            callback({ messages: pinnedMessages });
+
+        } catch (error) {
+            console.error('Error getting pinned messages:', error);
+            callback({ error: 'Failed to get pinned messages' });
+        }
+    }
 }
 
 export default new MessageHandler();

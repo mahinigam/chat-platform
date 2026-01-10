@@ -3,6 +3,36 @@
  */
 
 /**
+ * Space Tone Definitions
+ */
+export const SPACE_TONES: Record<string, { label: string; color: string; border: string; bg: string }> = {
+  social: {
+    label: 'Social',
+    color: 'text-blue-400',
+    border: 'border-blue-500/30',
+    bg: 'bg-blue-500/5'
+  },
+  focus: {
+    label: 'Focus',
+    color: 'text-purple-400',
+    border: 'border-purple-500/30',
+    bg: 'bg-purple-500/5'
+  },
+  work: {
+    label: 'Work',
+    color: 'text-amber-400',
+    border: 'border-amber-500/30',
+    bg: 'bg-amber-500/5'
+  },
+  private: {
+    label: 'Private',
+    color: 'text-emerald-400',
+    border: 'border-emerald-500/30',
+    bg: 'bg-emerald-500/5'
+  }
+};
+
+/**
  * Simple classname combiner (lightweight clsx alternative)
  */
 export const cn = (...classes: (string | undefined | false | null | Record<string, boolean>)[]): string => {

@@ -49,9 +49,10 @@ interface MessageItemProps {
   onPollVote?: (pollId: string, optionIndex: number) => void;
   onReaction?: (messageId: string, emoji: string) => void;
   onDelete?: (messageId: string, mode: 'me' | 'everyone') => void;
+  onPin?: (messageId: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollVote, onReaction, onDelete: _onDelete }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollVote, onReaction, onDelete: _onDelete, onPin }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [recentEmojis, setRecentEmojis] = useState<string[]>(getRecentEmojis());
@@ -408,7 +409,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollV
               isOwn={message.isOwn}
               onReply={() => console.log('Reply to', message.id)}
               onStar={() => console.log('Star', message.id)}
-              onPin={() => console.log('Pin', message.id)}
+              onPin={() => onPin?.(message.id)}
               onForward={() => console.log('Forward', message.id)}
               onCopy={() => {
                 navigator.clipboard.writeText(message.content);

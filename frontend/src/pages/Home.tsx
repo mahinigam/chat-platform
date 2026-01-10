@@ -8,7 +8,8 @@ import Modal from '../components/Modal';
 import AudioRecorder from '../components/AudioRecorder';
 import { useToast } from '../hooks/useToast';
 import { useMessageDelete } from '../hooks/useMessageDelete';
-import { cn } from '../utils/theme';
+import { cn, SPACE_TONES } from '../utils/theme';
+import { playNotificationSound, isQuietHoursActive } from '../utils/notification';
 import socketService from '../services/socket';
 import axios from 'axios';
 import { uploadFile } from '../api/upload';
@@ -28,6 +29,8 @@ import RoomOptionsMenu from '../components/RoomOptionsMenu';
 import IncomingCallModal from '../components/calls/IncomingCallModal';
 import CallButton from '../components/calls/CallButton';
 import GroupCallScreen from '../components/calls/GroupCallScreen';
+import SpaceSettingsModal from '../components/SpaceSettingsModal';
+import PinnedMessagesDrawer from '../components/PinnedMessagesDrawer';
 import webrtcService from '../services/webrtc';
 
 
@@ -50,7 +53,28 @@ interface Room {
     isOnline?: boolean;
     unread?: number;
     other_user_id?: number;
+    description?: string;
+    tone?: string;
+    settings?: { quietHours?: { start: string; end: string } };
 }
+
+// Helper to check if current time is within quiet hours
+const isWithinQuietHours = (settings?: { quietHours?: { start: string; end: string } }): boolean => {
+    if (!settings?.quietHours?.start || !settings?.quietHours?.end) return false;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const [startH, startM] = settings.quietHours.start.split(':').map(Number);
+    const [endH, endM] = settings.quietHours.end.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    // Handle overnight quiet hours (e.g., 22:00 to 08:00)
+    if (startMinutes > endMinutes) {
+        return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+    }
+    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+};
 
 interface Message {
     id: string;
@@ -104,6 +128,8 @@ function Home() {
     const [isScheduling, setIsScheduling] = useState(false);
     const [scheduleContent, setScheduleContent] = useState('');
     const [blockedUserIds, setBlockedUserIds] = useState<number[]>([]);
+    const [isSpaceSettingsOpen, setIsSpaceSettingsOpen] = useState(false);
+    const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
 
     // Call State
     const [incomingCall, setIncomingCall] = useState<{ callId: number; callerId: number; callerName: string; callType: 'voice' | 'video'; roomId?: number } | null>(null);
@@ -439,6 +465,11 @@ function Home() {
 
             setRooms(prev => prev.map(room => {
                 if (room.id === message.room_id) {
+                    // Play notification sound if it's not our own message and not in quiet hours
+                    if (message.sender.id !== currentUser?.id) {
+                        const isQuiet = room.room_type === 'group' && isQuietHoursActive(room.settings);
+                        playNotificationSound(isQuiet);
+                    }
                     return {
                         ...room,
                         last_message_content: message.message_type === 'text' ? message.content : `Sent a ${message.message_type}`,
@@ -709,10 +740,6 @@ function Home() {
         setIsMobileMenuOpen(false);
     }, []);
 
-    const handleCreateRoom = useCallback(() => {
-        setIsModalOpen(true);
-    }, []);
-
     const handleScheduleMessage = async (date: Date) => {
         if (!selectedRoomId || !scheduleContent) return;
 
@@ -814,14 +841,30 @@ function Home() {
                         rooms={sidebarRooms}
                         selectedRoomId={selectedRoomId?.toString()}
                         onRoomSelect={handleRoomSelect}
-                        onCreateRoom={handleCreateRoom}
                         className="w-full md:w-[320px] flex-shrink-0"
                         onToggleSidebar={() => setIsSidebarOpen(false)}
+                        onSpaceCreated={(space) => {
+                            // Add newly created space to rooms list
+                            setRooms(prev => [{
+                                id: space.id,
+                                name: space.name,
+                                room_type: 'group',
+                                description: space.description,
+                                tone: space.tone,
+                                settings: space.settings,
+                            }, ...prev]);
+                            // Select the new space
+                            setSelectedRoomId(space.id);
+                        }}
                     />
                 </div>
             </motion.div>
 
-            <div className="flex-1 flex flex-col min-w-0 h-full">
+            {/* Chat Area - Apply dimmed effect during quiet hours */}
+            <div className={cn(
+                "flex-1 flex flex-col min-w-0 h-full",
+                currentRoom?.room_type === 'group' && isWithinQuietHours(currentRoom?.settings) && "opacity-60 saturate-50"
+            )}>
                 <div
                     className={cn(
                         'flex-shrink-0 h-16 px-4 py-3',
@@ -863,17 +906,24 @@ function Home() {
                         {/* Room Info */}
                         {currentRoom && (
                             <div className="flex items-center gap-3 min-w-0">
-                                {/* <Avatar src={currentRoom.avatar} name={currentRoom.name} size="md" isOnline={currentRoom.isOnline} /> */}
-                                {/* Keeping it simple as per original layout, just text? Or add helper? 
-                                    MainLayout had Avatar. Let's just keep text if no avatar data readily available/matched.
-                                    The original code just had text. 
-                                */}
                                 <div className="min-w-0">
-                                    <h2 className="text-base font-semibold text-mono-text truncate">
+                                    <h2 className="text-base font-semibold text-mono-text truncate flex items-center gap-2">
                                         {currentRoom.name}
+                                        {currentRoom.room_type === 'group' && currentRoom.tone && SPACE_TONES[currentRoom.tone] && (
+                                            <span className={cn(
+                                                "px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-sm border",
+                                                SPACE_TONES[currentRoom.tone].color,
+                                                SPACE_TONES[currentRoom.tone].border,
+                                                SPACE_TONES[currentRoom.tone].bg
+                                            )}>
+                                                {SPACE_TONES[currentRoom.tone].label}
+                                            </span>
+                                        )}
                                     </h2>
                                     <p className="text-xs text-mono-muted truncate">
-                                        {currentRoom.isOnline ? 'Online' : 'Offline'}
+                                        {currentRoom.room_type === 'group' && currentRoom.description
+                                            ? currentRoom.description
+                                            : (currentRoom.isOnline ? 'Online' : 'Offline')}
                                     </p>
                                 </div>
                             </div>
@@ -883,17 +933,49 @@ function Home() {
                     {/* Header Actions */}
                     {currentRoom && (
                         <div className="flex gap-2 flex-shrink-0">
-                            <div className="flex gap-1 bg-zinc-800/50 rounded-full px-2 py-1 border border-white/5 items-center justify-center">
-                                <CallButton
-                                    type="voice"
-                                    onCallStart={handleStartDirectCall}
-                                />
-                                <CallButton
-                                    type="video"
-                                    onCallStart={handleStartDirectCall}
-                                />
-                            </div>
+                            {/* Call Buttons - DIRECT ONLY as per Phase 12 requirements */}
+                            {currentRoom.room_type === 'direct' && (
+                                <div className="flex gap-1 bg-zinc-800/50 rounded-full px-2 py-1 border border-white/5 items-center justify-center">
+                                    <CallButton
+                                        type="voice"
+                                        onCallStart={handleStartDirectCall}
+                                    />
+                                    <CallButton
+                                        type="video"
+                                        onCallStart={handleStartDirectCall}
+                                    />
+                                </div>
+                            )}
 
+
+                            {/* Space Settings - GROUP ONLY */}
+                            {currentRoom.room_type === 'group' && (
+                                <>
+                                    {/* Pinned Messages / Space Memory */}
+                                    <ChromeButton
+                                        variant="circle"
+                                        className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-amber-400/70 hover:text-amber-400"
+                                        aria-label="Pinned Messages"
+                                        onClick={() => setIsPinnedDrawerOpen(true)}
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                        </svg>
+                                    </ChromeButton>
+                                    {/* Settings Gear */}
+                                    <ChromeButton
+                                        variant="circle"
+                                        className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                                        aria-label="Space Settings"
+                                        onClick={() => setIsSpaceSettingsOpen(true)}
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    </ChromeButton>
+                                </>
+                            )}
 
                             <ChromeButton
                                 variant="circle"
@@ -990,6 +1072,16 @@ function Home() {
                             } catch (err) {
                                 errorToast('Failed to delete message');
                             }
+                        }}
+                        onPin={(messageId: string) => {
+                            if (!selectedRoomId) return;
+                            socketService.pinMessage(messageId, selectedRoomId, (response) => {
+                                if (response.error) {
+                                    errorToast(response.error);
+                                } else {
+                                    success('Message pinned');
+                                }
+                            });
                         }}
                     />
 
@@ -1091,6 +1183,18 @@ function Home() {
                             rooms={sidebarRooms}
                             selectedRoomId={selectedRoomId?.toString()}
                             onRoomSelect={handleRoomSelect}
+                            onSpaceCreated={(space) => {
+                                setRooms(prev => [{
+                                    id: space.id,
+                                    name: space.name,
+                                    room_type: 'group',
+                                    description: space.description,
+                                    tone: space.tone,
+                                    settings: space.settings,
+                                }, ...prev]);
+                                setSelectedRoomId(space.id);
+                                setIsMobileMenuOpen(false);
+                            }}
                         />
                     </div>
                 </div>
@@ -1171,6 +1275,38 @@ function Home() {
                     localStream={localStream}
                     callType={activeCallType}
                     onEndCall={handleEndGroupCall}
+                />
+            )}
+
+            {/* Space Settings Modal */}
+            {currentRoom && currentRoom.room_type === 'group' && (
+                <SpaceSettingsModal
+                    isOpen={isSpaceSettingsOpen}
+                    onClose={() => setIsSpaceSettingsOpen(false)}
+                    space={{
+                        id: currentRoom.id,
+                        name: currentRoom.name,
+                        description: currentRoom.description,
+                        tone: currentRoom.tone,
+                    }}
+                    currentUserId={currentUser?.id || 0}
+                    onSpaceUpdated={(updatedSpace) => {
+                        setRooms(prev => prev.map(r => r.id === updatedSpace.id ? { ...r, ...updatedSpace } : r));
+                    }}
+                    onSpaceLeft={() => {
+                        setRooms(prev => prev.filter(r => r.id !== currentRoom.id));
+                        setSelectedRoomId(null);
+                    }}
+                />
+            )}
+
+            {/* Pinned Messages Drawer */}
+            {currentRoom && (
+                <PinnedMessagesDrawer
+                    isOpen={isPinnedDrawerOpen}
+                    onClose={() => setIsPinnedDrawerOpen(false)}
+                    roomId={currentRoom.id}
+                    roomType={currentRoom.room_type}
                 />
             )}
         </div>

@@ -220,4 +220,39 @@ export class MessageRepository {
 
         return result.rows;
     }
+
+    /**
+     * Pin a message
+     */
+    static async pinMessage(messageId: string): Promise<void> {
+        await Database.query(
+            `UPDATE messages SET is_pinned = TRUE WHERE id = $1`,
+            [messageId]
+        );
+    }
+
+    /**
+     * Unpin a message
+     */
+    static async unpinMessage(messageId: string): Promise<void> {
+        await Database.query(
+            `UPDATE messages SET is_pinned = FALSE WHERE id = $1`,
+            [messageId]
+        );
+    }
+
+    /**
+     * Get all pinned messages for a room
+     */
+    static async getPinnedMessages(roomId: number): Promise<any[]> {
+        const result = await Database.query(
+            `SELECT m.*, u.username as sender_username, u.avatar_url as sender_avatar
+       FROM messages m
+       JOIN users u ON m.sender_id = u.id
+       WHERE m.room_id = $1 AND m.is_pinned = TRUE AND m.deleted_at IS NULL
+       ORDER BY m.created_at DESC`,
+            [roomId]
+        );
+        return result.rows;
+    }
 }
