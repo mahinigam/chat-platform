@@ -47,22 +47,23 @@ The UI follows the **Obsidian Chrome** design system — a monochrome, performan
 | **Message Reactions** | Emoji reactions with real-time sync |
 
 ### Voice & Video
-| Feature | Description |
+| Feature | Implementation Details |
 |---------|-------------|
-| **1:1 Calling** | High-def Voice & Video calls via WebRTC (P2P) |
-| **Reliability** | Auto-reconnect (ICE restart) & connection quality monitoring |
-| **Privacy First** | True hardware release on mute/camera off |
-| **Call Logging** | Automatic missed call tracking & duration logging |
+| **Mesh Calling** | Client-limited Mesh topology supporting up to 5 concurrent peers. |
+| **Video & Voice** | HD streaming via reliable WebRTC transport. |
+| **Screen Share** | Video-only track replacement negotiated via re-offers. |
+| **Privacy** | Hardware-level track stop on mute/camera-off. |
+| **Logs** | Persistent PostgreSQL logs for missed, rejected, and completed calls. |
 
 ### Rich Media
-| Feature | Description |
+| Feature | Implementation |
 |---------|-------------|
-| **Orbit Search** | Integrated music search (Spotify → YouTube audio playback) |
-| **Voice Messages** | High-fidelity audio recording with waveform visualization |
-| **Polls** | Real-time collaborative voting |
-| **GIFs** | Giphy integration |
-| **Location Sharing** | OpenStreetMap-based location picker |
-| **File Uploads** | Images, videos, and documents |
+| **Orbit Search** | Hybrid search resolving Spotify metadata to YouTube audio streams. |
+| **Voice Messages** | MediaRecorder API with real-time waveform visualization. |
+| **Polls** | Real-time votable entities synchronized via Redis Pub/Sub. |
+| **GIFs** | Giphy API integration with lazy-loaded grid. |
+| **Location** | OpenStreetMap integration for coordinate sharing. |
+| **File Uploads** | Multipart uploads with support for images, video, and documents. |
 
 ### User Controls
 | Feature | Description |
@@ -126,10 +127,10 @@ Aether features a **7-second cinematic intro** inspired by Arcane/Valorant aesth
 | **Revealed** | 1.1s | Logo pauses in final form |
 | **Zoom** | 1.5s | Smooth zoom-fade transition to app |
 
-**Key details:**
-- Logo colors are revealed *during* the glitch (no jarring transition)
-- Session-based: only plays once per browser session
-- Lightweight: 4.5 KB bundle, pure CSS/Framer Motion animations
+**Implementation:**
+- Pure CSS & Framer Motion (No heavy JS libraries).
+- Session storage logic ensures it runs only once per session.
+- Precomputed keyframes for performance optimization.
 
 ---
 
@@ -325,20 +326,20 @@ ChatSearch.js      4 KB (lazy-loaded)
 OrbitSearch.js     6 KB (lazy-loaded)
 ```
 
-### Search Architecture
+### Hybrid Search Architecture
 
-| Layer | Technology | Purpose |
+Aether implements a fail-safe hybrid search strategy to ensure availability:
+
+| Layer | Technology | Role |
 |-------|------------|---------|
-| **Primary** | Elasticsearch (ngram tokenizer) | Substring search, fuzzy matching |
-| **Fallback** | PostgreSQL ILIKE | Graceful degradation if ES unavailable |
-| **Sync** | Real-time indexing on message send | Instant searchability |
+| **Primary** | **Elasticsearch** | Handles high-throughput fuzzy matching and ngram tokenization. |
+| **Fallback** | **PostgreSQL (ILIKE)** | Activates automatically if ES is unreachable. |
+| **Sync** | **Real-time Indexing** | Messages are indexed asynchronously upon creation. |
 
-**Features:**
-- Single-character search (e.g., `"j"` returns all matches)
-- Filters: `from:user`, `before:date`, `after:date`
-- Recent searches stored in localStorage
-- **Debounced input** (300ms) to reduce API calls
-- **Text highlighting** in messages matching search query
+**Capabilities:**
+- **Fuzzy Matching**: Tolerates typos and partial queries (e.g., `"devlop"` matches `"developer"`).
+- **Filters**: Supports `from:user`, `before:date`, and `after:date` syntax.
+- **Privacy**: Global search respects room membership boundaries.
 
 ### Theme Performance (Obsidian Chrome)
 
