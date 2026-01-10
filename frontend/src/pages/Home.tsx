@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Video, Search, Loader2 } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import MessageList from '../components/MessageList';
 import Composer from '../components/Composer';
@@ -12,7 +12,7 @@ import { cn } from '../utils/theme';
 import socketService from '../services/socket';
 import axios from 'axios';
 import { uploadFile } from '../api/upload';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ToastContainer from '../components/Toast';
 import ChromeButton from '../components/ChromeButton';
 
@@ -26,7 +26,6 @@ import UndoToast from '../components/UndoToast';
 import ScheduleModal from '../components/ScheduleModal';
 import RoomOptionsMenu from '../components/RoomOptionsMenu';
 import IncomingCallModal from '../components/calls/IncomingCallModal';
-import CallScreen from '../components/calls/CallScreen';
 import CallButton from '../components/calls/CallButton';
 import GroupCallScreen from '../components/calls/GroupCallScreen';
 import webrtcService from '../services/webrtc';
@@ -77,7 +76,6 @@ interface Message {
 
 function Home() {
     const navigate = useNavigate();
-    const location = useLocation();
     const [isConnected, setIsConnected] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [token, setToken] = useState<string | null>(() => {
@@ -109,13 +107,8 @@ function Home() {
 
     // Call State
     const [incomingCall, setIncomingCall] = useState<{ callId: number; callerId: number; callerName: string; callType: 'voice' | 'video'; roomId?: number } | null>(null);
-    const [callScreenVisible, setCallScreenVisible] = useState(false);
-    const [activeCallStatus, setActiveCallStatus] = useState<string>('connecting');
-    const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [activeCallType, setActiveCallType] = useState<'voice' | 'video'>('voice');
-    const [activeCallOpponent, setActiveCallOpponent] = useState<number | null>(null);
-    const [currentCallId, setCurrentCallId] = useState<number | null>(null);
     const [groupCallVisible, setGroupCallVisible] = useState(false);
 
 
@@ -148,17 +141,17 @@ function Home() {
         webrtcService.initialize(socket!); // Safe if we assume socket exists after connect, but strictly should check. socketService handles null internally.
 
         webrtcService.on('localStream', (stream) => setLocalStream(stream));
-        webrtcService.on('remoteStream', (stream) => setRemoteStream(stream));
-        webrtcService.on('connectionState', (state) => setActiveCallStatus(state));
+        // webrtcService.on('remoteStream') handled by GroupCallScreen
+        // webrtcService.on('connectionState', (state) => setActiveCallStatus(state)); // Removed
         webrtcService.on('error', (err) => {
             console.error('WebRTC Error:', err);
             errorToast('Call connection failed');
-            handleEndCall();
+            handleEndGroupCall();
         });
 
         // Socket listeners for signaling
         const onRinging = (data: any) => {
-            if (!callScreenVisible) {
+            if (!groupCallVisible) {
                 setIncomingCall({
                     callId: data.callId,
                     callerId: data.callerId,
@@ -169,30 +162,25 @@ function Home() {
             }
         };
 
-        const onAccepted = async (data: any) => {
-            setActiveCallStatus('connecting');
-            setCurrentCallId(data.callId);
-            setCallScreenVisible(true);
-            try {
-                await webrtcService.startCall(data.calleeId, activeCallType === 'video');
-            } catch (err) {
-                errorToast('Failed to connect call');
-                handleEndCall();
-            }
+        const onAccepted = async (_data: any) => {
+            // User B accepted. They will join the room.
+            // We just update status if needed.
+            // setActiveCallStatus('connected'); // Removed
+            // Remove 'startCall' logic - Mesh handles it via new_peer
         };
 
         const onRejected = () => {
             errorToast('Call rejected');
-            handleEndCall();
+            handleEndGroupCall();
         };
 
         const onEnded = () => {
-            handleEndCall();
+            handleEndGroupCall();
         };
 
         const onBusy = () => {
             errorToast('User is on another call');
-            handleEndCall();
+            handleEndGroupCall();
         };
 
         socket?.on('call:ringing', onRinging);
@@ -209,20 +197,21 @@ function Home() {
             socket?.off('call:ended', onEnded);
             socket?.off('call:busy', onBusy);
         };
-    }, [activeCallType, callScreenVisible]); // Re-bind if these change
+    }, [activeCallType, groupCallVisible]); // Re-bind if these change
 
     const handleAcceptCall = async () => {
         if (!incomingCall) return;
         const socket = socketService.getSocket();
-        const { callId, callerId, callType } = incomingCall;
+        const { callId, callerId, roomId } = incomingCall;
 
         setIncomingCall(null);
-        setCallScreenVisible(true);
-        setActiveCallType(callType);
-        setActiveCallStatus('connecting');
-        setCurrentCallId(callId);
-        setActiveCallOpponent(callerId);
 
+        // Join the room (Mesh)
+        if (roomId) {
+            handleJoinGroupCall(roomId);
+        }
+
+        // Notify caller
         socket?.emit('call:accept', { callId, callerId });
     };
 
@@ -236,28 +225,34 @@ function Home() {
         setIncomingCall(null);
     };
 
-    const handleEndCall = () => {
-        const socket = socketService.getSocket();
-        if (activeCallOpponent && currentCallId) {
-            socket?.emit('call:end', {
-                callId: currentCallId,
-                otherUserId: activeCallOpponent
-            });
-        }
-        webrtcService.endCall();
-        setCallScreenVisible(false);
-        setActiveCallOpponent(null);
-        setActiveCallOpponent(null);
+    // New handler for starting calls (1:1 -> Mesh)
+    const handleStartDirectCall = async (type: 'voice' | 'video') => {
+        if (!selectedRoomId || !currentRoom?.other_user_id) return;
+
+        setActiveCallType(type);
+
+        // 1. Join Room
+        handleJoinGroupCall(selectedRoomId);
+
+        // 2. Ring User
+        socketService.getSocket()?.emit('call:initiate', {
+            calleeId: currentRoom.other_user_id,
+            callType: type,
+            roomId: selectedRoomId
+        });
     };
 
-    const handleJoinGroupCall = async () => {
-        if (!selectedRoomId) return;
+    const handleJoinGroupCall = async (roomIdTarget?: number) => {
+        const targetId = roomIdTarget || selectedRoomId;
+        if (!targetId) return;
+
         setGroupCallVisible(true);
         try {
-            await webrtcService.joinGroupCall(selectedRoomId);
+            // Ensure we join the group call
+            await webrtcService.joinGroupCall(targetId);
         } catch (err) {
             console.error('Failed to join group call:', err);
-            errorToast('Failed to join group call');
+            errorToast('Failed to join call');
             setGroupCallVisible(false);
         }
     };
@@ -265,40 +260,6 @@ function Home() {
     const handleEndGroupCall = async () => {
         await webrtcService.endCall();
         setGroupCallVisible(false);
-    };
-
-    const handleNewCall = async () => {
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const roomName = `Call ${timestamp}`;
-        try {
-            setIsModalOpen(false); // Ensure other modals are closed
-            // Create new room
-            const response = await axios.post(`${API_URL}/rooms`, {
-                name: roomName,
-                roomType: 'group',
-                members: []
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            const newRoom = response.data.room;
-            setRooms(prev => [newRoom, ...prev]);
-            setSelectedRoomId(newRoom.id);
-
-            // Auto-join call logic
-            // We need to wait for state update or just fire it? 
-            // setSelectedRoomId updates state for View, but joinGroupCall needs ID.
-            setGroupCallVisible(true);
-            webrtcService.joinGroupCall(newRoom.id).catch(err => {
-                console.error('Failed to auto-join new call:', err);
-                errorToast('Failed to start call');
-                setGroupCallVisible(false);
-            });
-
-        } catch (err) {
-            console.error('New Call error:', err);
-            errorToast('Failed to start new call');
-        }
     };
 
     // Socket connection and Auth
@@ -399,41 +360,6 @@ function Home() {
 
         fetchBlockedUsers();
     }, [token, isConnected, API_URL]);
-
-    // Auto-Join Call Link Logic
-    useEffect(() => {
-        if (!token || !isConnected || rooms.length === 0) return;
-
-        const params = new URLSearchParams(location.search);
-        const joinRoomId = params.get('joinRoom');
-
-        if (joinRoomId) {
-            const roomId = parseInt(joinRoomId);
-            const targetRoom = rooms.find(r => r.id === roomId);
-
-            if (targetRoom) {
-                // Select the room
-                if (selectedRoomId !== roomId) {
-                    setSelectedRoomId(roomId);
-                }
-
-                // Join the call
-                setGroupCallVisible(true);
-                webrtcService.joinGroupCall(roomId).catch(err => {
-                    console.error('Failed to auto-join group call:', err);
-                    errorToast('Failed to join group call');
-                    setGroupCallVisible(false);
-                });
-
-                // Clear URL param to prevent re-joining
-                navigate('/', { replace: true });
-            } else {
-                // Only show error if we are sure rooms are loaded (checked rooms.length > 0 above)
-                errorToast('You are not a member of this room.');
-                navigate('/', { replace: true });
-            }
-        }
-    }, [rooms, token, isConnected, location.search, navigate, errorToast, selectedRoomId]);
 
     // Fetch messages
     useEffect(() => {
@@ -889,7 +815,6 @@ function Home() {
                         selectedRoomId={selectedRoomId?.toString()}
                         onRoomSelect={handleRoomSelect}
                         onCreateRoom={handleCreateRoom}
-                        onNewCall={handleNewCall}
                         className="w-full md:w-[320px] flex-shrink-0"
                         onToggleSidebar={() => setIsSidebarOpen(false)}
                     />
@@ -958,34 +883,18 @@ function Home() {
                     {/* Header Actions */}
                     {currentRoom && (
                         <div className="flex gap-2 flex-shrink-0">
-                            {currentRoom?.room_type === 'direct' && currentRoom?.other_user_id && (
-                                <div className="flex gap-1 bg-zinc-800/50 rounded-full px-2 py-1 border border-white/5 items-center justify-center">
-                                    <div onClickCapture={() => setActiveCallType('voice')}>
-                                        <CallButton
-                                            calleeId={currentRoom.other_user_id}
-                                            roomId={currentRoom.id}
-                                            type="voice"
-                                        />
-                                    </div>
-                                    <div onClickCapture={() => setActiveCallType('video')}>
-                                        <CallButton
-                                            calleeId={currentRoom.other_user_id}
-                                            roomId={currentRoom.id}
-                                            type="video"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                            {currentRoom?.room_type === 'group' && (
-                                <ChromeButton
-                                    variant="circle"
-                                    className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-text hover:text-green-400 border border-mono-glass-border hover:border-green-500/50"
-                                    title="Start Group Call"
-                                    onClick={handleJoinGroupCall}
-                                >
-                                    <Video className="w-5 h-5" />
-                                </ChromeButton>
-                            )}
+                            <div className="flex gap-1 bg-zinc-800/50 rounded-full px-2 py-1 border border-white/5 items-center justify-center">
+                                <CallButton
+                                    type="voice"
+                                    onCallStart={handleStartDirectCall}
+                                />
+                                <CallButton
+                                    type="video"
+                                    onCallStart={handleStartDirectCall}
+                                />
+                            </div>
+
+
                             <ChromeButton
                                 variant="circle"
                                 className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
@@ -1255,18 +1164,12 @@ function Home() {
                 onAccept={handleAcceptCall}
                 onReject={handleRejectCall}
             />
-            <CallScreen
-                visible={callScreenVisible}
-                remoteStream={remoteStream}
-                localStream={localStream}
-                status={activeCallStatus}
-                callType={activeCallType}
-                onEndCall={handleEndCall}
-            />
+
             {groupCallVisible && selectedRoomId && (
                 <GroupCallScreen
                     roomId={selectedRoomId}
                     localStream={localStream}
+                    callType={activeCallType}
                     onEndCall={handleEndGroupCall}
                 />
             )}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Monitor, MonitorOff, Users, UserPlus, Link as LinkIcon } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Monitor, MonitorOff, Users, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import webrtcService from '../../services/webrtc';
 import UserInviteModal from './UserInviteModal';
@@ -14,12 +14,14 @@ interface Participant {
 interface GroupCallScreenProps {
     roomId: number;
     localStream: MediaStream | null;
+    callType: 'voice' | 'video';
     onEndCall: () => void;
 }
 
 const GroupCallScreen: React.FC<GroupCallScreenProps> = ({
     roomId,
     localStream,
+    callType,
     onEndCall
 }) => {
     const [participants, setParticipants] = useState<Map<number, Participant>>(new Map());
@@ -120,11 +122,7 @@ const GroupCallScreen: React.FC<GroupCallScreenProps> = ({
         webrtcService.inviteUser(roomId, userId);
     };
 
-    const handleCopyLink = () => {
-        const link = `${window.location.origin}/call/${roomId}`;
-        navigator.clipboard.writeText(link);
-        success('Call link copied to clipboard');
-    };
+
 
     // Calculate Grid
     const getGridClass = (count: number) => {
@@ -148,12 +146,7 @@ const GroupCallScreen: React.FC<GroupCallScreenProps> = ({
 
             {/* Header Right: Add User & Link */}
             <div className="absolute top-6 right-6 z-10 flex gap-2">
-                <button
-                    onClick={handleCopyLink}
-                    className="p-2 rounded-full bg-black/40 backdrop-blur border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                    <LinkIcon size={20} />
-                </button>
+
                 <button
                     onClick={() => setIsInviteModalOpen(true)}
                     className="p-2 rounded-full bg-black/40 backdrop-blur border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -230,12 +223,14 @@ const GroupCallScreen: React.FC<GroupCallScreenProps> = ({
                         {cameraOff ? <VideoOff size={24} /> : <Video size={24} />}
                     </button>
 
-                    <button
-                        onClick={toggleScreenShare}
-                        className={`p-4 rounded-full transition-all ${isScreenSharing ? 'bg-blue-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                    >
-                        {isScreenSharing ? <MonitorOff size={24} /> : <Monitor size={24} />}
-                    </button>
+                    {callType === 'video' && (
+                        <button
+                            onClick={toggleScreenShare}
+                            className={`p-4 rounded-full transition-all ${isScreenSharing ? 'bg-blue-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                        >
+                            {isScreenSharing ? <MonitorOff size={24} /> : <Monitor size={24} />}
+                        </button>
+                    )}
 
                     <div className="w-px h-8 bg-white/20 mx-2" />
 

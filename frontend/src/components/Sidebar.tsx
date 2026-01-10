@@ -18,7 +18,6 @@ interface SidebarProps {
   selectedRoomId?: string;
   onRoomSelect: (roomId: string) => void;
   onCreateRoom?: () => void;
-  onNewCall?: () => void;
   onToggleSidebar?: () => void;
   className?: string;
 }
@@ -26,7 +25,7 @@ interface SidebarProps {
 import SearchUsers from './Connect/SearchUsers';
 import RequestList from './Connect/RequestList';
 import AetherLogo from './AetherLogo';
-import { MessageSquare, UserPlus, Users, Menu, VolumeX, Phone } from 'lucide-react';
+import { MessageSquare, UserPlus, Users, Menu, VolumeX } from 'lucide-react';
 import ChromeButton from './ChromeButton';
 import SettingsMenu from './SettingsMenu';
 import Avatar from './Avatar';
@@ -36,7 +35,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedRoomId,
   onRoomSelect,
   onCreateRoom,
-  onNewCall,
   onToggleSidebar,
   className,
 }) => {
@@ -117,18 +115,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           >
             <Menu className="w-4 h-4" />
           </ChromeButton>
-        </div>
-
-        {/* Action Buttons: New Chat & New Call */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={onNewCall}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-accent-primary hover:bg-accent-primary-hover text-white rounded-xl transition-all font-medium text-xs shadow-glass-color"
-          >
-            <Phone className="w-4 h-4" />
-            <span>New Call</span>
-          </button>
-          {/* We can keep New Chat logic here if needed or separate */}
         </div>
 
         {/* Tabs */}

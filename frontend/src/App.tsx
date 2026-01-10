@@ -44,18 +44,14 @@ function AnimatedRoutes() {
                         </PageWrapper>
                     }
                 />
-                <Route path="/call/:roomId" element={<CallRedirect />} />
+
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </AnimatePresence>
     );
 }
 
-const CallRedirect = () => {
-    const { roomId } = useParams();
-    // Redirect to home with joinRoom param, preserving existing auth logic
-    return <Navigate to={`/?joinRoom=${roomId}`} replace />;
-};
+
 
 function App() {
     const [showIntro, setShowIntro] = useState(false);

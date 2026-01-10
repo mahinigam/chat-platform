@@ -1,52 +1,25 @@
 import React, { useState } from 'react';
 import { Phone, Video, Loader2 } from 'lucide-react';
-import socketService from '../../services/socket';
-import { useToast } from '../../hooks/useToast';
 
 interface CallButtonProps {
-    calleeId: number;
-    roomId?: number;
     type: 'voice' | 'video';
+    onCallStart: (type: 'voice' | 'video') => void;
 }
 
-const CallButton: React.FC<CallButtonProps> = ({ calleeId, roomId, type }) => {
-    const socket = socketService.getSocket();
+const CallButton: React.FC<CallButtonProps> = ({ type, onCallStart }) => {
     const [loading, setLoading] = useState(false);
-    const { error: errorToast } = useToast();
 
-    const handleCall = async () => {
+    const handleClick = async () => {
         setLoading(true);
-
-        // 1. Check permissions
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: type === 'video'
-            });
-            // Stop stream immediately, just checking permissions
-            stream.getTracks().forEach(track => track.stop());
-        } catch (error) {
-            console.error('Permission denied:', error);
-            errorToast('Please allow microphone/camera access to call');
-            setLoading(false);
-            return;
-        }
-
-        // 2. Initiate call signaling
-        socket?.emit('call:initiate', {
-            calleeId,
-            callType: type,
-            roomId
-        });
-
-        // Loading state will be cleared when call actually starts or errors
-        // For safe UX, clear after 5s if nothing happens
-        setTimeout(() => setLoading(false), 5000);
+        // Execute the parent's handler
+        onCallStart(type);
+        // Reset loading after a delay to prevent spam
+        setTimeout(() => setLoading(false), 2000);
     };
 
     return (
         <button
-            onClick={handleCall}
+            onClick={handleClick}
             disabled={loading}
             className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors relative group"
             title={type === 'voice' ? 'Voice Call' : 'Video Call'}
