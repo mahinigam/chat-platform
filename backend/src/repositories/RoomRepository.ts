@@ -88,7 +88,8 @@ export class RoomRepository {
             `SELECT r.*, 
               m_last.content as last_message_content,
               m_last.created_at as last_message_at,
-              u_last.username as last_sender_username
+              u_last.username as last_sender_username,
+              other_user.user_id as other_user_id
        FROM rooms r
        JOIN room_members rm ON r.id = rm.room_id
        LEFT JOIN LATERAL (
@@ -99,6 +100,14 @@ export class RoomRepository {
          LIMIT 1
        ) m_last ON true
        LEFT JOIN users u_last ON m_last.sender_id = u_last.id
+       LEFT JOIN LATERAL (
+         SELECT rm2.user_id
+         FROM room_members rm2
+         WHERE rm2.room_id = r.id 
+           AND rm2.user_id != $1 
+           AND rm2.left_at IS NULL
+         LIMIT 1
+       ) other_user ON r.room_type = 'direct'
        WHERE rm.user_id = $1 AND rm.left_at IS NULL
        ORDER BY COALESCE(m_last.created_at, r.created_at) DESC`,
             [userId]

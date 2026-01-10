@@ -43,6 +43,7 @@ interface Room {
     last_sender_username?: string;
     isOnline?: boolean;
     unread?: number;
+    other_user_id?: number;
 }
 
 interface Message {
@@ -762,8 +763,19 @@ function Home() {
                             </ChromeButton>
                             <RoomOptionsMenu
                                 roomId={selectedRoomId!}
+                                userId={currentRoom?.other_user_id}
                                 roomName={currentRoom?.name || 'Chat'}
+                                isBlocked={currentRoom?.other_user_id ? blockedUserIds.includes(currentRoom.other_user_id) : false}
                                 token={token || ''}
+                                onBlockChange={(blocked) => {
+                                    if (currentRoom?.other_user_id) {
+                                        if (blocked) {
+                                            setBlockedUserIds(prev => [...prev, currentRoom.other_user_id!]);
+                                        } else {
+                                            setBlockedUserIds(prev => prev.filter(id => id !== currentRoom.other_user_id));
+                                        }
+                                    }
+                                }}
                             />
                         </div>
                     )}
