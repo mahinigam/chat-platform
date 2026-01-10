@@ -3,7 +3,7 @@ exports.up = (pgm) => {
     // We need to drop the existing check constraint and add a new one
     pgm.dropConstraint('messages', 'messages_message_type_check');
     pgm.addConstraint('messages', 'messages_message_type_check', {
-        check: "message_type IN ('text', 'image', 'video', 'audio', 'file', 'poll', 'location', 'sticker', 'gif')"
+        check: "message_type IN ('text', 'image', 'video', 'audio', 'file', 'poll', 'location', 'sticker', 'gif', 'youtube', 'system')"
     });
 
     // 2. Create poll_votes table
