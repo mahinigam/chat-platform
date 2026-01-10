@@ -6,9 +6,9 @@ interface AetherIntroProps {
 }
 
 // Timing constants (in ms) - Total: 7 seconds
-const STAGE_1_DURATION = 2000;   // Void: 0 - 2s
-const STAGE_2_DURATION = 2300;  // Corruption: 2s - 4.3s
-const STAGE_3_DURATION = 700;   // Revelation: 4.3s - 5s  
+const STAGE_1_DURATION = 2500;   // Void: 0 - 2.5s
+const STAGE_2_DURATION = 1900;  // Corruption: 2.5s - 4.4s
+const STAGE_3_DURATION = 600;   // Revelation: 4.4s - 5s  
 const STAGE_4_DURATION = 2000;  // Gravity: 5s - 7s
 const TOTAL_DURATION = STAGE_1_DURATION + STAGE_2_DURATION + STAGE_3_DURATION + STAGE_4_DURATION;
 
@@ -311,19 +311,6 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                     </>
                 )}
             </motion.div>
-
-            {/* Flash on revelation */}
-            <AnimatePresence>
-                {stage === 'revelation' && (
-                    <motion.div
-                        className="absolute inset-0 bg-white pointer-events-none"
-                        initial={{ opacity: 0.8 }}
-                        animate={{ opacity: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
-                    />
-                )}
-            </AnimatePresence>
         </motion.div>
     );
 };
