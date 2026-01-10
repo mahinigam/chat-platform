@@ -149,20 +149,18 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
         }
     };
 
-    // Container variants for gravity effect
+    // Container variants for zoom fade effect
     const containerVariants = {
         initial: {
-            y: 0,
             scale: 1,
             opacity: 1
         },
         gravity: {
-            y: '-100vh',
-            scale: 2.5,
+            scale: 3,
             opacity: 0,
             transition: {
                 duration: STAGE_4_DURATION / 1000,
-                ease: [0.55, 0.055, 0.675, 0.19] as const // Ease-in for acceleration feel
+                ease: [0.4, 0, 0.2, 1] as const // Smooth ease-out for zoom fade
             }
         }
     };
