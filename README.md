@@ -44,16 +44,25 @@ The UI follows the **Obsidian Chrome** design system — a monochrome, performan
 | **Message Receipts** | Sent → Delivered → Read status indicators |
 | **Offline Support** | Messages queued and delivered on reconnection |
 | **Typing Indicators** | Debounced "User is typing..." with auto-stop |
+| **Message Reactions** | Emoji reactions with real-time sync |
 
 ### Rich Media
 | Feature | Description |
 |---------|-------------|
-| **Orbit Search** | Integrated music search (Spotify → YouTube audio) |
+| **Orbit Search** | Integrated music search (Spotify → YouTube audio playback) |
 | **Voice Messages** | High-fidelity audio recording with waveform visualization |
 | **Polls** | Real-time collaborative voting |
 | **GIFs** | Giphy integration |
 | **Location Sharing** | OpenStreetMap-based location picker |
 | **File Uploads** | Images, videos, and documents |
+
+### User Controls
+| Feature | Description |
+|---------|-------------|
+| **Block Users** | Block users in DMs to prevent messaging |
+| **Mute Rooms** | Mute notifications for specific rooms |
+| **Mute Users** | Mute notifications from specific users |
+| **Blocked/Muted Lists** | Manage blocked and muted users from settings |
 
 ### Advanced Engineering
 | Feature | Description |
@@ -95,7 +104,24 @@ Aether's UI follows the **Obsidian Chrome** design philosophy, which emphasizes:
 | `GlassPanel` | Container with subtle borders and shadow |
 | `Modal` | Focus-trapped dialog with smooth scale transition |
 | `Toast` | Non-blocking notifications |
-| `CosmicLogo` | Brand logo with hover-triggered distortion effect |
+| `AetherLogo` | Brand logo with hover-triggered distortion effect |
+| `AetherIntro` | Cinematic intro animation (see below) |
+
+### Signature Intro Animation
+
+Aether features a **7-second cinematic intro** inspired by Arcane/Valorant aesthetics:
+
+| Stage | Duration | Effect |
+|-------|----------|--------|
+| **Void** | 2.5s | White logo fades in on pure black |
+| **Corruption** | 1.9s | RGB split, glitch slices, particles + gradual color reveal |
+| **Revealed** | 1.1s | Logo pauses in final form |
+| **Zoom** | 1.5s | Smooth zoom-fade transition to app |
+
+**Key details:**
+- Logo colors are revealed *during* the glitch (no jarring transition)
+- Session-based: only plays once per browser session
+- Lightweight: 4.5 KB bundle, pure CSS/Framer Motion animations
 
 ---
 
