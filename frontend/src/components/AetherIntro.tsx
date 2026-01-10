@@ -7,12 +7,12 @@ interface AetherIntroProps {
 
 // Timing constants (in ms) - Total: 7 seconds
 const STAGE_1_DURATION = 2500;   // Void: 0 - 2.5s
-const STAGE_2_DURATION = 1900;  // Corruption: 2.5s - 4.4s
-const STAGE_3_DURATION = 600;   // Revelation: 4.4s - 5s  
-const STAGE_4_DURATION = 2000;  // Gravity: 5s - 7s
+const STAGE_2_DURATION = 1900;  // Corruption (w/ gradual reveal): 2.5s - 4.4s
+const STAGE_3_DURATION = 1100;  // Revealed (logo pauses): 4.4s - 5.5s  
+const STAGE_4_DURATION = 1500;  // Zoom: 5.5s - 7s
 const TOTAL_DURATION = STAGE_1_DURATION + STAGE_2_DURATION + STAGE_3_DURATION + STAGE_4_DURATION;
 
-type Stage = 'void' | 'corruption' | 'revelation' | 'gravity' | 'complete';
+type Stage = 'void' | 'corruption' | 'revealed' | 'zoom' | 'complete';
 
 // Logo size to match login page (lg size = 150px width)
 const LOGO_WIDTH = 150;
@@ -64,10 +64,12 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
     const [stage, setStage] = useState<Stage>('void');
     const [glitchOffset, setGlitchOffset] = useState({ x: 0, y: 0 });
     const [rgbSplit, setRgbSplit] = useState(0);
+    const [logoBrightness, setLogoBrightness] = useState(10); // Start pure white
     const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const brightnessIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Generate random glitch offsets during corruption stage
+    // Generate random glitch offsets and gradually decrease brightness during corruption
     const startGlitchEffect = useCallback(() => {
         glitchIntervalRef.current = setInterval(() => {
             setGlitchOffset({
@@ -76,6 +78,19 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
             });
             setRgbSplit(3 + Math.random() * 6);
         }, 50);
+
+        // Gradual brightness reveal: 10 → 1 over corruption duration
+        const steps = 20;
+        const stepDuration = STAGE_2_DURATION / steps;
+        let currentStep = 0;
+        brightnessIntervalRef.current = setInterval(() => {
+            currentStep++;
+            const progress = currentStep / steps;
+            setLogoBrightness(10 - (9 * progress)); // 10 → 1
+            if (currentStep >= steps) {
+                if (brightnessIntervalRef.current) clearInterval(brightnessIntervalRef.current);
+            }
+        }, stepDuration);
     }, []);
 
     const stopGlitchEffect = useCallback(() => {
@@ -83,29 +98,34 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
             clearInterval(glitchIntervalRef.current);
             glitchIntervalRef.current = null;
         }
+        if (brightnessIntervalRef.current) {
+            clearInterval(brightnessIntervalRef.current);
+            brightnessIntervalRef.current = null;
+        }
         setGlitchOffset({ x: 0, y: 0 });
         setRgbSplit(0);
+        setLogoBrightness(1); // Ensure final brightness
     }, []);
 
     // Stage progression
     useEffect(() => {
         const timers: NodeJS.Timeout[] = [];
 
-        // Stage 1 → Stage 2 (Void → Corruption)
+        // Stage 1 → Stage 2 (Void → Corruption with gradual reveal)
         timers.push(setTimeout(() => {
             setStage('corruption');
             startGlitchEffect();
         }, STAGE_1_DURATION));
 
-        // Stage 2 → Stage 3 (Corruption → Revelation)
+        // Stage 2 → Stage 3 (Corruption → Revealed - logo pauses)
         timers.push(setTimeout(() => {
             stopGlitchEffect();
-            setStage('revelation');
+            setStage('revealed');
         }, STAGE_1_DURATION + STAGE_2_DURATION));
 
-        // Stage 3 → Stage 4 (Revelation → Gravity)
+        // Stage 3 → Stage 4 (Revealed → Zoom)
         timers.push(setTimeout(() => {
-            setStage('gravity');
+            setStage('zoom');
         }, STAGE_1_DURATION + STAGE_2_DURATION + STAGE_3_DURATION));
 
         // Complete
@@ -120,47 +140,18 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
         };
     }, [onComplete, startGlitchEffect, stopGlitchEffect]);
 
-    // Logo variants for different stages
-    const logoVariants = {
-        void: {
-            opacity: 0,
-            scale: 0.9,
-            filter: 'brightness(10) blur(0px)'
-        },
-        voidVisible: {
-            opacity: 1,
-            scale: 1,
-            filter: 'brightness(10) blur(0px)' // Pure white
-        },
-        corruption: {
-            opacity: 1,
-            scale: 1,
-            filter: 'brightness(10) blur(0px)'
-        },
-        revelation: {
-            opacity: 1,
-            scale: 1,
-            filter: 'brightness(1) blur(0px)' // Natural colors
-        },
-        gravity: {
-            opacity: 1,
-            scale: 1,
-            filter: 'brightness(1) blur(0px)'
-        }
-    };
-
     // Container variants for zoom fade effect
     const containerVariants = {
         initial: {
             scale: 1,
             opacity: 1
         },
-        gravity: {
+        zoom: {
             scale: 3,
             opacity: 0,
             transition: {
                 duration: STAGE_4_DURATION / 1000,
-                ease: [0.4, 0, 0.2, 1] as const // Smooth ease-out for zoom fade
+                ease: [0.4, 0, 0.2, 1] as const
             }
         }
     };
@@ -174,7 +165,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
             style={{ backgroundColor: '#000000' }}
             variants={containerVariants}
             initial="initial"
-            animate={stage === 'gravity' ? 'gravity' : 'initial'}
+            animate={stage === 'zoom' ? 'zoom' : 'initial'}
         >
             {/* Scanline overlay for extra grit */}
             <div
@@ -213,7 +204,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                         style={{
                             width: LOGO_WIDTH,
                             height: LOGO_HEIGHT,
-                            filter: 'brightness(10) hue-rotate(-60deg) saturate(5)',
+                            filter: `brightness(${logoBrightness}) hue-rotate(-60deg) saturate(5)`,
                             mixBlendMode: 'screen',
                             transform: `translateX(${-rgbSplit}px)`,
                             opacity: 0.7
@@ -230,7 +221,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                         style={{
                             width: LOGO_WIDTH,
                             height: LOGO_HEIGHT,
-                            filter: 'brightness(10) hue-rotate(180deg) saturate(5)',
+                            filter: `brightness(${logoBrightness}) hue-rotate(180deg) saturate(5)`,
                             mixBlendMode: 'screen',
                             transform: `translateX(${rgbSplit}px)`,
                             opacity: 0.7
@@ -238,7 +229,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                     />
                 )}
 
-                {/* Main Logo */}
+                {/* Main Logo - brightness controlled by logoBrightness state */}
                 <motion.img
                     src="/src/assets/logo.svg"
                     alt="Aether"
@@ -246,19 +237,16 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                     style={{
                         width: LOGO_WIDTH,
                         height: LOGO_HEIGHT,
+                        filter: `brightness(${logoBrightness})`,
                     }}
-                    variants={logoVariants}
-                    initial="void"
-                    animate={
-                        stage === 'void' ? 'voidVisible' :
-                            stage === 'corruption' ? 'corruption' :
-                                stage === 'revelation' ? 'revelation' :
-                                    'gravity'
-                    }
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{
+                        opacity: stage === 'void' ? 0 : 1,
+                        scale: 1
+                    }}
                     transition={{
-                        duration: stage === 'void' ? 1.0 :
-                            stage === 'revelation' ? 0.5 : 0.1,
-                        ease: stage === 'revelation' ? [0.34, 1.56, 0.64, 1] : 'easeOut'
+                        duration: stage === 'void' ? 1.0 : 0.3,
+                        ease: 'easeOut'
                     }}
                 />
 
@@ -282,7 +270,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                             <img
                                 src="/src/assets/logo.svg"
                                 alt=""
-                                style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT, filter: 'brightness(10)' }}
+                                style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT, filter: `brightness(${logoBrightness})` }}
                             />
                         </motion.div>
                         <motion.div
@@ -303,7 +291,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                             <img
                                 src="/src/assets/logo.svg"
                                 alt=""
-                                style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT, filter: 'brightness(10)' }}
+                                style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT, filter: `brightness(${logoBrightness})` }}
                             />
                         </motion.div>
                     </>
