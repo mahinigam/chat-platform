@@ -5,7 +5,7 @@ import { useToast } from '../hooks/useToast';
 
 import ToastContainer from '../components/Toast';
 import ParticleBackground from '../components/ParticleBackground';
-import CosmicLogo from '../components/CosmicLogo';
+import AetherLogo from '../components/AetherLogo';
 import ChromeButton from '../components/ChromeButton';
 
 const Register: React.FC = () => {
@@ -42,7 +42,7 @@ const Register: React.FC = () => {
         <div className="min-h-screen text-mono-text flex items-center justify-center p-4 relative overflow-hidden">
             <div className="w-full max-w-sm relative z-10">
                 <div className="text-center mb-8">
-                    <CosmicLogo size="lg" />
+                    <AetherLogo size="lg" />
                     <p className="text-mono-muted">Create your account</p>
                 </div>
 

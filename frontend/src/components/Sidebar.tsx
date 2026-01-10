@@ -24,7 +24,7 @@ interface SidebarProps {
 
 import SearchUsers from './Connect/SearchUsers';
 import RequestList from './Connect/RequestList';
-import CosmicLogo from './CosmicLogo';
+import AetherLogo from './AetherLogo';
 import { MessageSquare, UserPlus, Users, Menu, VolumeX } from 'lucide-react';
 import ChromeButton from './ChromeButton';
 import SettingsMenu from './SettingsMenu';
@@ -105,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-mono-glass-border">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <CosmicLogo size="sm" />
+          <AetherLogo size="sm" />
           <ChromeButton
             variant="circle"
             className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-mono-muted hover:text-mono-text md:flex"
