@@ -10,6 +10,7 @@ import presenceHandler from './handlers/presenceHandler';
 import roomHandler from './handlers/roomHandler';
 import pollHandler from './handlers/pollHandler';
 import reactionHandler from './handlers/reactionHandler';
+import callHandler from './handlers/callHandler';
 
 export interface AuthenticatedSocket extends Socket {
     userId: number;
@@ -38,6 +39,9 @@ export function initializeSocket(httpServer: HTTPServer): Server {
     // When User A on Server 1 sends a message to User B on Server 2,
     // the message goes through Redis Pub/Sub
     io.adapter(createAdapter(redisPubClient, redisSubClient));
+
+    // Initialize CallHandler with IO instance
+    callHandler.initialize(io);
 
     console.log('Socket.io Redis Adapter initialized - Horizontal scaling enabled');
 
@@ -109,6 +113,15 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             socket.on('heartbeat', () =>
                 presenceHandler.handleHeartbeat(authSocket)
             );
+
+            // ============================================
+            // Call Events (WebRTC Signaling)
+            // ============================================
+            socket.on('call:initiate', (data) => callHandler.handleInitiateCall(authSocket, data));
+            socket.on('call:accept', (data) => callHandler.handleAcceptCall(authSocket, data));
+            socket.on('call:reject', (data) => callHandler.handleRejectCall(authSocket, data));
+            socket.on('call:end', (data) => callHandler.handleEndCall(authSocket, data));
+            socket.on('call:signal', (data) => callHandler.handleSignal(authSocket, data));
 
             // ============================================
             // Disconnection Handler

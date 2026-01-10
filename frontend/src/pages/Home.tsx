@@ -25,6 +25,12 @@ const ChatSearch = React.lazy(() => import('../components/ChatSearch'));
 import UndoToast from '../components/UndoToast';
 import ScheduleModal from '../components/ScheduleModal';
 import RoomOptionsMenu from '../components/RoomOptionsMenu';
+import IncomingCallModal from '../components/calls/IncomingCallModal';
+import CallScreen from '../components/calls/CallScreen';
+import CallButton from '../components/calls/CallButton';
+import webrtcService from '../services/webrtc';
+
+
 
 // Loading fallback for lazy components
 const LazyFallback = () => (
@@ -99,6 +105,18 @@ function Home() {
     const [scheduleContent, setScheduleContent] = useState('');
     const [blockedUserIds, setBlockedUserIds] = useState<number[]>([]);
 
+    // Call State
+    const [incomingCall, setIncomingCall] = useState<{ callId: number; callerId: number; callerName: string; callType: 'voice' | 'video'; roomId?: number } | null>(null);
+    const [callScreenVisible, setCallScreenVisible] = useState(false);
+    const [activeCallStatus, setActiveCallStatus] = useState<string>('connecting');
+    const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+    const [activeCallType, setActiveCallType] = useState<'voice' | 'video'>('voice');
+    const [activeCallOpponent, setActiveCallOpponent] = useState<number | null>(null);
+    const [currentCallId, setCurrentCallId] = useState<number | null>(null);
+
+
+
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toasts, dismissToast, success, error: errorToast } = useToast();
@@ -120,6 +138,115 @@ function Home() {
     }, [navigate]);
 
     // Socket connection
+    useEffect(() => {
+        const socket = socketService.getSocket();
+
+        // Listeners for WebRTC events
+        webrtcService.initialize(socket!); // Safe if we assume socket exists after connect, but strictly should check. socketService handles null internally.
+
+        webrtcService.on('localStream', (stream) => setLocalStream(stream));
+        webrtcService.on('remoteStream', (stream) => setRemoteStream(stream));
+        webrtcService.on('connectionState', (state) => setActiveCallStatus(state));
+        webrtcService.on('error', (err) => {
+            console.error('WebRTC Error:', err);
+            errorToast('Call connection failed');
+            handleEndCall();
+        });
+
+        // Socket listeners for signaling
+        const onRinging = (data: any) => {
+            if (!callScreenVisible) {
+                setIncomingCall({
+                    callId: data.callId,
+                    callerId: data.callerId,
+                    callerName: data.callerName,
+                    callType: data.callType,
+                    roomId: data.roomId
+                });
+            }
+        };
+
+        const onAccepted = async (data: any) => {
+            setActiveCallStatus('connecting');
+            setCurrentCallId(data.callId);
+            setCallScreenVisible(true);
+            try {
+                await webrtcService.startCall(data.calleeId, activeCallType === 'video');
+            } catch (err) {
+                errorToast('Failed to connect call');
+                handleEndCall();
+            }
+        };
+
+        const onRejected = () => {
+            errorToast('Call rejected');
+            handleEndCall();
+        };
+
+        const onEnded = () => {
+            handleEndCall();
+        };
+
+        const onBusy = () => {
+            errorToast('User is on another call');
+            handleEndCall();
+        };
+
+        socket?.on('call:ringing', onRinging);
+        socket?.on('call:accepted', onAccepted);
+        socket?.on('call:rejected', onRejected);
+        socket?.on('call:ended', onEnded);
+        socket?.on('call:busy', onBusy);
+
+        return () => {
+            // Cleanup
+            socket?.off('call:ringing', onRinging);
+            socket?.off('call:accepted', onAccepted);
+            socket?.off('call:rejected', onRejected);
+            socket?.off('call:ended', onEnded);
+            socket?.off('call:busy', onBusy);
+        };
+    }, [activeCallType, callScreenVisible]); // Re-bind if these change
+
+    const handleAcceptCall = async () => {
+        if (!incomingCall) return;
+        const socket = socketService.getSocket();
+        const { callId, callerId, callType } = incomingCall;
+
+        setIncomingCall(null);
+        setCallScreenVisible(true);
+        setActiveCallType(callType);
+        setActiveCallStatus('connecting');
+        setCurrentCallId(callId);
+        setActiveCallOpponent(callerId);
+
+        socket?.emit('call:accept', { callId, callerId });
+    };
+
+    const handleRejectCall = () => {
+        if (!incomingCall) return;
+        const socket = socketService.getSocket();
+        socket?.emit('call:reject', {
+            callId: incomingCall.callId,
+            callerId: incomingCall.callerId
+        });
+        setIncomingCall(null);
+    };
+
+    const handleEndCall = () => {
+        const socket = socketService.getSocket();
+        if (activeCallOpponent && currentCallId) {
+            socket?.emit('call:end', {
+                callId: currentCallId,
+                otherUserId: activeCallOpponent
+            });
+        }
+        webrtcService.endCall();
+        setCallScreenVisible(false);
+        setActiveCallOpponent(null);
+    };
+
+    // Socket connection and Auth
     useEffect(() => {
         if (!token) {
             navigate('/login');
@@ -739,20 +866,24 @@ function Home() {
                     {/* Header Actions */}
                     {currentRoom && (
                         <div className="flex gap-2 flex-shrink-0">
-                            <ChromeButton
-                                variant="circle"
-                                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
-                                aria-label="Video Call"
-                            >
-                                <Video className="w-5 h-5" />
-                            </ChromeButton>
-                            <ChromeButton
-                                variant="circle"
-                                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
-                                aria-label="Voice Call"
-                            >
-                                <Phone className="w-5 h-5" />
-                            </ChromeButton>
+                            {currentRoom?.room_type === 'direct' && currentRoom?.other_user_id && (
+                                <div className="flex gap-1 bg-zinc-800/50 rounded-full px-2 py-1 border border-white/5 items-center justify-center">
+                                    <div onClickCapture={() => setActiveCallType('voice')}>
+                                        <CallButton
+                                            calleeId={currentRoom.other_user_id}
+                                            roomId={currentRoom.id}
+                                            type="voice"
+                                        />
+                                    </div>
+                                    <div onClickCapture={() => setActiveCallType('video')}>
+                                        <CallButton
+                                            calleeId={currentRoom.other_user_id}
+                                            roomId={currentRoom.id}
+                                            type="video"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                             <ChromeButton
                                 variant="circle"
                                 className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
@@ -1013,6 +1144,22 @@ function Home() {
                 onClose={() => setIsScheduleModalOpen(false)}
                 onSchedule={handleScheduleMessage}
                 isLoading={isScheduling}
+            />
+            {/* Call Modals */}
+            <IncomingCallModal
+                visible={!!incomingCall}
+                callerName={incomingCall?.callerName || 'Unknown'}
+                callType={incomingCall?.callType || 'voice'}
+                onAccept={handleAcceptCall}
+                onReject={handleRejectCall}
+            />
+            <CallScreen
+                visible={callScreenVisible}
+                remoteStream={remoteStream}
+                localStream={localStream}
+                status={activeCallStatus}
+                callType={activeCallType}
+                onEndCall={handleEndCall}
             />
         </div>
     );

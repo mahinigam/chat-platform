@@ -136,7 +136,10 @@ class PresenceHandler {
                 socket.join(`room:${room.id}`);
             }
 
-            console.log(`User ${userId} joined ${rooms.length} rooms`);
+            // Join user-specific room for direct signaling (calls, notifications)
+            socket.join(`user:${userId}`);
+
+            console.log(`User ${userId} joined ${rooms.length} rooms + user channel`);
 
         } catch (error) {
             console.error('Error joining user rooms:', error);
@@ -189,17 +192,35 @@ class PresenceHandler {
     /**
      * Broadcast presence status to user's contacts
      */
-    private async broadcastPresence(
-        socket: AuthenticatedSocket,
-        status: 'online' | 'offline'
+    /**
+     * Broadcast presence status to user's contacts
+     */
+    public async broadcastPresence(
+        socket: AuthenticatedSocket | { userId: number, username: string, to: (room: string) => any } | { to: (room: string) => any },
+        status: 'online' | 'offline' | 'busy',
+        overrideUser?: { userId: number, username: string }
     ): Promise<void> {
         try {
-            const { userId, username } = socket;
+            let userId: number;
+            let username: string;
+
+            if (overrideUser) {
+                userId = overrideUser.userId;
+                username = overrideUser.username;
+            } else if ('userId' in socket) {
+                userId = socket.userId;
+                username = socket.username;
+            } else {
+                console.error('Cannot broadcast presence: No user identity provided');
+                return;
+            }
 
             // Get user's rooms to broadcast presence
             const rooms = await RoomRepository.getUserRooms(userId);
 
             for (const room of rooms) {
+                // Use socket.to() if available (broadcast to others), otherwise io.to() logic needed?
+                // Actually socket.to() is fine, we just need the emitter.
                 socket.to(`room:${room.id}`).emit('presence:change', {
                     userId,
                     username,

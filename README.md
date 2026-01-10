@@ -46,6 +46,14 @@ The UI follows the **Obsidian Chrome** design system — a monochrome, performan
 | **Typing Indicators** | Debounced "User is typing..." with auto-stop |
 | **Message Reactions** | Emoji reactions with real-time sync |
 
+### Voice & Video
+| Feature | Description |
+|---------|-------------|
+| **1:1 Calling** | High-def Voice & Video calls via WebRTC (P2P) |
+| **Reliability** | Auto-reconnect (ICE restart) & connection quality monitoring |
+| **Privacy First** | True hardware release on mute/camera off |
+| **Call Logging** | Automatic missed call tracking & duration logging |
+
 ### Rich Media
 | Feature | Description |
 |---------|-------------|
