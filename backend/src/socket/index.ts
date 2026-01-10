@@ -123,6 +123,11 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             socket.on('call:end', (data) => callHandler.handleEndCall(authSocket, data));
             socket.on('call:signal', (data) => callHandler.handleSignal(authSocket, data));
 
+            // Group Calls
+            socket.on('call:join_group', (data) => callHandler.handleJoinGroupCall(authSocket, data.roomId));
+            socket.on('call:leave_group', (data) => callHandler.handleLeaveGroupCall(authSocket, data.roomId));
+            socket.on('call:invite', (data) => callHandler.handleInviteToCall(authSocket, data));
+
             // ============================================
             // Disconnection Handler
             // ============================================

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Video, Phone, Search, Loader2 } from 'lucide-react';
+import { Video, Search, Loader2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import MessageList from '../components/MessageList';
 import Composer from '../components/Composer';
@@ -12,7 +12,7 @@ import { cn } from '../utils/theme';
 import socketService from '../services/socket';
 import axios from 'axios';
 import { uploadFile } from '../api/upload';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ToastContainer from '../components/Toast';
 import ChromeButton from '../components/ChromeButton';
 
@@ -28,6 +28,7 @@ import RoomOptionsMenu from '../components/RoomOptionsMenu';
 import IncomingCallModal from '../components/calls/IncomingCallModal';
 import CallScreen from '../components/calls/CallScreen';
 import CallButton from '../components/calls/CallButton';
+import GroupCallScreen from '../components/calls/GroupCallScreen';
 import webrtcService from '../services/webrtc';
 
 
@@ -76,6 +77,7 @@ interface Message {
 
 function Home() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isConnected, setIsConnected] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [token, setToken] = useState<string | null>(() => {
@@ -114,6 +116,7 @@ function Home() {
     const [activeCallType, setActiveCallType] = useState<'voice' | 'video'>('voice');
     const [activeCallOpponent, setActiveCallOpponent] = useState<number | null>(null);
     const [currentCallId, setCurrentCallId] = useState<number | null>(null);
+    const [groupCallVisible, setGroupCallVisible] = useState(false);
 
 
 
@@ -244,6 +247,58 @@ function Home() {
         webrtcService.endCall();
         setCallScreenVisible(false);
         setActiveCallOpponent(null);
+        setActiveCallOpponent(null);
+    };
+
+    const handleJoinGroupCall = async () => {
+        if (!selectedRoomId) return;
+        setGroupCallVisible(true);
+        try {
+            await webrtcService.joinGroupCall(selectedRoomId);
+        } catch (err) {
+            console.error('Failed to join group call:', err);
+            errorToast('Failed to join group call');
+            setGroupCallVisible(false);
+        }
+    };
+
+    const handleEndGroupCall = async () => {
+        await webrtcService.endCall();
+        setGroupCallVisible(false);
+    };
+
+    const handleNewCall = async () => {
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const roomName = `Call ${timestamp}`;
+        try {
+            setIsModalOpen(false); // Ensure other modals are closed
+            // Create new room
+            const response = await axios.post(`${API_URL}/rooms`, {
+                name: roomName,
+                roomType: 'group',
+                members: []
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            const newRoom = response.data.room;
+            setRooms(prev => [newRoom, ...prev]);
+            setSelectedRoomId(newRoom.id);
+
+            // Auto-join call logic
+            // We need to wait for state update or just fire it? 
+            // setSelectedRoomId updates state for View, but joinGroupCall needs ID.
+            setGroupCallVisible(true);
+            webrtcService.joinGroupCall(newRoom.id).catch(err => {
+                console.error('Failed to auto-join new call:', err);
+                errorToast('Failed to start call');
+                setGroupCallVisible(false);
+            });
+
+        } catch (err) {
+            console.error('New Call error:', err);
+            errorToast('Failed to start new call');
+        }
     };
 
     // Socket connection and Auth
@@ -344,6 +399,41 @@ function Home() {
 
         fetchBlockedUsers();
     }, [token, isConnected, API_URL]);
+
+    // Auto-Join Call Link Logic
+    useEffect(() => {
+        if (!token || !isConnected || rooms.length === 0) return;
+
+        const params = new URLSearchParams(location.search);
+        const joinRoomId = params.get('joinRoom');
+
+        if (joinRoomId) {
+            const roomId = parseInt(joinRoomId);
+            const targetRoom = rooms.find(r => r.id === roomId);
+
+            if (targetRoom) {
+                // Select the room
+                if (selectedRoomId !== roomId) {
+                    setSelectedRoomId(roomId);
+                }
+
+                // Join the call
+                setGroupCallVisible(true);
+                webrtcService.joinGroupCall(roomId).catch(err => {
+                    console.error('Failed to auto-join group call:', err);
+                    errorToast('Failed to join group call');
+                    setGroupCallVisible(false);
+                });
+
+                // Clear URL param to prevent re-joining
+                navigate('/', { replace: true });
+            } else {
+                // Only show error if we are sure rooms are loaded (checked rooms.length > 0 above)
+                errorToast('You are not a member of this room.');
+                navigate('/', { replace: true });
+            }
+        }
+    }, [rooms, token, isConnected, location.search, navigate, errorToast, selectedRoomId]);
 
     // Fetch messages
     useEffect(() => {
@@ -799,6 +889,8 @@ function Home() {
                         selectedRoomId={selectedRoomId?.toString()}
                         onRoomSelect={handleRoomSelect}
                         onCreateRoom={handleCreateRoom}
+                        onNewCall={handleNewCall}
+                        className="w-full md:w-[320px] flex-shrink-0"
                         onToggleSidebar={() => setIsSidebarOpen(false)}
                     />
                 </div>
@@ -883,6 +975,16 @@ function Home() {
                                         />
                                     </div>
                                 </div>
+                            )}
+                            {currentRoom?.room_type === 'group' && (
+                                <ChromeButton
+                                    variant="circle"
+                                    className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-text hover:text-green-400 border border-mono-glass-border hover:border-green-500/50"
+                                    title="Start Group Call"
+                                    onClick={handleJoinGroupCall}
+                                >
+                                    <Video className="w-5 h-5" />
+                                </ChromeButton>
                             )}
                             <ChromeButton
                                 variant="circle"
@@ -1161,6 +1263,13 @@ function Home() {
                 callType={activeCallType}
                 onEndCall={handleEndCall}
             />
+            {groupCallVisible && selectedRoomId && (
+                <GroupCallScreen
+                    roomId={selectedRoomId}
+                    localStream={localStream}
+                    onEndCall={handleEndGroupCall}
+                />
+            )}
         </div>
     );
 }

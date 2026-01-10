@@ -1,5 +1,5 @@
 import React, { Suspense, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MessageListSkeleton } from './components/Skeleton';
 
@@ -44,11 +44,18 @@ function AnimatedRoutes() {
                         </PageWrapper>
                     }
                 />
+                <Route path="/call/:roomId" element={<CallRedirect />} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </AnimatePresence>
     );
 }
+
+const CallRedirect = () => {
+    const { roomId } = useParams();
+    // Redirect to home with joinRoom param, preserving existing auth logic
+    return <Navigate to={`/?joinRoom=${roomId}`} replace />;
+};
 
 function App() {
     const [showIntro, setShowIntro] = useState(false);

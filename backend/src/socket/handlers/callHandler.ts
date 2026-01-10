@@ -199,6 +199,95 @@ class CallHandler {
         }
     }
 
+    // Group Call Logic
+    async handleJoinGroupCall(socket: AuthenticatedSocket, roomId: number) {
+        const { userId, username } = socket;
+        const roomChannel = `call:room:${roomId}`;
+
+        // Get existing participants in this room channel
+        // Note: This relies on socket.io adapter logic.
+        // In a clustered environment, we'd need Redis adapter capabilities to list sockets.
+        // For single instance or sticky sessions, this works:
+        const sockets = await this.io?.in(roomChannel).fetchSockets();
+
+        // Check participant limit (Max 5)
+        if (sockets && sockets.length >= 5) {
+            socket.emit('call:error', { message: 'Room is full (Max 5 participants)' });
+            return;
+        }
+
+        const participants = sockets?.map(s => {
+            // We need to cast 's' to AuthenticatedSocket or access data safely
+            const sAuth = s as unknown as AuthenticatedSocket;
+            return {
+                userId: sAuth.userId,
+                username: sAuth.username
+            };
+        }).filter(p => p.userId !== userId) || [];
+
+        // Join the channel
+        socket.join(roomChannel);
+
+        // Notify others
+        socket.to(roomChannel).emit('call:new_peer', {
+            userId,
+            username
+        });
+
+        // Send existing participants to the joiner
+        socket.emit('call:room_joined', {
+            roomId,
+            participants
+        });
+
+        // Mark user as busy? In group calls, maybe 'busy' is good, 
+        // but they can be in multiple groups? For simplicity, yes busy.
+        activeCalls.set(userId, roomId); // Store roomId as callId for tracking
+        await presenceHandler.broadcastPresence(socket, 'busy');
+    }
+
+    async handleInviteToCall(socket: AuthenticatedSocket, data: { roomId: number; targetUserId: number }) {
+        const { userId, username } = socket;
+        const { roomId, targetUserId } = data;
+
+        // Check if target is already in the room?
+        const roomChannel = `call:room:${roomId}`;
+        const sockets = await this.io?.in(roomChannel).fetchSockets();
+        const isAlreadyIn = sockets?.some(s => (s as unknown as AuthenticatedSocket).userId === targetUserId);
+
+        if (isAlreadyIn) {
+            socket.emit('call:error', { message: 'User is already in the call' });
+            return;
+        }
+
+        if (this.io) {
+            this.io.to(`user:${targetUserId}`).emit('call:ringing', {
+                callId: roomId, // Use roomId as callId for group invites so frontend knows where to join
+                callerId: userId,
+                callerName: username,
+                callType: 'video',
+                roomId: roomId,
+                isGroupInvite: true
+            });
+        }
+    }
+
+    async handleLeaveGroupCall(socket: AuthenticatedSocket, roomId: number) {
+        const { userId } = socket;
+        const roomChannel = `call:room:${roomId}`;
+
+        socket.leave(roomChannel);
+
+        // Notify others
+        socket.to(roomChannel).emit('call:peer_left', {
+            userId
+        });
+
+        // Cleanup busy
+        activeCalls.delete(userId);
+        await presenceHandler.broadcastPresence(socket, 'online');
+    }
+
     // WebRTC Signaling (Relay Only)
     handleSignal(socket: AuthenticatedSocket, data: { targetUserId: number; type: 'offer' | 'answer' | 'ice-candidate'; payload: any }) {
         const { userId } = socket;

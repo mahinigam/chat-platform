@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, Video, VideoOff, PhoneOff } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Monitor, MonitorOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import webrtcService from '../../services/webrtc';
 
@@ -24,6 +24,7 @@ const CallScreen: React.FC<CallScreenProps> = ({
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const [muted, setMuted] = useState(false);
     const [cameraOff, setCameraOff] = useState(callType === 'voice');
+    const [isScreenSharing, setIsScreenSharing] = useState(false);
     const [controlsVisible, setControlsVisible] = useState(true);
     const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -49,6 +50,18 @@ const CallScreen: React.FC<CallScreenProps> = ({
     const toggleCamera = () => {
         webrtcService.toggleVideo(cameraOff); // if currently off, enable it (true)
         setCameraOff(!cameraOff);
+    };
+
+    const toggleScreenShare = async () => {
+        if (!isScreenSharing) {
+            await webrtcService.startScreenShare();
+            setIsScreenSharing(true);
+            setCameraOff(true); // Camera is implicitly off
+        } else {
+            await webrtcService.stopScreenShare();
+            setIsScreenSharing(false);
+            setCameraOff(false); // Camera explicitly back on
+        }
     };
 
     const showControls = () => {
@@ -115,7 +128,7 @@ const CallScreen: React.FC<CallScreenProps> = ({
                         autoPlay
                         playsInline
                         muted
-                        className={`w-full h-full object-cover ${cameraOff ? 'hidden' : ''}`}
+                        className={`w-full h-full object-cover ${cameraOff && !isScreenSharing ? 'hidden' : ''}`}
                     />
                     {cameraOff && (
                         <div className="w-full h-full flex items-center justify-center text-zinc-500">
@@ -140,12 +153,22 @@ const CallScreen: React.FC<CallScreenProps> = ({
                 </button>
 
                 {callType === 'video' && (
-                    <button
-                        onClick={toggleCamera}
-                        className={`p-4 rounded-full transition-all ${cameraOff ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                    >
-                        {cameraOff ? <VideoOff size={24} /> : <Video size={24} />}
-                    </button>
+                    <>
+                        <button
+                            onClick={toggleCamera}
+                            disabled={isScreenSharing}
+                            className={`p-4 rounded-full transition-all ${cameraOff ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'} ${isScreenSharing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {cameraOff ? <VideoOff size={24} /> : <Video size={24} />}
+                        </button>
+
+                        <button
+                            onClick={toggleScreenShare}
+                            className={`p-4 rounded-full transition-all ${isScreenSharing ? 'bg-blue-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                        >
+                            {isScreenSharing ? <MonitorOff size={24} /> : <Monitor size={24} />}
+                        </button>
+                    </>
                 )}
 
                 <button
