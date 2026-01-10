@@ -65,6 +65,7 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
     const [glitchOffset, setGlitchOffset] = useState({ x: 0, y: 0 });
     const [rgbSplit, setRgbSplit] = useState(0);
     const [logoBrightness, setLogoBrightness] = useState(10); // Start pure white
+    const [logoVisible, setLogoVisible] = useState(false); // Logo fades in during void
     const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const brightnessIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -110,6 +111,11 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
     // Stage progression
     useEffect(() => {
         const timers: NodeJS.Timeout[] = [];
+
+        // Fade in logo after a brief delay (during void)
+        timers.push(setTimeout(() => {
+            setLogoVisible(true);
+        }, 300));
 
         // Stage 1 → Stage 2 (Void → Corruption with gradual reveal)
         timers.push(setTimeout(() => {
@@ -239,14 +245,14 @@ const AetherIntro: React.FC<AetherIntroProps> = ({ onComplete }) => {
                         height: LOGO_HEIGHT,
                         filter: `brightness(${logoBrightness})`,
                     }}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{
-                        opacity: stage === 'void' ? 0 : 1,
+                        opacity: logoVisible ? 1 : 0,
                         scale: 1
                     }}
                     transition={{
-                        duration: stage === 'void' ? 1.0 : 0.3,
-                        ease: 'easeOut'
+                        duration: 1.2,
+                        ease: [0.16, 1, 0.3, 1]
                     }}
                 />
 
