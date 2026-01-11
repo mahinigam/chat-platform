@@ -1,9 +1,13 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
+import { authenticator } from '@otplib/preset-default';
+import QRCode from 'qrcode';
 import Database from '../config/database';
 import { tokenService } from '../services/TokenService';
 import { authenticateTokenHTTP } from '../middleware/auth';
 import { logInfo, logWarn } from '../config/logger';
+import emailService from '../services/EmailService';
+import jwt from 'jsonwebtoken';
 
 const router = Router();
 
@@ -108,6 +112,56 @@ router.post('/login', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        // 2FA CHECK
+        if (user.two_factor_enabled) {
+            const method = user.two_factor_method || 'totp';
+
+            // Create a temporary token for verification step
+            const tempToken = jwt.sign(
+                {
+                    userId: user.id,
+                    type: '2fa_pending',
+                    method
+                },
+                process.env.JWT_SECRET as string,
+                { expiresIn: '5m' }
+            );
+
+            if (method === 'email') {
+                // Generate and send email code
+                const code = authenticator.generate(authenticator.generateSecret()); // Generate 6 digit code
+
+                // Store hash
+                const codeHash = await bcrypt.hash(code, 10);
+                await Database.query(
+                    `UPDATE users SET two_factor_secret = $1, two_factor_secret_expires_at = NOW() + INTERVAL '5 minutes' WHERE id = $2`,
+                    [codeHash, user.id]
+                );
+
+                await emailService.sendTwoFactorCode(user.email, code);
+
+                return res.json({
+                    requires2FA: true,
+                    method: 'email',
+                    tempToken,
+                    message: `Verification code sent to ${user.email}`
+                });
+            } else {
+                // TOTP
+                return res.json({
+                    requires2FA: true,
+                    method: 'totp',
+                    tempToken
+                });
+            }
+        }
+
+        // Validate 2FA secret presence if TOTP is enabled but no secret (edge case)
+        if (user.two_factor_enabled && user.two_factor_method === 'totp' && !user.two_factor_secret) {
+            // Should not happen if flow is correct, but fail safe
+            console.error('User has 2FA enabled but no secret');
+        }
+
         // Generate token pair
         const tokens = await tokenService.generateTokenPair(user.id, user.username);
 
@@ -129,6 +183,181 @@ router.post('/login', async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Login error:', error);
         return res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+// --------------------------------------------------------------------------
+// 2FA Endpoints
+// --------------------------------------------------------------------------
+
+/**
+ * Init 2FA Setup
+ * Returns QR code (for TOTP) or sends email (for Email)
+ */
+router.post('/2fa/setup/init', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const { method } = req.body; // 'totp' or 'email'
+
+        if (method === 'totp') {
+            const secret = authenticator.generateSecret();
+            const userRes = await Database.query('SELECT email FROM users WHERE id = $1', [userId]);
+            const email = userRes.rows[0].email;
+
+            const otpauth = authenticator.keyuri(email, 'Aether Chat', secret);
+            const qrCode = await QRCode.toDataURL(otpauth);
+
+            return res.json({ secret, qrCode });
+        } else if (method === 'email') {
+            const userRes = await Database.query('SELECT email FROM users WHERE id = $1', [userId]);
+            const email = userRes.rows[0].email;
+
+            // Generate code
+            const secret = authenticator.generateSecret();
+            const code = authenticator.generate(secret); // Use otplib to generate 6-digit
+
+            // Store hash for verification
+            const codeHash = await bcrypt.hash(code, 10);
+            await Database.query(
+                `UPDATE users SET two_factor_secret = $1, two_factor_secret_expires_at = NOW() + INTERVAL '5 minutes' WHERE id = $2`,
+                [codeHash, userId]
+            );
+
+            await emailService.sendTwoFactorCode(email, code);
+            return res.json({ status: 'sent', email });
+        } else {
+            return res.status(400).json({ error: 'Invalid method' });
+        }
+    } catch (error) {
+        console.error('2FA Init Error:', error);
+        return res.status(500).json({ error: 'Failed to init 2FA' });
+    }
+});
+
+/**
+ * Verify & Enable 2FA
+ */
+router.post('/2fa/setup/verify', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const { code, method, secret } = req.body;
+
+        if (method === 'totp') {
+            if (!secret) return res.status(400).json({ error: 'Secret required for TOTP setup' });
+
+            const isValid = authenticator.verify({ token: code, secret });
+            if (!isValid) return res.status(400).json({ error: 'Invalid authentication code' });
+
+            await Database.query(
+                `UPDATE users SET two_factor_enabled = true, two_factor_method = 'totp', two_factor_secret = $1 WHERE id = $2`,
+                [secret, userId]
+            );
+
+            return res.json({ success: true });
+        } else if (method === 'email') {
+            const result = await Database.query(
+                `SELECT two_factor_secret, two_factor_secret_expires_at FROM users WHERE id = $1`,
+                [userId]
+            );
+
+            if (result.rows.length === 0 || !result.rows[0].two_factor_secret) {
+                return res.status(400).json({ error: 'No verification pending' });
+            }
+
+            const { two_factor_secret, two_factor_secret_expires_at } = result.rows[0];
+
+            if (new Date() > new Date(two_factor_secret_expires_at)) {
+                return res.status(400).json({ error: 'Code expired' });
+            }
+
+            const isValid = await bcrypt.compare(code, two_factor_secret);
+            if (!isValid) return res.status(400).json({ error: 'Invalid code' });
+
+            // Enable 2FA - Clear the secret (it was temp)
+            await Database.query(
+                `UPDATE users SET two_factor_enabled = true, two_factor_method = 'email', two_factor_secret = NULL WHERE id = $1`,
+                [userId]
+            );
+
+            return res.json({ success: true });
+        } else {
+            return res.status(400).json({ error: 'Invalid method' });
+        }
+    } catch (error) {
+        console.error('2FA Verify Error:', error);
+        return res.status(500).json({ error: 'Failed to verify 2FA' });
+    }
+});
+
+/**
+ * Login 2FA Verify
+ */
+router.post('/2fa/login/verify', async (req: Request, res: Response) => {
+    try {
+        const { tempToken, code } = req.body;
+
+        if (!tempToken || !code) return res.status(400).json({ error: 'Missing token or code' });
+
+        // Verify temp token
+        let decoded: any;
+        try {
+            decoded = jwt.verify(tempToken, process.env.JWT_SECRET as string);
+        } catch (e) {
+            return res.status(401).json({ error: 'Invalid or expired session' });
+        }
+
+        if (decoded.type !== '2fa_pending') {
+            return res.status(401).json({ error: 'Invalid token type' });
+        }
+
+        const userId = decoded.userId;
+        const method = decoded.method;
+
+        // Fetch user secret
+        const result = await Database.query(
+            `SELECT * FROM users WHERE id = $1`,
+            [userId]
+        );
+        const user = result.rows[0];
+
+        if (method === 'totp') {
+            const isValid = authenticator.verify({ token: code, secret: user.two_factor_secret });
+            if (!isValid) return res.status(401).json({ error: 'Invalid code' });
+        } else if (method === 'email') {
+            if (!user.two_factor_secret) return res.status(400).json({ error: 'No code generated' });
+
+            if (user.two_factor_secret_expires_at && new Date() > new Date(user.two_factor_secret_expires_at)) {
+                return res.status(401).json({ error: 'Code expired' });
+            }
+
+            const isValid = await bcrypt.compare(code, user.two_factor_secret);
+            if (!isValid) return res.status(401).json({ error: 'Invalid code' });
+
+            // Check if we should clear it? Probably fine to leave until next login overwrite
+            await Database.query(`UPDATE users SET two_factor_secret = NULL WHERE id = $1`, [userId]);
+        }
+
+        // Success - Generate real tokens
+        const tokens = await tokenService.generateTokenPair(user.id, user.username);
+
+        logInfo('User logged in via 2FA', { userId: user.id });
+
+        return res.json({
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                displayName: user.display_name,
+                avatarUrl: user.avatar_url,
+            },
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: tokens.expiresIn,
+        });
+
+    } catch (error) {
+        console.error('2FA Login Verify Error:', error);
+        return res.status(500).json({ error: 'Verification failed' });
     }
 });
 
@@ -255,6 +484,30 @@ router.post('/verify-password', authenticateTokenHTTP, async (req: Request, res:
     } catch (error) {
         console.error('Password verification error:', error);
         return res.status(500).json({ error: 'Verification failed' });
+    }
+});
+
+/**
+ * Disable 2FA
+ */
+router.post('/2fa/disable', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const { password } = req.body;
+
+        const result = await Database.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+        if (!await bcrypt.compare(password, result.rows[0].password_hash)) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        await Database.query(
+            `UPDATE users SET two_factor_enabled = false, two_factor_secret = NULL, two_factor_method = NULL WHERE id = $1`,
+            [userId]
+        );
+
+        return res.json({ success: true });
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to disable 2FA' });
     }
 });
 
