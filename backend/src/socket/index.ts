@@ -85,6 +85,10 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             socket.on('space:members', (data, callback) => roomHandler.handleGetSpaceMembers(authSocket, data, callback));
             socket.on('space:set_alias', (data, callback) => roomHandler.handleSetMemberAlias(authSocket, data, callback));
 
+            // Chat Lock
+            socket.on('room:lock', (data, callback) => roomHandler.handleLockChat(authSocket, data, callback));
+            socket.on('room:get_locked', (data, callback) => roomHandler.handleGetLockedRooms(authSocket, data, callback));
+
             // Messaging
             socket.on('message:send', (data, callback) =>
                 messageHandler.handleSendMessage(authSocket, data, callback)

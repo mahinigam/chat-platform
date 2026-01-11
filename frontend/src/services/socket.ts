@@ -350,6 +350,30 @@ class SocketService {
         this.socket?.emit('constellation:for_message', { messageId }, callback);
     }
 
+    // ============================================
+    // CHAT LOCK METHODS
+    // ============================================
+
+    /**
+     * Lock or unlock a chat
+     */
+    lockChat(
+        roomId: number,
+        locked: boolean,
+        callback: (response: { success?: boolean; error?: string }) => void
+    ): void {
+        this.socket?.emit('room:lock', { roomId, locked }, callback);
+    }
+
+    /**
+     * Get all locked room IDs for current user
+     */
+    getLockedRooms(
+        callback: (response: { lockedRoomIds?: number[]; error?: string }) => void
+    ): void {
+        this.socket?.emit('room:get_locked', {}, callback);
+    }
+
     /**
      * Listen to events
      */

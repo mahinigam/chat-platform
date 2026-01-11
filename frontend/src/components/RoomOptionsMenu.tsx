@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreVertical, VolumeX, Volume2, Ban, UserCheck } from 'lucide-react';
+import { MoreVertical, VolumeX, Volume2, Ban, UserCheck, Lock, Unlock } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
@@ -15,9 +15,11 @@ interface RoomOptionsMenuProps {
     roomName: string;
     isMuted?: boolean;
     isBlocked?: boolean;
+    isLocked?: boolean;
     token: string;
     onMuteChange?: (muted: boolean) => void;
     onBlockChange?: (blocked: boolean) => void;
+    onLockChange?: (locked: boolean) => void;
     className?: string;
 }
 
@@ -27,15 +29,18 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
     roomName,
     isMuted = false,
     isBlocked = false,
+    isLocked = false,
     token,
     onMuteChange,
     onBlockChange,
+    onLockChange,
     className
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
     const [localMuted, setLocalMuted] = useState(isMuted);
     const [localBlocked, setLocalBlocked] = useState(isBlocked);
+    const [localLocked, setLocalLocked] = useState(isLocked);
     const [isLoading, setIsLoading] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
     const buttonRef = useRef<HTMLDivElement>(null);
@@ -240,6 +245,35 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
                             )}
                         </motion.button>
                     )}
+
+                    {/* Lock Option */}
+                    <motion.button
+                        variants={itemVariants}
+                        onClick={() => {
+                            const newLocked = !localLocked;
+                            setLocalLocked(newLocked);
+                            onLockChange?.(newLocked);
+                            setIsOpen(false);
+                        }}
+                        className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5",
+                            "text-sm hover:bg-mono-surface",
+                            "rounded-xl transition-colors text-left group",
+                            "text-amber-400 hover:text-amber-300"
+                        )}
+                    >
+                        {localLocked ? (
+                            <>
+                                <Unlock className="w-4 h-4" />
+                                <span className="font-medium">Unlock Chat</span>
+                            </>
+                        ) : (
+                            <>
+                                <Lock className="w-4 h-4" />
+                                <span className="font-medium">Lock Chat</span>
+                            </>
+                        )}
+                    </motion.button>
                 </motion.div>
             )}
         </AnimatePresence>

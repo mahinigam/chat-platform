@@ -269,4 +269,44 @@ export class RoomRepository {
         );
         return result.rows[0]?.alias || null;
     }
+
+    /**
+     * Set chat lock status for a user in a room
+     */
+    static async setChatLock(
+        roomId: number,
+        userId: number,
+        locked: boolean
+    ): Promise<void> {
+        await Database.query(
+            `UPDATE room_members 
+             SET is_locked = $1
+             WHERE room_id = $2 AND user_id = $3 AND left_at IS NULL`,
+            [locked, roomId, userId]
+        );
+    }
+
+    /**
+     * Get chat lock status for a user in a room
+     */
+    static async getChatLock(roomId: number, userId: number): Promise<boolean> {
+        const result = await Database.query(
+            `SELECT is_locked FROM room_members 
+             WHERE room_id = $1 AND user_id = $2 AND left_at IS NULL`,
+            [roomId, userId]
+        );
+        return result.rows[0]?.is_locked || false;
+    }
+
+    /**
+     * Get all locked room IDs for a user
+     */
+    static async getLockedRoomIds(userId: number): Promise<number[]> {
+        const result = await Database.query(
+            `SELECT room_id FROM room_members 
+             WHERE user_id = $1 AND is_locked = TRUE AND left_at IS NULL`,
+            [userId]
+        );
+        return result.rows.map(r => r.room_id);
+    }
 }

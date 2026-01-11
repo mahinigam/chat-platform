@@ -296,6 +296,54 @@ class RoomHandler {
             callback({ error: 'Failed to set alias' });
         }
     }
+
+    /**
+     * Handle locking a chat (toggle lock status)
+     */
+    async handleLockChat(
+        socket: AuthenticatedSocket,
+        data: { roomId: number; locked: boolean },
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId, username } = socket;
+            const { roomId, locked } = data;
+
+            // Verify user is a member
+            const isMember = await RoomRepository.isUserMemberOfRoom(userId, roomId);
+            if (!isMember) {
+                callback({ error: 'You are not a member of this room.' });
+                return;
+            }
+
+            await RoomRepository.setChatLock(roomId, userId, locked);
+
+            callback({ success: true, roomId, locked });
+            console.log(`User ${username} ${locked ? 'locked' : 'unlocked'} room ${roomId}`);
+
+        } catch (error) {
+            console.error('Error locking chat:', error);
+            callback({ error: 'Failed to update lock status' });
+        }
+    }
+
+    /**
+     * Handle getting locked room IDs for current user
+     */
+    async handleGetLockedRooms(
+        socket: AuthenticatedSocket,
+        _data: Record<string, never>,
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId } = socket;
+            const lockedRoomIds = await RoomRepository.getLockedRoomIds(userId);
+            callback({ lockedRoomIds });
+        } catch (error) {
+            console.error('Error getting locked rooms:', error);
+            callback({ error: 'Failed to get locked rooms' });
+        }
+    }
 }
 
 export default new RoomHandler();
