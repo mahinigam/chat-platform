@@ -37,6 +37,7 @@ import CallButton from '../components/calls/CallButton';
 import GroupCallScreen from '../components/calls/GroupCallScreen';
 import SpaceSettingsModal from '../components/SpaceSettingsModal';
 import PinnedMessagesDrawer from '../components/PinnedMessagesDrawer';
+import AddToConstellationMenu from '../components/AddToConstellationMenu';
 import webrtcService from '../services/webrtc';
 
 
@@ -136,6 +137,11 @@ function Home() {
     const [blockedUserIds, setBlockedUserIds] = useState<number[]>([]);
     const [isSpaceSettingsOpen, setIsSpaceSettingsOpen] = useState(false);
     const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
+    const [constellationTarget, setConstellationTarget] = useState<{
+        messageId: string;
+        roomId: number;
+        position: { x: number; y: number };
+    } | null>(null);
 
     // Chat Lock State
     const [lockedRoomIds, setLockedRoomIds] = useState<number[]>([]);
@@ -1366,6 +1372,18 @@ function Home() {
                                 }
                             });
                         }}
+                        onConstellation={(messageId: string, roomId: number) => {
+                            const element = document.getElementById(`message-${messageId}`);
+                            const rect = element?.getBoundingClientRect();
+                            setConstellationTarget({
+                                messageId,
+                                roomId,
+                                position: {
+                                    x: Math.min(rect?.right || 300, window.innerWidth - 280),
+                                    y: Math.min(rect?.top || 200, window.innerHeight - 300)
+                                }
+                            });
+                        }}
                     />
 
                     {/* Audio Recorder Overlay */}
@@ -1608,6 +1626,16 @@ function Home() {
                     roomType={currentRoom.room_type}
                 />
             )}
+
+            {/* Add to Constellation Menu */}
+            <AddToConstellationMenu
+                isOpen={!!constellationTarget}
+                onClose={() => setConstellationTarget(null)}
+                messageId={constellationTarget?.messageId || ''}
+                roomId={constellationTarget?.roomId || 0}
+                position={constellationTarget?.position || { x: 0, y: 0 }}
+                onSuccess={() => success('Added to constellation')}
+            />
         </div>
     );
 }
