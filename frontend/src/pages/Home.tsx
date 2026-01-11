@@ -30,6 +30,7 @@ const OrbitSearch = React.lazy(() => import('../components/OrbitSearch'));
 const ChatSearch = React.lazy(() => import('../components/ChatSearch'));
 import UndoToast from '../components/UndoToast';
 import ScheduleModal from '../components/ScheduleModal';
+import ChatLockModal from '../components/ChatLockModal';
 import RoomOptionsMenu from '../components/RoomOptionsMenu';
 import IncomingCallModal from '../components/calls/IncomingCallModal';
 import CallButton from '../components/calls/CallButton';
@@ -135,6 +136,14 @@ function Home() {
     const [blockedUserIds, setBlockedUserIds] = useState<number[]>([]);
     const [isSpaceSettingsOpen, setIsSpaceSettingsOpen] = useState(false);
     const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
+
+    // Chat Lock State
+    const [lockedRoomIds, setLockedRoomIds] = useState<number[]>([]);
+    const [unlockedSessionRooms, setUnlockedSessionRooms] = useState<number[]>([]);
+    const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+    const [lockTargetRoom, setLockTargetRoom] = useState<{ id: string; name: string } | null>(null);
+    const lockTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+    const prevSelectedRoomIdRef = useRef<number | null>(null);
 
     // Call State
     const [incomingCall, setIncomingCall] = useState<{ callId: number; callerId: number; callerName: string; callType: 'voice' | 'video'; roomId?: number } | null>(null);
@@ -585,7 +594,50 @@ function Home() {
         };
     }, [selectedRoomId, currentUser, isE2EReady]);
 
-    // Keyboard shortcut for search (Cmd+F / Ctrl+F)
+    // Chat Lock: Fetch locked rooms
+    useEffect(() => {
+        if (!isConnected) return;
+
+        socketService.getLockedRooms(({ lockedRoomIds: ids }) => {
+            if (ids) setLockedRoomIds(ids);
+        });
+
+        // For now, simple fetch on connect is good.
+    }, [isConnected]);
+
+    // Chat Lock: Timer Logic
+    useEffect(() => {
+        const currentId = selectedRoomId;
+        const prevId = prevSelectedRoomIdRef.current;
+
+        // If we left an unlocked room
+        if (prevId && unlockedSessionRooms.includes(prevId) && prevId !== currentId) {
+            // Clear existing timer if any
+            if (lockTimersRef.current.has(prevId)) {
+                clearTimeout(lockTimersRef.current.get(prevId)!);
+            }
+
+            // Set new timer (60s)
+            const timeout = setTimeout(() => {
+                setUnlockedSessionRooms(prev => prev.filter(id => id !== prevId));
+                lockTimersRef.current.delete(prevId);
+            }, 60000);
+
+            lockTimersRef.current.set(prevId, timeout);
+        }
+
+        // If we entered an unlocked room
+        if (currentId && unlockedSessionRooms.includes(currentId)) {
+            if (lockTimersRef.current.has(currentId)) {
+                clearTimeout(lockTimersRef.current.get(currentId)!);
+                lockTimersRef.current.delete(currentId);
+            }
+        }
+
+        prevSelectedRoomIdRef.current = currentId;
+    }, [selectedRoomId, unlockedSessionRooms]);
+
+    // Keyboard shortcut for search
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'f' && selectedRoomId) {
@@ -883,10 +935,69 @@ function Home() {
         });
     }, [selectedRoomId, currentUser, errorToast]);
 
+
+
     const handleRoomSelect = useCallback((roomId: string) => {
-        setSelectedRoomId(parseInt(roomId));
-        setIsMobileMenuOpen(false);
-    }, []);
+        const id = parseInt(roomId);
+        const isLocked = lockedRoomIds.includes(id);
+        const isUnlocked = unlockedSessionRooms.includes(id);
+
+        if (isLocked && !isUnlocked) {
+            const room = rooms.find(r => r.id === id);
+            setLockTargetRoom({ id: roomId, name: room?.name || 'Chat' });
+            setIsLockModalOpen(true);
+        } else {
+            setSelectedRoomId(id);
+            setIsMobileMenuOpen(false);
+        }
+    }, [lockedRoomIds, unlockedSessionRooms, rooms]);
+
+    const handleUnlockChat = async (password: string): Promise<boolean> => {
+        try {
+            const response = await axios.post(`${API_URL}/auth/verify-password`, { password }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data.valid) {
+                if (lockTargetRoom) {
+                    const roomId = parseInt(lockTargetRoom.id);
+                    setUnlockedSessionRooms(prev => [...prev, roomId]);
+                    setSelectedRoomId(roomId);
+                    // Clear any running timer for this room immediately
+                    if (lockTimersRef.current.has(roomId)) {
+                        clearTimeout(lockTimersRef.current.get(roomId)!);
+                        lockTimersRef.current.delete(roomId);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('Unlock failed', error);
+            return false;
+        }
+    };
+
+    const handleLockToggled = (locked: boolean) => {
+        if (!selectedRoomId) return;
+
+        socketService.lockChat(selectedRoomId, locked, (response) => {
+            if (response.error) {
+                errorToast('Failed to updates lock status');
+            } else {
+                if (locked) {
+                    setLockedRoomIds(prev => [...prev, selectedRoomId]);
+                    // Automatically unlock for current session so user doesn't get kicked out immediately
+                    setUnlockedSessionRooms(prev => [...prev, selectedRoomId]);
+                    success('Chat locked');
+                } else {
+                    setLockedRoomIds(prev => prev.filter(id => id !== selectedRoomId));
+                    setUnlockedSessionRooms(prev => prev.filter(id => id !== selectedRoomId));
+                    success('Chat unlocked');
+                }
+            }
+        });
+    };
 
     const handleScheduleMessage = async (date: Date) => {
         if (!selectedRoomId || !scheduleContent) return;
@@ -987,8 +1098,13 @@ function Home() {
                 <div className="w-80 h-full">
                     <Sidebar
                         rooms={sidebarRooms}
+                        lockedRoomIds={lockedRoomIds}
                         selectedRoomId={selectedRoomId?.toString()}
                         onRoomSelect={handleRoomSelect}
+                        onLockedRoomClick={(roomId, name) => {
+                            setLockTargetRoom({ id: roomId, name });
+                            setIsLockModalOpen(true);
+                        }}
                         className="w-full md:w-[320px] flex-shrink-0"
                         onToggleSidebar={() => setIsSidebarOpen(false)}
                         onSpaceCreated={(space) => {
@@ -1146,8 +1262,11 @@ function Home() {
                                 roomId={selectedRoomId!}
                                 userId={currentRoom?.other_user_id}
                                 roomName={currentRoom?.name || 'Chat'}
-                                isBlocked={currentRoom?.other_user_id ? blockedUserIds.includes(currentRoom.other_user_id) : false}
-                                token={token || ''}
+                                isMuted={rooms.find(r => r.id === selectedRoomId)?.settings?.quietHours !== undefined}
+                                isLocked={selectedRoomId ? lockedRoomIds.includes(selectedRoomId) : false}
+                                token={token!}
+                                onMuteChange={() => { /* Handle mute refresh */ }}
+                                onLockChange={handleLockToggled}
                                 onBlockChange={(blocked) => {
                                     if (currentRoom?.other_user_id) {
                                         if (blocked) {
@@ -1338,8 +1457,13 @@ function Home() {
                     >
                         <Sidebar
                             rooms={sidebarRooms}
+                            lockedRoomIds={lockedRoomIds}
                             selectedRoomId={selectedRoomId?.toString()}
                             onRoomSelect={handleRoomSelect}
+                            onLockedRoomClick={(roomId, name) => {
+                                setLockTargetRoom({ id: roomId, name });
+                                setIsLockModalOpen(true);
+                            }}
                             onSpaceCreated={(space) => {
                                 setRooms(prev => [{
                                     id: space.id,
@@ -1356,6 +1480,17 @@ function Home() {
                     </div>
                 </div>
             )}
+
+            {/* Chat Lock Modal */}
+            <ChatLockModal
+                isOpen={isLockModalOpen}
+                onClose={() => {
+                    setIsLockModalOpen(false);
+                    setLockTargetRoom(null);
+                }}
+                onUnlock={handleUnlockChat}
+                roomName={lockTargetRoom?.name || 'Chat'}
+            />
 
             <Modal
                 isOpen={isModalOpen}

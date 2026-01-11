@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, SPACE_TONES } from '../utils/theme';
-import { MessageSquare, UserPlus, Users, Menu, Plus } from 'lucide-react';
+import { MessageSquare, UserPlus, Users, Menu, Plus, Lock } from 'lucide-react';
 import ChromeButton from './ChromeButton';
 import SettingsMenu from './SettingsMenu';
 import Avatar from './Avatar';
@@ -27,7 +27,9 @@ interface Room {
 interface SidebarProps {
   rooms: Room[];
   selectedRoomId?: string;
+  lockedRoomIds?: number[];
   onRoomSelect: (roomId: string) => void;
+  onLockedRoomClick?: (roomId: string, roomName: string) => void;
   onToggleSidebar?: () => void;
   onSpaceCreated?: (space: any) => void;
   className?: string;
@@ -36,7 +38,9 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
   rooms,
   selectedRoomId,
+  lockedRoomIds = [],
   onRoomSelect,
+  onLockedRoomClick,
   onToggleSidebar,
   onSpaceCreated,
   className,
@@ -149,84 +153,100 @@ const Sidebar: React.FC<SidebarProps> = ({
                       </button>
                     </div>
 
-                    {rooms.map((room) => (
-                      <li key={room.id} role="listitem">
-                        <button
-                          onClick={() => onRoomSelect(room.id)}
-                          className={cn(
-                            'w-[calc(100%-16px)] px-3 py-2 m-2 mt-0 mb-1 rounded-glass block',
-                            'transition-all duration-normal ease-glass',
-                            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-mono-text/50',
-                            selectedRoomId === room.id
-                              ? 'bg-mono-surface border border-mono-glass-highlight shadow-glass-sm'
-                              : 'hover:bg-mono-surface/40 border border-transparent hover:border-mono-glass-border',
-                            'active:scale-98',
-                            'min-h-[64px] flex items-center gap-3',
-                            // Tone-specific subtle background if selected
-                            selectedRoomId === room.id && room.tone && SPACE_TONES[room.tone]
-                              ? SPACE_TONES[room.tone].bg.replace('/5', '/10')
-                              : ''
-                          )}
-                        >
-                          <div className={cn(
-                            "flex-shrink-0 relative",
-                            room.room_type === 'group' ? "rounded-lg" : "rounded-full"
-                          )}>
-                            <Avatar
-                              src={room.avatar}
-                              name={room.name}
-                              size="lg"
-                              isOnline={room.isOnline}
-                              className={cn(
-                                room.room_type === 'group' ? "rounded-lg" : "",
-                                room.tone && SPACE_TONES[room.tone] ? SPACE_TONES[room.tone].border : ''
-                              )}
-                            />
-                            {/* Soft Presence Pulse for Spaces */}
-                            {room.room_type === 'group' && room.tone && SPACE_TONES[room.tone] && (room.unread > 0 || room.isOnline) && (
-                              <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
-                                <span className={cn(
-                                  "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-                                  room.tone === 'social' ? 'bg-blue-400' :
-                                    room.tone === 'focus' ? 'bg-purple-400' :
-                                      room.tone === 'work' ? 'bg-amber-400' : 'bg-emerald-400'
-                                )}></span>
-                                <span className={cn(
-                                  "relative inline-flex rounded-full h-3 w-3 border-2 border-mono-bg",
-                                  room.tone === 'social' ? 'bg-blue-500' :
-                                    room.tone === 'focus' ? 'bg-purple-500' :
-                                      room.tone === 'work' ? 'bg-amber-500' : 'bg-emerald-500'
-                                )}></span>
-                              </span>
+                    {rooms.map((room) => {
+                      const isLocked = lockedRoomIds.includes(parseInt(room.id));
+                      return (
+                        <li key={room.id} role="listitem">
+                          <button
+                            onClick={() => {
+                              if (isLocked) {
+                                onLockedRoomClick?.(room.id, room.name);
+                              } else {
+                                onRoomSelect(room.id);
+                              }
+                            }}
+                            className={cn(
+                              'w-[calc(100%-16px)] px-3 py-2 m-2 mt-0 mb-1 rounded-glass block relative',
+                              'transition-all duration-normal ease-glass',
+                              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-mono-text/50',
+                              selectedRoomId === room.id
+                                ? 'bg-mono-surface border border-mono-glass-highlight shadow-glass-sm'
+                                : 'hover:bg-mono-surface/40 border border-transparent hover:border-mono-glass-border',
+                              'active:scale-98',
+                              'min-h-[64px] flex items-center gap-3',
+                              // Tone-specific subtle background if selected
+                              selectedRoomId === room.id && room.tone && SPACE_TONES[room.tone]
+                                ? SPACE_TONES[room.tone].bg.replace('/5', '/10')
+                                : ''
                             )}
-                          </div>
-
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center justify-between mb-0.5">
-                              <h3 className={cn(
-                                "text-sm font-semibold truncate transition-colors",
-                                selectedRoomId === room.id && room.tone && SPACE_TONES[room.tone] ? SPACE_TONES[room.tone].color : "text-mono-text"
-                              )}>{room.name}</h3>
-                              {room.timestamp && <span className="text-[10px] text-mono-muted">{room.timestamp}</span>}
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <p className={cn("text-xs truncate max-w-[140px]", room.unread > 0 ? "text-mono-text font-medium" : "text-mono-muted")}>
-                                {room.snippet || (room.room_type === 'group' ? (
-                                  room.tone === 'focus' ? 'Focusing...' :
-                                    room.tone === 'social' ? 'Hanging out...' :
-                                      room.tone === 'work' ? 'Collaborating...' : 'Quiet...'
-                                ) : 'Start chatting...')}
-                              </p>
-                              {room.unread > 0 && (
-                                <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-black text-[10px] font-bold px-1">
-                                  {room.unread > 99 ? '99+' : room.unread}
+                          >
+                            <div className={cn(
+                              "flex-shrink-0 relative",
+                              room.room_type === 'group' ? "rounded-lg" : "rounded-full"
+                            )}>
+                              <Avatar
+                                src={room.avatar}
+                                name={room.name}
+                                size="lg"
+                                isOnline={room.isOnline}
+                                className={cn(
+                                  room.room_type === 'group' ? "rounded-lg" : "",
+                                  room.tone && SPACE_TONES[room.tone] ? SPACE_TONES[room.tone].border : ''
+                                )}
+                              />
+                              {/* Soft Presence Pulse for Spaces */}
+                              {room.room_type === 'group' && room.tone && SPACE_TONES[room.tone] && (room.unread > 0 || room.isOnline) && (
+                                <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
+                                  <span className={cn(
+                                    "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+                                    room.tone === 'social' ? 'bg-blue-400' :
+                                      room.tone === 'focus' ? 'bg-purple-400' :
+                                        room.tone === 'work' ? 'bg-amber-400' : 'bg-emerald-400'
+                                  )}></span>
+                                  <span className={cn(
+                                    "relative inline-flex rounded-full h-3 w-3 border-2 border-mono-bg",
+                                    room.tone === 'social' ? 'bg-blue-500' :
+                                      room.tone === 'focus' ? 'bg-purple-500' :
+                                        room.tone === 'work' ? 'bg-amber-500' : 'bg-emerald-500'
+                                  )}></span>
                                 </span>
                               )}
                             </div>
-                          </div>
-                        </button>
-                      </li>
-                    ))}
+
+                            <div className="flex-1 min-w-0 text-left">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <h3 className={cn(
+                                  "text-sm font-semibold truncate transition-colors",
+                                  selectedRoomId === room.id && room.tone && SPACE_TONES[room.tone] ? SPACE_TONES[room.tone].color : "text-mono-text"
+                                )}>{room.name}</h3>
+                                {room.timestamp && <span className="text-[10px] text-mono-muted">{room.timestamp}</span>}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className={cn("text-xs truncate max-w-[140px]", room.unread > 0 ? "text-mono-text font-medium" : "text-mono-muted")}>
+                                  {room.snippet || (room.room_type === 'group' ? (
+                                    room.tone === 'focus' ? 'Focusing...' :
+                                      room.tone === 'social' ? 'Hanging out...' :
+                                        room.tone === 'work' ? 'Collaborating...' : 'Quiet...'
+                                  ) : 'Start chatting...')}
+                                </p>
+                                {room.unread > 0 && (
+                                  <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-black text-[10px] font-bold px-1">
+                                    {room.unread > 99 ? '99+' : room.unread}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Lock Icon Overlay */}
+                            {isLocked && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-mono-bg/80 backdrop-blur-sm rounded-glass z-10 transition-all duration-300">
+                                <Lock className="w-5 h-5 text-amber-400 drop-shadow-glow" />
+                              </div>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </>
                 )}
               </ul>

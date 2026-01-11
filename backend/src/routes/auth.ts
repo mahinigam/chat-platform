@@ -215,4 +215,42 @@ router.get('/sessions', authenticateTokenHTTP, async (req: Request, res: Respons
     }
 });
 
+/**
+ * Verify password (for sensitive actions like unlocking chat)
+ */
+router.post('/verify-password', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ error: 'Password required' });
+        }
+
+        // Get user hash
+        const result = await Database.query(
+            'SELECT password_hash FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const isValid = await bcrypt.compare(password, result.rows[0].password_hash);
+
+        if (isValid) {
+            logInfo('Password verified for sensitive action', { userId });
+        } else {
+            logWarn('Password verification failed', { userId });
+        }
+
+        return res.json({ valid: isValid });
+
+    } catch (error) {
+        console.error('Password verification error:', error);
+        return res.status(500).json({ error: 'Verification failed' });
+    }
+});
+
 export default router;
