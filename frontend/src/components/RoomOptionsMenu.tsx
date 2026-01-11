@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreVertical, VolumeX, Volume2, Ban, UserCheck } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
 import MuteModal from './MuteModal';
@@ -64,6 +65,43 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
         }
     }, [isOpen]);
 
+    // Animation Variants - matching SettingsMenu/AttachmentMenu
+    const menuVariants: Variants = {
+        hidden: {
+            opacity: 0,
+            scale: 0.95,
+            y: -10,
+            transition: { duration: 0.15, ease: "easeOut" }
+        },
+        visible: {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                staggerChildren: 0.05
+            }
+        },
+        exit: {
+            opacity: 0,
+            scale: 0.95,
+            y: -10,
+            transition: { duration: 0.15, ease: "easeIn" }
+        }
+    };
+
+    const itemVariants: Variants = {
+        hidden: { opacity: 0, x: -10, filter: "blur(4px)" },
+        visible: {
+            opacity: 1,
+            x: 0,
+            filter: "blur(0px)",
+            transition: { duration: 0.2 }
+        }
+    };
+
     const handleMuteWithDuration = async (until?: Date) => {
         setIsLoading(true);
         try {
@@ -123,77 +161,88 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
     };
 
     const menuContent = (
-        <div
-            ref={menuRef}
-            className={cn(
-                "fixed w-56",
-                "bg-mono-bg/95 backdrop-blur-xl border border-mono-glass-border",
-                "rounded-2xl shadow-2xl overflow-hidden p-1"
-            )}
-            style={{
-                top: menuPosition.top,
-                right: menuPosition.right,
-                zIndex: 9999
-            }}
-        >
-            {/* Mute Option */}
-            <button
-                onClick={() => {
-                    if (localMuted) {
-                        handleUnmute();
-                    } else {
-                        setIsOpen(false);
-                        setIsMuteModalOpen(true);
-                    }
-                }}
-                disabled={isLoading}
-                className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5",
-                    "text-sm text-mono-text hover:bg-mono-surface",
-                    "rounded-xl transition-colors text-left group",
-                    isLoading && "opacity-50 cursor-not-allowed"
-                )}
-            >
-                {localMuted ? (
-                    <>
-                        <Volume2 className="w-4 h-4 text-mono-muted group-hover:text-mono-text" />
-                        <span>Unmute {roomName}</span>
-                    </>
-                ) : (
-                    <>
-                        <VolumeX className="w-4 h-4 text-mono-muted group-hover:text-mono-text" />
-                        <span>Mute {roomName}</span>
-                    </>
-                )}
-            </button>
-
-            {/* Block Option */}
-            {userId && (
-                <button
-                    onClick={handleBlockUser}
-                    disabled={isLoading}
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    ref={menuRef}
+                    variants={menuVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
                     className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5",
-                        "text-sm hover:bg-mono-surface",
-                        "rounded-xl transition-colors text-left group",
-                        localBlocked ? "text-green-400 hover:text-green-300" : "text-red-400 hover:text-red-300",
-                        isLoading && "opacity-50 cursor-not-allowed"
+                        "fixed w-56",
+                        "bg-mono-bg/95 backdrop-blur-glass border border-mono-glass-border",
+                        "rounded-2xl shadow-2xl overflow-hidden p-1"
                     )}
+                    style={{
+                        top: menuPosition.top,
+                        right: menuPosition.right,
+                        zIndex: 9999,
+                        transformOrigin: "top right"
+                    }}
                 >
-                    {localBlocked ? (
-                        <>
-                            <UserCheck className="w-4 h-4" />
-                            <span>Unblock User</span>
-                        </>
-                    ) : (
-                        <>
-                            <Ban className="w-4 h-4" />
-                            <span>Block User</span>
-                        </>
+                    {/* Mute Option */}
+                    <motion.button
+                        variants={itemVariants}
+                        onClick={() => {
+                            if (localMuted) {
+                                handleUnmute();
+                            } else {
+                                setIsOpen(false);
+                                setIsMuteModalOpen(true);
+                            }
+                        }}
+                        disabled={isLoading}
+                        className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5",
+                            "text-sm text-mono-text hover:bg-mono-surface",
+                            "rounded-xl transition-colors text-left group",
+                            isLoading && "opacity-50 cursor-not-allowed"
+                        )}
+                    >
+                        {localMuted ? (
+                            <>
+                                <Volume2 className="w-4 h-4 text-mono-muted group-hover:text-mono-text transition-colors" />
+                                <span className="font-medium">Unmute {roomName}</span>
+                            </>
+                        ) : (
+                            <>
+                                <VolumeX className="w-4 h-4 text-mono-muted group-hover:text-mono-text transition-colors" />
+                                <span className="font-medium">Mute {roomName}</span>
+                            </>
+                        )}
+                    </motion.button>
+
+                    {/* Block Option */}
+                    {userId && (
+                        <motion.button
+                            variants={itemVariants}
+                            onClick={handleBlockUser}
+                            disabled={isLoading}
+                            className={cn(
+                                "w-full flex items-center gap-3 px-3 py-2.5",
+                                "text-sm hover:bg-mono-surface",
+                                "rounded-xl transition-colors text-left group",
+                                localBlocked ? "text-green-400 hover:text-green-300" : "text-red-400 hover:text-red-300",
+                                isLoading && "opacity-50 cursor-not-allowed"
+                            )}
+                        >
+                            {localBlocked ? (
+                                <>
+                                    <UserCheck className="w-4 h-4" />
+                                    <span className="font-medium">Unblock User</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Ban className="w-4 h-4" />
+                                    <span className="font-medium">Block User</span>
+                                </>
+                            )}
+                        </motion.button>
                     )}
-                </button>
+                </motion.div>
             )}
-        </div>
+        </AnimatePresence>
     );
 
     return (
@@ -201,7 +250,10 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
             <div className={cn("relative", className)} ref={buttonRef}>
                 <ChromeButton
                     variant="circle"
-                    className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-mono-muted hover:text-mono-text"
+                    className={cn(
+                        "p-2 min-h-[40px] min-w-[40px] flex items-center justify-center",
+                        isOpen ? "text-mono-text bg-mono-surface" : "text-mono-muted hover:text-mono-text"
+                    )}
                     aria-label="More options"
                     onClick={() => setIsOpen(!isOpen)}
                 >
@@ -210,7 +262,7 @@ const RoomOptionsMenu: React.FC<RoomOptionsMenuProps> = ({
             </div>
 
             {/* Portal the dropdown to body to avoid overflow issues */}
-            {isOpen && createPortal(menuContent, document.body)}
+            {createPortal(menuContent, document.body)}
 
             {/* Mute Duration Modal */}
             <MuteModal
