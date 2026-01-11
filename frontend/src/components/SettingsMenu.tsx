@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, LogOut, User, Ban, Smartphone, Star, Shield } from 'lucide-react';
+import { Settings, LogOut, User, Ban, Smartphone, Star, Shield, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
@@ -28,7 +28,28 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onCo
     const [isDevicesOpen, setIsDevicesOpen] = useState(false);
     const [isMyDetailsOpen, setIsMyDetailsOpen] = useState(false);
     const [isTwoFactorSetupOpen, setIsTwoFactorSetupOpen] = useState(false);
+    const [is2FAEnabled, setIs2FAEnabled] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Fetch 2FA status
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const authToken = token || localStorage.getItem('token');
+                if (!authToken) return;
+                const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/auth/2fa/status`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setIs2FAEnabled(data.enabled);
+                }
+            } catch (err) {
+                console.error('Failed to fetch 2FA status:', err);
+            }
+        };
+        fetchStatus();
+    }, [token, isTwoFactorSetupOpen]);
 
     // Close when clicking outside
     useEffect(() => {
@@ -190,7 +211,10 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onCo
                                     className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left"
                                 >
                                     <Shield className="w-4 h-4 text-mono-muted" />
-                                    <span>Two-Factor Auth</span>
+                                    <span className="flex-1">Two-Factor Auth</span>
+                                    {is2FAEnabled && (
+                                        <CheckCircle className="w-4 h-4 text-green-500" />
+                                    )}
                                 </motion.button>
 
                                 <motion.button

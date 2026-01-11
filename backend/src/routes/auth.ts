@@ -488,6 +488,28 @@ router.post('/verify-password', authenticateTokenHTTP, async (req: Request, res:
 });
 
 /**
+ * Get 2FA Status
+ */
+router.get('/2fa/status', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const result = await Database.query(
+            'SELECT two_factor_enabled, two_factor_method FROM users WHERE id = $1',
+            [userId]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        return res.json({
+            enabled: result.rows[0].two_factor_enabled || false,
+            method: result.rows[0].two_factor_method
+        });
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to get 2FA status' });
+    }
+});
+
+/**
  * Disable 2FA
  */
 router.post('/2fa/disable', authenticateTokenHTTP, async (req: Request, res: Response) => {
