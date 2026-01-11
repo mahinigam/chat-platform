@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Star, Trash2, Edit2, MessageSquare, Loader2 } from 'lucide-react';
+import { X, Star, ArrowLeft, Trash2, MessageSquare, Loader2, Plus } from 'lucide-react';
 import { cn } from '../utils/theme';
 import socketService from '../services/socket';
 import ChromeButton from './ChromeButton';
@@ -45,8 +45,8 @@ const ConstellationModal: React.FC<ConstellationModalProps> = ({
     const [messages, setMessages] = useState<ConstellationMessage[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editName, setEditName] = useState('');
+    const [showCreateInput, setShowCreateInput] = useState(false);
+    const [newName, setNewName] = useState('');
     const { addToast } = useToast();
 
     const loadConstellations = useCallback(() => {
@@ -67,7 +67,7 @@ const ConstellationModal: React.FC<ConstellationModalProps> = ({
         }
     }, [isOpen, loadConstellations]);
 
-    const loadMessages = (constellation: Constellation) => {
+    const selectConstellation = (constellation: Constellation) => {
         setSelectedConstellation(constellation);
         setLoadingMessages(true);
         socketService.getConstellationMessages(constellation.id, (response) => {
@@ -78,35 +78,32 @@ const ConstellationModal: React.FC<ConstellationModalProps> = ({
         });
     };
 
-    const handleDeleteConstellation = (id: number, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!confirm('Delete this constellation? Messages will not be deleted.')) return;
+    const goBack = () => {
+        setSelectedConstellation(null);
+        setMessages([]);
+        loadConstellations(); // Refresh counts
+    };
 
-        socketService.deleteConstellation(id, (response) => {
-            if (response.success) {
-                setConstellations(prev => prev.filter(c => c.id !== id));
-                if (selectedConstellation?.id === id) {
-                    setSelectedConstellation(null);
-                    setMessages([]);
-                }
-                addToast('Constellation deleted', 'success');
-            } else {
-                addToast(response.error || 'Failed to delete', 'error');
+    const handleCreateConstellation = () => {
+        if (!newName.trim()) return;
+        socketService.createConstellation(newName.trim(), undefined, (response) => {
+            if (response.constellation) {
+                setConstellations(prev => [response.constellation, ...prev]);
+                setNewName('');
+                setShowCreateInput(false);
+                addToast('Constellation created!', 'success');
             }
         });
     };
 
-    const handleRenameConstellation = (id: number) => {
-        if (!editName.trim()) return;
-        socketService.updateConstellation(id, { name: editName.trim() }, (response) => {
+    const handleDeleteConstellation = (id: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm('Delete this constellation?')) return;
+
+        socketService.deleteConstellation(id, (response) => {
             if (response.success) {
-                setConstellations(prev => prev.map(c =>
-                    c.id === id ? { ...c, name: editName.trim() } : c
-                ));
-                if (selectedConstellation?.id === id) {
-                    setSelectedConstellation(prev => prev ? { ...prev, name: editName.trim() } : null);
-                }
-                setEditingId(null);
+                setConstellations(prev => prev.filter(c => c.id !== id));
+                addToast('Deleted', 'success');
             }
         });
     };
@@ -116,12 +113,6 @@ const ConstellationModal: React.FC<ConstellationModalProps> = ({
         socketService.removeFromConstellation(selectedConstellation.id, messageId, (response) => {
             if (response.success) {
                 setMessages(prev => prev.filter(m => m.message_id !== messageId));
-                // Update count
-                setConstellations(prev => prev.map(c =>
-                    c.id === selectedConstellation.id
-                        ? { ...c, message_count: c.message_count - 1 }
-                        : c
-                ));
             }
         });
     };
@@ -139,166 +130,167 @@ const ConstellationModal: React.FC<ConstellationModalProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
                 onClick={onClose}
             >
                 <motion.div
-                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
-                        'w-full max-w-2xl h-[70vh] bg-mono-bg rounded-2xl shadow-2xl overflow-hidden',
-                        'border border-mono-glass-border flex'
+                        'w-full max-w-md bg-mono-bg rounded-2xl shadow-2xl overflow-hidden',
+                        'border border-mono-glass-border'
                     )}
                 >
-                    {/* Sidebar - Constellation List */}
-                    <div className="w-1/3 border-r border-mono-glass-border flex flex-col">
-                        <div className="flex items-center justify-between p-4 border-b border-mono-glass-border">
-                            <div className="flex items-center gap-2">
-                                <Star className="w-5 h-5 text-amber-400" />
-                                <h2 className="font-semibold text-mono-text">Constellations</h2>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-2">
-                            {loading ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-5 h-5 animate-spin text-mono-muted" />
-                                </div>
-                            ) : constellations.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-mono-muted text-center p-4">
-                                    <Star className="w-10 h-10 mb-2 opacity-30" />
-                                    <p className="text-sm">No constellations yet</p>
-                                    <p className="text-xs mt-1">Add messages from chat to create one</p>
-                                </div>
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-mono-glass-border bg-mono-surface/30">
+                        <div className="flex items-center gap-3">
+                            {selectedConstellation ? (
+                                <ChromeButton variant="circle" onClick={goBack} className="p-1.5">
+                                    <ArrowLeft className="w-4 h-4" />
+                                </ChromeButton>
                             ) : (
-                                constellations.map((c) => (
-                                    <div
-                                        key={c.id}
-                                        onClick={() => loadMessages(c)}
-                                        className={cn(
-                                            'group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors',
-                                            selectedConstellation?.id === c.id
-                                                ? 'bg-amber-500/20'
-                                                : 'hover:bg-mono-surface'
-                                        )}
-                                    >
-                                        {editingId === c.id ? (
-                                            <input
-                                                type="text"
-                                                value={editName}
-                                                onChange={(e) => setEditName(e.target.value)}
-                                                onBlur={() => handleRenameConstellation(c.id)}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleRenameConstellation(c.id)}
-                                                autoFocus
-                                                className="flex-1 bg-transparent border-b border-amber-400 text-mono-text text-sm focus:outline-none"
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        ) : (
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-mono-text truncate">{c.name}</p>
-                                                <p className="text-xs text-mono-muted">{c.message_count} messages</p>
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingId(c.id);
-                                                    setEditName(c.name);
-                                                }}
-                                                className="p-1 hover:bg-mono-glass-highlight rounded"
-                                            >
-                                                <Edit2 className="w-3 h-3 text-mono-muted" />
-                                            </button>
-                                            <button
-                                                onClick={(e) => handleDeleteConstellation(c.id, e)}
-                                                className="p-1 hover:bg-red-500/20 rounded"
-                                            >
-                                                <Trash2 className="w-3 h-3 text-red-400" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
+                                <Star className="w-5 h-5 text-amber-400" />
                             )}
+                            <h2 className="font-semibold text-mono-text">
+                                {selectedConstellation?.name || 'Constellations'}
+                            </h2>
                         </div>
+                        <ChromeButton variant="circle" onClick={onClose} className="p-1.5">
+                            <X className="w-4 h-4" />
+                        </ChromeButton>
                     </div>
 
-                    {/* Main Content - Messages */}
-                    <div className="flex-1 flex flex-col">
-                        <div className="flex items-center justify-between p-4 border-b border-mono-glass-border">
-                            <h3 className="font-medium text-mono-text">
-                                {selectedConstellation?.name || 'Select a constellation'}
-                            </h3>
-                            <ChromeButton variant="circle" onClick={onClose} className="p-2">
-                                <X className="w-4 h-4" />
-                            </ChromeButton>
-                        </div>
+                    {/* Content */}
+                    <div className="h-[400px] overflow-y-auto">
+                        {!selectedConstellation ? (
+                            // Constellation List View
+                            <div className="p-3">
+                                {loading ? (
+                                    <div className="flex items-center justify-center h-full py-16">
+                                        <Loader2 className="w-6 h-6 animate-spin text-mono-muted" />
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Create New */}
+                                        {showCreateInput ? (
+                                            <div className="flex gap-2 mb-3">
+                                                <input
+                                                    type="text"
+                                                    value={newName}
+                                                    onChange={(e) => setNewName(e.target.value)}
+                                                    placeholder="Name..."
+                                                    autoFocus
+                                                    className="flex-1 bg-mono-surface border border-mono-glass-border rounded-xl px-3 py-2 text-sm text-mono-text placeholder:text-mono-muted focus:outline-none focus:border-amber-500/50"
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateConstellation()}
+                                                />
+                                                <ChromeButton onClick={handleCreateConstellation} className="px-4 py-2 bg-amber-500 text-black text-sm font-medium">
+                                                    Create
+                                                </ChromeButton>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setShowCreateInput(true)}
+                                                className="w-full flex items-center gap-3 p-3 mb-2 rounded-xl border border-dashed border-mono-glass-border text-mono-muted hover:text-amber-400 hover:border-amber-500/50 transition-all"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                <span className="text-sm">Create new constellation</span>
+                                            </button>
+                                        )}
 
-                        <div className="flex-1 overflow-y-auto p-4">
-                            {!selectedConstellation ? (
-                                <div className="flex flex-col items-center justify-center h-full text-mono-muted">
-                                    <MessageSquare className="w-12 h-12 mb-3 opacity-30" />
-                                    <p>Select a constellation to view messages</p>
-                                </div>
-                            ) : loadingMessages ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-6 h-6 animate-spin text-mono-muted" />
-                                </div>
-                            ) : messages.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-mono-muted">
-                                    <Star className="w-10 h-10 mb-2 opacity-30" />
-                                    <p>No messages in this constellation</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {messages.map((msg) => (
-                                        <div
-                                            key={msg.message_id}
-                                            className="group p-3 rounded-lg bg-mono-surface/50 hover:bg-mono-surface transition-colors"
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <Avatar name={msg.sender_username} size="sm" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-sm font-medium text-mono-text">
-                                                            {msg.sender_display_name || msg.sender_username}
-                                                        </span>
-                                                        <span className="text-xs text-mono-muted">
-                                                            in {msg.room_name || 'DM'}
-                                                        </span>
+                                        {/* Constellation Items */}
+                                        {constellations.length === 0 ? (
+                                            <div className="text-center py-12 text-mono-muted">
+                                                <Star className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                                <p className="text-sm">No constellations yet</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {constellations.map((c) => (
+                                                    <div
+                                                        key={c.id}
+                                                        onClick={() => selectConstellation(c)}
+                                                        className="group flex items-center justify-between p-3 rounded-xl bg-mono-surface/50 hover:bg-mono-surface cursor-pointer transition-colors border border-transparent hover:border-mono-glass-border"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Star className="w-4 h-4 text-amber-400" />
+                                                            <div>
+                                                                <p className="text-sm font-medium text-mono-text">{c.name}</p>
+                                                                <p className="text-xs text-mono-muted">{c.message_count} messages</p>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => handleDeleteConstellation(c.id, e)}
+                                                            className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded-lg transition-all"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                                        </button>
                                                     </div>
-                                                    <p className="text-sm text-mono-text/80 break-words">
-                                                        {msg.content}
-                                                    </p>
-                                                    <p className="text-xs text-mono-muted mt-1">
-                                                        {new Date(msg.message_created_at).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => handleGoToMessage(msg)}
-                                                        className="p-1.5 hover:bg-mono-glass-highlight rounded text-mono-muted hover:text-mono-text"
-                                                        title="Go to message"
-                                                    >
-                                                        <MessageSquare className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleRemoveMessage(msg.message_id)}
-                                                        className="p-1.5 hover:bg-red-500/20 rounded text-mono-muted hover:text-red-400"
-                                                        title="Remove from constellation"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            // Messages View
+                            <div className="p-3">
+                                {loadingMessages ? (
+                                    <div className="flex items-center justify-center py-16">
+                                        <Loader2 className="w-6 h-6 animate-spin text-mono-muted" />
+                                    </div>
+                                ) : messages.length === 0 ? (
+                                    <div className="text-center py-12 text-mono-muted">
+                                        <Star className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                        <p className="text-sm">No messages in this constellation</p>
+                                        <p className="text-xs mt-1">Add messages from chat using the ⋮ menu</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {messages.map((msg) => (
+                                            <div
+                                                key={msg.message_id}
+                                                className="group p-3 rounded-xl bg-mono-surface/50 hover:bg-mono-surface transition-colors"
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <Avatar name={msg.sender_username} size="sm" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-medium text-mono-text">
+                                                                {msg.sender_display_name || msg.sender_username}
+                                                            </span>
+                                                            <span className="text-xs text-mono-muted">
+                                                                {new Date(msg.message_created_at).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm text-mono-text/80 mt-1 break-words line-clamp-2">
+                                                            {msg.content}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleGoToMessage(msg)}
+                                                            className="p-1.5 hover:bg-mono-glass-highlight rounded-lg"
+                                                            title="Go to message"
+                                                        >
+                                                            <MessageSquare className="w-3.5 h-3.5 text-mono-muted" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRemoveMessage(msg.message_id)}
+                                                            className="p-1.5 hover:bg-red-500/20 rounded-lg"
+                                                            title="Remove"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </motion.div>
             </motion.div>
