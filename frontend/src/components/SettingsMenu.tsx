@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, LogOut, User, Ban, Smartphone } from 'lucide-react';
+import { Settings, LogOut, User, Ban, Smartphone, Star } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
@@ -15,10 +15,11 @@ interface SettingsMenuProps {
     };
     token?: string;
     onLogout: () => void;
+    onConstellations?: () => void;
     className?: string;
 }
 
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, className }) => {
+const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onConstellations, className }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isBlockedUsersOpen, setIsBlockedUsersOpen] = useState(false);
     const [isDevicesOpen, setIsDevicesOpen] = useState(false);
@@ -133,6 +134,18 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, clas
                                 >
                                     <User className="w-4 h-4 text-mono-muted" />
                                     <span>Edit Profile</span>
+                                </motion.button>
+
+                                <motion.button
+                                    variants={itemVariants}
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        onConstellations?.();
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 rounded-xl transition-colors text-left"
+                                >
+                                    <Star className="w-4 h-4" />
+                                    <span>Constellations</span>
                                 </motion.button>
 
                                 <motion.button

@@ -6,6 +6,7 @@ import ChromeButton from './ChromeButton';
 import SettingsMenu from './SettingsMenu';
 import Avatar from './Avatar';
 import CreateSpaceModal from './CreateSpaceModal';
+import ConstellationModal from './ConstellationModal';
 import SearchUsers from './Connect/SearchUsers';
 import RequestList from './Connect/RequestList';
 import AetherLogo from './AetherLogo';
@@ -42,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'chats' | 'search' | 'requests'>('chats');
   const [isCreateSpaceOpen, setIsCreateSpaceOpen] = useState(false);
+  const [isConstellationOpen, setIsConstellationOpen] = useState(false);
 
   return (
     <nav
@@ -272,6 +274,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               localStorage.removeItem('token');
               window.location.reload();
             }}
+            onConstellations={() => setIsConstellationOpen(true)}
           />
         </div>
       </div>
@@ -280,6 +283,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         isOpen={isCreateSpaceOpen}
         onClose={() => setIsCreateSpaceOpen(false)}
         onSpaceCreated={(space) => onSpaceCreated?.(space)}
+      />
+      <ConstellationModal
+        isOpen={isConstellationOpen}
+        onClose={() => setIsConstellationOpen(false)}
       />
     </nav >
   );
