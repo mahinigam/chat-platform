@@ -6,10 +6,12 @@ import ChromeButton from './ChromeButton';
 import Avatar from './Avatar';
 import BlockedUsersModal from './BlockedUsersModal';
 import DeviceManagement from './DeviceManagement';
+import MyDetailsModal from './MyDetailsModal';
 
 interface SettingsMenuProps {
     user?: {
         name: string;
+        username?: string;
         avatar?: string;
         email?: string;
     };
@@ -23,6 +25,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onCo
     const [isOpen, setIsOpen] = useState(false);
     const [isBlockedUsersOpen, setIsBlockedUsersOpen] = useState(false);
     const [isDevicesOpen, setIsDevicesOpen] = useState(false);
+    const [isMyDetailsOpen, setIsMyDetailsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Close when clicking outside
@@ -130,14 +133,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onCo
                             <div className="p-1">
                                 <motion.button
                                     variants={itemVariants}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left"
-                                >
-                                    <User className="w-4 h-4 text-mono-muted" />
-                                    <span>Edit Profile</span>
-                                </motion.button>
-
-                                <motion.button
-                                    variants={itemVariants}
                                     onClick={() => {
                                         setIsOpen(false);
                                         onConstellations?.();
@@ -146,6 +141,18 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onCo
                                 >
                                     <Star className="w-4 h-4" />
                                     <span>Constellations</span>
+                                </motion.button>
+
+                                <motion.button
+                                    variants={itemVariants}
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        setIsMyDetailsOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left"
+                                >
+                                    <User className="w-4 h-4 text-mono-muted" />
+                                    <span>My Details</span>
                                 </motion.button>
 
                                 <motion.button
@@ -200,6 +207,18 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onCo
             {isDevicesOpen && (
                 <DeviceManagement onClose={() => setIsDevicesOpen(false)} />
             )}
+
+            {/* My Details Modal */}
+            <MyDetailsModal
+                isOpen={isMyDetailsOpen}
+                onClose={() => setIsMyDetailsOpen(false)}
+                user={{
+                    name: user?.name || '',
+                    username: user?.username || '',
+                    email: user?.email,
+                    avatar: user?.avatar
+                }}
+            />
         </>
     );
 };

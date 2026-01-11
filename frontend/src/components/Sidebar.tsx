@@ -28,6 +28,12 @@ interface SidebarProps {
   rooms: Room[];
   selectedRoomId?: string;
   lockedRoomIds?: number[];
+  currentUser?: {
+    username: string;
+    displayName?: string;
+    email?: string;
+    avatar?: string;
+  };
   onRoomSelect: (roomId: string) => void;
   onLockedRoomClick?: (roomId: string, roomName: string) => void;
   onToggleSidebar?: () => void;
@@ -39,6 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   rooms,
   selectedRoomId,
   lockedRoomIds = [],
+  currentUser,
   onRoomSelect,
   onLockedRoomClick,
   onToggleSidebar,
@@ -284,14 +291,25 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer Profile */}
       <div className="flex-shrink-0 p-3 border-t border-mono-glass-border">
         <div className="flex items-center gap-3 px-2">
-          <Avatar size="sm" name="My Profile" />
+          <Avatar size="sm" name={currentUser?.displayName || currentUser?.username || "My Profile"} src={currentUser?.avatar} />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-mono-text truncate">My Profile</p>
+            <p className="text-xs font-medium text-mono-text truncate">
+              {currentUser?.displayName || currentUser?.username || "My Profile"}
+            </p>
+            {currentUser?.username && (
+              <p className="text-[10px] text-mono-muted truncate">@{currentUser.username}</p>
+            )}
           </div>
           <SettingsMenu
-            user={{ name: "My Profile" }}
+            user={{
+              name: currentUser?.displayName || currentUser?.username || "My Profile",
+              username: currentUser?.username,
+              email: currentUser?.email,
+              avatar: currentUser?.avatar
+            }}
             onLogout={() => {
               localStorage.removeItem('token');
+              localStorage.removeItem('user'); // Clear user data
               window.location.reload();
             }}
             onConstellations={() => setIsConstellationOpen(true)}

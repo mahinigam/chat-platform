@@ -10,6 +10,7 @@ import ChromeButton from '../components/ChromeButton';
 
 const Register: React.FC = () => {
     const [username, setUsername] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,7 @@ const Register: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const data = await register(username, email, password);
+            const data = await register(username, email, password, displayName);
             // Backend now returns accessToken instead of token
             localStorage.setItem('token', data.accessToken || data.token);
             if (data.refreshToken) {
@@ -53,6 +54,14 @@ const Register: React.FC = () => {
                         onChange={(e) => setUsername(e.target.value)}
                         className="input-glass"
                         placeholder="Username"
+                        required
+                    />
+                    <input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        className="input-glass"
+                        placeholder="Name (appears in sidebar)"
                         required
                     />
                     <input

@@ -119,11 +119,24 @@ export class RoomRepository {
      */
     static async getUserRooms(userId: number): Promise<any[]> {
         const result = await Database.query(
-            `SELECT r.*, 
+            `SELECT r.id, 
+              CASE 
+                WHEN r.room_type = 'direct' THEN COALESCE(u_other.display_name, u_other.username)
+                ELSE r.name 
+              END as name,
+              r.room_type,
+              r.description,
+              r.tone,
+              r.settings,
+              r.owner_id,
+              r.created_by,
+              r.created_at,
               m_last.content as last_message_content,
               m_last.created_at as last_message_at,
               u_last.username as last_sender_username,
-              other_user.user_id as other_user_id
+              other_user.user_id as other_user_id,
+              u_other.username as other_username,
+              u_other.display_name as other_display_name
        FROM rooms r
        JOIN room_members rm ON r.id = rm.room_id
        LEFT JOIN LATERAL (
@@ -142,6 +155,7 @@ export class RoomRepository {
            AND rm2.left_at IS NULL
          LIMIT 1
        ) other_user ON r.room_type = 'direct'
+       LEFT JOIN users u_other ON other_user.user_id = u_other.id
        WHERE rm.user_id = $1 AND rm.left_at IS NULL
        ORDER BY COALESCE(m_last.created_at, r.created_at) DESC`,
             [userId]

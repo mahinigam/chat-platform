@@ -66,7 +66,12 @@ router.post('/register', async (req: Request, res: Response) => {
             expiresIn: tokens.expiresIn,
         });
 
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === '23505') {
+            if (error.constraint === 'users_username_key') {
+                return res.status(409).json({ error: 'Username already taken' });
+            }
+        }
         console.error('Register error:', error);
         return res.status(500).json({ error: 'Registration failed' });
     }

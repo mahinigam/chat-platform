@@ -376,13 +376,19 @@ function Home() {
 
         // Decode token
         try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            setCurrentUser({
-                id: payload.userId,
-                username: payload.username
-            });
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                setCurrentUser(JSON.parse(storedUser));
+            } else {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                setCurrentUser({
+                    id: payload.userId,
+                    username: payload.username,
+                    displayName: payload.username // Fallback
+                });
+            }
         } catch (e) {
-            console.error('Invalid token', e);
+            console.error('Invalid token or user data', e);
             logout();
         }
 
@@ -1098,8 +1104,9 @@ function Home() {
                 <div className="w-80 h-full">
                     <Sidebar
                         rooms={sidebarRooms}
-                        lockedRoomIds={lockedRoomIds}
                         selectedRoomId={selectedRoomId?.toString()}
+                        lockedRoomIds={lockedRoomIds}
+                        currentUser={currentUser}
                         onRoomSelect={handleRoomSelect}
                         onLockedRoomClick={(roomId, name) => {
                             setLockTargetRoom({ id: roomId, name });
