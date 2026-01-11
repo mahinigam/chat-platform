@@ -172,7 +172,6 @@ const ComponentGallery: React.FC = () => {
                     rooms={mockRooms}
                     selectedRoomId="room-1"
                     onRoomSelect={(id) => info(`Selected room: ${id}`)}
-                    onCreateRoom={() => info('Create room clicked')}
                   />
                 </div>
               </section>

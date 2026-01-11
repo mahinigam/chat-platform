@@ -30,7 +30,7 @@ const GroupCallScreen: React.FC<GroupCallScreenProps> = ({
     const [isScreenSharing, setIsScreenSharing] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [dStatus, setDStatus] = useState('Connecting...');
-    const { success } = useToast();
+    const { } = useToast();
 
     // Local Video Ref
     const localVideoRef = useRef<HTMLVideoElement>(null);

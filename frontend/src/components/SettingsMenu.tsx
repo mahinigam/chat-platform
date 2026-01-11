@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, LogOut, User, Ban } from 'lucide-react';
+import { Settings, LogOut, User, Ban, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { cn } from '../utils/theme';
 import ChromeButton from './ChromeButton';
 import Avatar from './Avatar';
 import BlockedUsersModal from './BlockedUsersModal';
+import DeviceManagement from './DeviceManagement';
 
 interface SettingsMenuProps {
     user?: {
@@ -20,6 +21,7 @@ interface SettingsMenuProps {
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, className }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isBlockedUsersOpen, setIsBlockedUsersOpen] = useState(false);
+    const [isDevicesOpen, setIsDevicesOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Close when clicking outside
@@ -144,6 +146,18 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, clas
                                     <Ban className="w-4 h-4 text-mono-muted" />
                                     <span>Blocked Users</span>
                                 </motion.button>
+
+                                <motion.button
+                                    variants={itemVariants}
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        setIsDevicesOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mono-text hover:bg-mono-surface rounded-xl transition-colors text-left"
+                                >
+                                    <Smartphone className="w-4 h-4 text-mono-muted" />
+                                    <span>Linked Devices</span>
+                                </motion.button>
                             </div>
 
                             {/* Logout Section */}
@@ -168,6 +182,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, clas
                 onClose={() => setIsBlockedUsersOpen(false)}
                 token={token || localStorage.getItem('token') || ''}
             />
+
+            {/* Device Management Modal */}
+            {isDevicesOpen && (
+                <DeviceManagement onClose={() => setIsDevicesOpen(false)} />
+            )}
         </>
     );
 };

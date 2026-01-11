@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Lock } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import MessageList from '../components/MessageList';
 import Composer from '../components/Composer';
@@ -16,6 +16,11 @@ import { uploadFile } from '../api/upload';
 import { useNavigate } from 'react-router-dom';
 import ToastContainer from '../components/Toast';
 import ChromeButton from '../components/ChromeButton';
+
+// E2E Encryption
+import { useE2EInit } from '../hooks/useE2EInit';
+import { e2eCryptoService } from '../crypto/E2ECryptoService';
+import { prepareOutgoingMessage, prepareGroupMessage, processIncomingMessage } from '../services/e2eMessageService';
 
 // Lazy load heavy components (code splitting)
 const PollCreator = React.lazy(() => import('../components/PollCreator'));
@@ -149,15 +154,43 @@ function Home() {
 
     const API_URL = import.meta.env.VITE_API_URL || `http://localhost:3000/api`;
 
+    // E2E Encryption State
+    const [isE2EReady, setIsE2EReady] = useState(false);
+
     // Logout Helper
     const logout = useCallback(() => {
         localStorage.removeItem('token');
         setToken(null);
         setCurrentUser(null);
         setIsConnected(false);
+        setIsE2EReady(false);
         socketService.disconnect();
         navigate('/login');
     }, [navigate]);
+
+    // E2E Initialization - auto-enable encryption by default
+    useE2EInit({
+        token,
+        userId: currentUser?.id,
+        isConnected,
+        apiUrl: API_URL,
+        onInitialized: async () => {
+            console.log('E2E: Crypto services initialized');
+            // Auto-enable E2E if not already enabled
+            if (!e2eCryptoService.isEnabled()) {
+                try {
+                    await e2eCryptoService.enableE2E();
+                    console.log('E2E: Encryption enabled automatically');
+                } catch (err) {
+                    console.error('E2E: Failed to enable automatically:', err);
+                }
+            }
+            setIsE2EReady(true);
+        },
+        onError: (err) => {
+            console.error('E2E: Initialization error:', err);
+        },
+    });
 
     // Socket connection
     useEffect(() => {
@@ -438,22 +471,46 @@ function Home() {
     useEffect(() => {
         if (!socketService.getSocket()) return;
 
-        const handleNewMessage = (message: any) => {
+        const handleNewMessage = async (message: any) => {
             if (selectedRoomId && message.room_id === selectedRoomId) {
+                // Process E2E decryption if message is encrypted
+                let processedMessage = message;
+                if (message.e2e && isE2EReady) {
+                    try {
+                        const decrypted = await processIncomingMessage({
+                            id: message.id,
+                            room_id: message.room_id,
+                            sender_id: message.sender.id,
+                            content: message.content,
+                            message_type: message.message_type,
+                            created_at: message.created_at,
+                            sender_username: message.sender.username,
+                            e2e: true,
+                        });
+                        processedMessage = {
+                            ...message,
+                            content: decrypted.content,
+                            message_type: decrypted.message_type,
+                        };
+                    } catch (err) {
+                        console.error('E2E decryption failed:', err);
+                    }
+                }
+
                 const newMessage: Message = {
-                    id: message.id,
-                    roomId: message.room_id,
+                    id: processedMessage.id,
+                    roomId: processedMessage.room_id,
                     sender: {
-                        id: message.sender.id,
-                        name: message.sender.username,
-                        avatar: message.sender.avatar
+                        id: processedMessage.sender.id,
+                        name: processedMessage.sender.username,
+                        avatar: processedMessage.sender.avatar
                     },
-                    content: message.content,
-                    messageType: message.message_type,
-                    metadata: message.metadata,
-                    timestamp: message.created_at,
+                    content: processedMessage.content,
+                    messageType: processedMessage.message_type,
+                    metadata: processedMessage.metadata,
+                    timestamp: processedMessage.created_at,
                     status: 'delivered',
-                    isOwn: message.sender.id === currentUser?.id,
+                    isOwn: processedMessage.sender.id === currentUser?.id,
                     reactions: []
                 };
 
@@ -526,7 +583,7 @@ function Home() {
             socketService.off('poll:updated', handlePollUpdate);
             socketService.off('reaction:update', handleReactionUpdate);
         };
-    }, [selectedRoomId, currentUser]);
+    }, [selectedRoomId, currentUser, isE2EReady]);
 
     // Keyboard shortcut for search (Cmd+F / Ctrl+F)
     useEffect(() => {
@@ -563,6 +620,97 @@ function Home() {
 
             setMessages(prev => [...prev, optimisticMessage]);
 
+            // E2E Encryption for text messages
+            if (type === 'text' && isE2EReady) {
+                try {
+                    const message = {
+                        roomId: selectedRoomId,
+                        content,
+                        messageType: type,
+                        tempId,
+                    };
+
+                    // Determine if DM or group (compute inline to avoid variable order issues)
+                    const room = rooms.find(r => r.id === selectedRoomId);
+                    const isDM = room?.room_type === 'direct';
+                    const recipientUserId = room?.other_user_id;
+
+                    if (isDM && recipientUserId) {
+                        // Encrypt for DM using X3DH + Double Ratchet
+                        const { payload, isEncrypted } = await prepareOutgoingMessage(
+                            message,
+                            recipientUserId,
+                            selectedRoomId
+                        );
+
+                        if (isEncrypted && 'e2e' in payload) {
+                            // Send encrypted message
+                            socketService.sendEncryptedMessage(
+                                selectedRoomId,
+                                payload.content,
+                                tempId,
+                                (response: any) => {
+                                    if (response.success) {
+                                        setMessages(prev => prev.map(msg =>
+                                            msg.tempId === tempId
+                                                ? { ...msg, id: response.message.id, status: 'sent', tempId: undefined }
+                                                : msg
+                                        ));
+                                    } else {
+                                        setMessages(prev => prev.map(msg =>
+                                            msg.tempId === tempId
+                                                ? { ...msg, status: 'failed' }
+                                                : msg
+                                        ));
+                                        errorToast(response.error || 'Failed to send message');
+                                    }
+                                },
+                                payload.metadata
+                            );
+                            return;
+                        }
+                    } else if (room?.room_type === 'group') {
+                        // Encrypt for group using Sender Keys protocol
+                        // For now, we need member IDs - we'll use an empty array which triggers initialization
+                        const { payload, isEncrypted } = await prepareGroupMessage(
+                            message,
+                            [], // Member IDs are fetched internally by GroupE2EService
+                            selectedRoomId
+                        );
+
+                        if (isEncrypted && 'e2e' in payload) {
+                            // Send encrypted group message
+                            socketService.sendEncryptedMessage(
+                                selectedRoomId,
+                                payload.content,
+                                tempId,
+                                (response: any) => {
+                                    if (response.success) {
+                                        setMessages(prev => prev.map(msg =>
+                                            msg.tempId === tempId
+                                                ? { ...msg, id: response.message.id, status: 'sent', tempId: undefined }
+                                                : msg
+                                        ));
+                                    } else {
+                                        setMessages(prev => prev.map(msg =>
+                                            msg.tempId === tempId
+                                                ? { ...msg, status: 'failed' }
+                                                : msg
+                                        ));
+                                        errorToast(response.error || 'Failed to send message');
+                                    }
+                                },
+                                payload.metadata
+                            );
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    console.error('E2E encryption failed, falling back to plaintext:', err);
+                }
+            }
+
+            // Fallback: Send plaintext (or non-text message types)
             socketService.emit('message:send', {
                 roomId: selectedRoomId,
                 content,
@@ -586,7 +734,7 @@ function Home() {
                 }
             });
         },
-        [selectedRoomId, currentUser, errorToast]
+        [selectedRoomId, currentUser, rooms, isE2EReady, errorToast]
     );
 
     const handleAttachmentSelect = (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music' | 'schedule') => {
@@ -909,6 +1057,15 @@ function Home() {
                                 <div className="min-w-0">
                                     <h2 className="text-base font-semibold text-mono-text truncate flex items-center gap-2">
                                         {currentRoom.name}
+                                        {/* E2E Lock Icon */}
+                                        {isE2EReady && (
+                                            <span
+                                                className="inline-flex items-center text-green-400/80"
+                                                title="End-to-end encrypted"
+                                            >
+                                                <Lock className="w-3.5 h-3.5" />
+                                            </span>
+                                        )}
                                         {currentRoom.room_type === 'group' && currentRoom.tone && SPACE_TONES[currentRoom.tone] && (
                                             <span className={cn(
                                                 "px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-sm border",

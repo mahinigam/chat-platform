@@ -105,18 +105,43 @@ class SocketService {
         roomId: number,
         content: string,
         tempId: string,
-        callback: (response: any) => void
+        callback: (response: any) => void,
+        options?: {
+            messageType?: 'text' | 'image' | 'file' | 'encrypted';
+            e2e?: boolean;
+            metadata?: Record<string, any>;
+        }
     ): void {
         this.socket?.emit(
             'message:send',
             {
                 roomId,
                 content,
-                messageType: 'text',
+                messageType: options?.messageType || 'text',
                 tempId,
+                e2e: options?.e2e || false,
+                metadata: options?.metadata,
             },
             callback
         );
+    }
+
+    /**
+     * Send an encrypted message
+     * This is a convenience wrapper that sets the E2E flags
+     */
+    sendEncryptedMessage(
+        roomId: number,
+        encryptedContent: string,
+        tempId: string,
+        callback: (response: any) => void,
+        metadata?: Record<string, any>
+    ): void {
+        this.sendMessage(roomId, encryptedContent, tempId, callback, {
+            messageType: 'encrypted',
+            e2e: true,
+            metadata,
+        });
     }
 
     /**
@@ -244,6 +269,124 @@ class SocketService {
      */
     emit(event: string, data: any, callback?: (response: any) => void): void {
         this.socket?.emit(event, data, callback);
+    }
+
+    // ============================================
+    // E2E ENCRYPTION METHODS
+    // ============================================
+
+    /**
+     * Distribute sender key to room members (group E2E)
+     */
+    distributeSenderKey(
+        roomId: number,
+        distribution: string,
+        callback?: (response: { success: boolean; error?: string }) => void
+    ): void {
+        this.socket?.emit('e2e:distribute_sender_key', { roomId, distribution }, callback);
+    }
+
+    /**
+     * Notify room about key rotation (member left or scheduled rotation)
+     */
+    notifyKeyRotation(
+        roomId: number,
+        reason: 'member_left' | 'scheduled' | 'manual',
+        newKeyId?: number,
+        callback?: (response: { success: boolean; error?: string }) => void
+    ): void {
+        this.socket?.emit('e2e:key_rotation', { roomId, reason, newKeyId }, callback);
+    }
+
+    /**
+     * Request sender keys for a room (when joining a group)
+     */
+    requestSenderKeys(
+        roomId: number,
+        callback: (response: { 
+            success: boolean; 
+            senderKeys?: Array<{
+                senderUserId: number;
+                distributionKeyPublic: string;
+                distributionKeyId: number;
+                chainIteration: number;
+            }>;
+            error?: string 
+        }) => void
+    ): void {
+        this.socket?.emit('e2e:request_sender_keys', { roomId }, callback);
+    }
+
+    /**
+     * Acknowledge receipt of a sender key
+     */
+    acknowledgeSenderKey(
+        roomId: number,
+        senderUserId: number,
+        keyId: number,
+        callback?: (response: { success: boolean }) => void
+    ): void {
+        this.socket?.emit('e2e:sender_key_ack', { roomId, senderUserId, keyId }, callback);
+    }
+
+    /**
+     * Establish E2E session with another user (DM)
+     */
+    establishE2ESession(
+        targetUserId: number,
+        preKeyBundle?: string,
+        callback?: (response: { success: boolean; e2eEnabled?: boolean; error?: string }) => void
+    ): void {
+        this.socket?.emit('e2e:session_establish', { targetUserId, preKeyBundle }, callback);
+    }
+
+    /**
+     * Notify about key change (security alert)
+     */
+    notifyKeyChange(
+        userId: number,
+        keyType: 'identity' | 'signed_prekey',
+        callback?: (response: { success: boolean }) => void
+    ): void {
+        this.socket?.emit('e2e:key_change', { userId, keyType }, callback);
+    }
+
+    /**
+     * Subscribe to E2E events
+     */
+    setupE2EListeners(handlers: {
+        onSenderKey?: (data: { roomId: number; senderId: number; senderUsername: string; distribution: string }) => void;
+        onKeyRotated?: (data: { roomId: number; userId: number; username: string; reason: string; newKeyId?: number }) => void;
+        onSenderKeyRequest?: (data: { roomId: number; requesterId: number; requesterUsername: string }) => void;
+        onSenderKeyAck?: (data: { roomId: number; receiverId: number; keyId: number }) => void;
+        onSessionRequest?: (data: { fromUserId: number; preKeyBundle?: string }) => void;
+    }): void {
+        if (handlers.onSenderKey) {
+            this.socket?.on('e2e:sender_key', handlers.onSenderKey);
+        }
+        if (handlers.onKeyRotated) {
+            this.socket?.on('e2e:key_rotated', handlers.onKeyRotated);
+        }
+        if (handlers.onSenderKeyRequest) {
+            this.socket?.on('e2e:sender_key_request', handlers.onSenderKeyRequest);
+        }
+        if (handlers.onSenderKeyAck) {
+            this.socket?.on('e2e:sender_key_ack', handlers.onSenderKeyAck);
+        }
+        if (handlers.onSessionRequest) {
+            this.socket?.on('e2e:session_request', handlers.onSessionRequest);
+        }
+    }
+
+    /**
+     * Remove E2E event listeners
+     */
+    removeE2EListeners(): void {
+        this.socket?.off('e2e:sender_key');
+        this.socket?.off('e2e:key_rotated');
+        this.socket?.off('e2e:sender_key_request');
+        this.socket?.off('e2e:sender_key_ack');
+        this.socket?.off('e2e:session_request');
     }
 }
 

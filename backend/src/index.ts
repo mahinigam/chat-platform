@@ -76,6 +76,7 @@ import contactRoutes from './routes/contacts';
 import reactionRoutes from './routes/reactions';
 import searchRoutes from './routes/search';
 import blocksRoutes from './routes/blocks';
+import e2eRoutes from './routes/e2e';
 import { authLimiter, messageLimiter, uploadLimiter, searchLimiter, standardLimiter } from './middleware/rateLimit';
 
 // Apply standard rate limiting to all routes
@@ -94,6 +95,7 @@ app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/reactions', reactionRoutes);
 app.use('/api/search', searchLimiter, searchRoutes);
 app.use('/api', blocksRoutes);  // /api/users/:id/block, /api/blocked, /api/users/:id/mute, /api/muted, etc.
+app.use('/api/e2e', e2eRoutes);  // E2E encryption key management
 
 // Health check routes
 

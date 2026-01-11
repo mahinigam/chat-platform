@@ -9,9 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 interface SendMessageData {
     roomId: number;
     content: string;
-    messageType?: 'text' | 'image' | 'file';
+    messageType?: 'text' | 'image' | 'file' | 'encrypted';
     metadata?: any;
     tempId?: string; // For optimistic UI matching
+    e2e?: boolean;   // Flag indicating E2E encrypted content
 }
 
 class MessageHandler {
@@ -32,7 +33,7 @@ class MessageHandler {
     ): Promise<void> {
         try {
             const { userId, username } = socket;
-            const { roomId, content, messageType = 'text', metadata, tempId } = data;
+            const { roomId, content, messageType = 'text', metadata, tempId, e2e = false } = data;
 
             // Validation
             if (!content || content.trim().length === 0) {
@@ -90,7 +91,10 @@ class MessageHandler {
                 senderId: userId,
                 content,
                 messageType,
-                metadata,
+                metadata: {
+                    ...metadata,
+                    e2e, // Store E2E flag in metadata
+                },
             });
 
             // Get room members
@@ -106,15 +110,18 @@ class MessageHandler {
             await RedisService.cacheMessage(roomId, message);
 
             // Index message to Elasticsearch for search (non-blocking)
-            SearchRepository.indexMessage({
-                id: messageId,
-                room_id: roomId,
-                sender_id: userId,
-                sender_username: username,
-                content,
-                message_type: messageType,
-                created_at: message.created_at
-            }).catch(err => console.warn('ES index skipped:', err.message));
+            // NOTE: E2E encrypted messages are not indexed for search (privacy)
+            if (!e2e) {
+                SearchRepository.indexMessage({
+                    id: messageId,
+                    room_id: roomId,
+                    sender_id: userId,
+                    sender_username: username,
+                    content,
+                    message_type: messageType,
+                    created_at: message.created_at
+                }).catch(err => console.warn('ES index skipped:', err.message));
+            }
 
             // ============================================
             // CRITICAL: Emit to room
@@ -123,6 +130,7 @@ class MessageHandler {
             // If recipient is on a different server, Redis Pub/Sub handles it
             socket.to(`room:${roomId}`).emit('message:new', {
                 ...message,
+                e2e, // Include E2E flag for clients
                 sender: {
                     id: userId,
                     username: username,
@@ -143,6 +151,7 @@ class MessageHandler {
                 success: true,
                 message: {
                     ...message,
+                    e2e, // Include E2E flag
                     tempId, // Match with client's temporary ID
                 },
             });

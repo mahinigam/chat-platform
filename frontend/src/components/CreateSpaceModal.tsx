@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
-import ChromeButton from './ChromeButton';
 import socketService from '../services/socket';
 import { useToast } from '../hooks/useToast';
 import { Users, Briefcase, Coffee, Lock } from 'lucide-react';

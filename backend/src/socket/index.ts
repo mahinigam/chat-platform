@@ -11,6 +11,7 @@ import roomHandler from './handlers/roomHandler';
 import pollHandler from './handlers/pollHandler';
 import reactionHandler from './handlers/reactionHandler';
 import callHandler from './handlers/callHandler';
+import e2eHandler from './handlers/e2eHandler';
 
 export interface AuthenticatedSocket extends Socket {
     userId: number;
@@ -141,6 +142,28 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             socket.on('call:join_group', (data) => callHandler.handleJoinGroupCall(authSocket, data.roomId));
             socket.on('call:leave_group', (data) => callHandler.handleLeaveGroupCall(authSocket, data.roomId));
             socket.on('call:invite', (data) => callHandler.handleInviteToCall(authSocket, data));
+
+            // ============================================
+            // E2E Encryption Events
+            // ============================================
+            socket.on('e2e:distribute_sender_key', (data, callback) =>
+                e2eHandler.handleSenderKeyDistribution(authSocket, data, callback)
+            );
+            socket.on('e2e:key_rotation', (data, callback) =>
+                e2eHandler.handleKeyRotation(authSocket, data, callback)
+            );
+            socket.on('e2e:session_establish', (data, callback) =>
+                e2eHandler.handleSessionEstablish(authSocket, data, callback)
+            );
+            socket.on('e2e:key_change', (data, callback) =>
+                e2eHandler.handleKeyChange(authSocket, data, callback)
+            );
+            socket.on('e2e:request_sender_keys', (data, callback) =>
+                e2eHandler.handleRequestSenderKeys(authSocket, data, callback)
+            );
+            socket.on('e2e:sender_key_ack', (data, callback) =>
+                e2eHandler.handleSenderKeyAck(authSocket, data, callback)
+            );
 
             // ============================================
             // Disconnection Handler
