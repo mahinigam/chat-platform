@@ -72,6 +72,15 @@ The UI follows the **Obsidian Chrome** design system — a monochrome, performan
 | **Mute Rooms** | Mute notifications for specific rooms |
 | **Mute Users** | Mute notifications from specific users |
 | **Blocked/Muted Lists** | Manage blocked and muted users from settings |
+| **Chat Lock** | Lock individual chats with password protection (3-attempt limit + cooldown) |
+| **Device Management** | View and revoke active sessions across devices |
+
+### Identity & Profile
+| Feature | Description |
+|---------|-------------|
+| **Display Names** | Set a custom display name separate from your unique username |
+| **Unique Usernames** | Strict database-level enforcement of unique handles |
+| **Profile Management** | Update avatar, bio, and personal details via "My Details" |
 
 ### Advanced Engineering
 | Feature | Description |
