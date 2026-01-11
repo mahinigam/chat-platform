@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { cn } from '../utils/theme';
 import { Reply, Star, Pin, Forward, Copy, CheckSquare, User, Users } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
@@ -33,6 +33,20 @@ const MessageOptionsMenu: React.FC<MessageOptionsMenuProps> = ({
     className
 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
+    const [showBelow, setShowBelow] = useState(false);
+
+    // Determine if menu should appear above or below
+    useEffect(() => {
+        if (isOpen && menuRef.current) {
+            const parent = menuRef.current.parentElement;
+            if (parent) {
+                const rect = parent.getBoundingClientRect();
+                const menuHeight = 320; // Approximate menu height
+                const spaceAbove = rect.top;
+                setShowBelow(spaceAbove < menuHeight);
+            }
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -114,10 +128,14 @@ const MessageOptionsMenu: React.FC<MessageOptionsMenuProps> = ({
                         'rounded-2xl shadow-2xl overflow-hidden',
                         'p-1',
                         isOwn ? 'right-0' : 'left-0',
-                        'bottom-full mb-2',
+                        showBelow ? 'top-full mt-2' : 'bottom-full mb-2',
                         className
                     )}
-                    style={{ transformOrigin: isOwn ? "bottom right" : "bottom left" }}
+                    style={{
+                        transformOrigin: showBelow
+                            ? (isOwn ? "top right" : "top left")
+                            : (isOwn ? "bottom right" : "bottom left")
+                    }}
                 >
                     {options.map((option) => {
                         if (option.divider) {
