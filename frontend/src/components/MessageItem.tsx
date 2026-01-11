@@ -46,13 +46,15 @@ export interface Message {
 interface MessageItemProps {
   message: Message;
   searchQuery?: string;
+  roomId?: number;
   onPollVote?: (pollId: string, optionIndex: number) => void;
   onReaction?: (messageId: string, emoji: string) => void;
   onDelete?: (messageId: string, mode: 'me' | 'everyone') => void;
   onPin?: (messageId: string) => void;
+  onConstellation?: (messageId: string, roomId: number) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollVote, onReaction, onDelete: _onDelete, onPin }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId, onPollVote, onReaction, onDelete: _onDelete, onPin, onConstellation }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [recentEmojis, setRecentEmojis] = useState<string[]>(getRecentEmojis());
@@ -408,7 +410,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, onPollV
               onClose={() => setShowOptions(false)}
               isOwn={message.isOwn}
               onReply={() => console.log('Reply to', message.id)}
-              onStar={() => console.log('Star', message.id)}
+              onConstellation={() => onConstellation?.(message.id, roomId || 0)}
               onPin={() => onPin?.(message.id)}
               onForward={() => console.log('Forward', message.id)}
               onCopy={() => {

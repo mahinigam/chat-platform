@@ -7,7 +7,7 @@ interface MessageOptionsMenuProps {
     isOpen: boolean;
     onClose: () => void;
     onReply?: () => void;
-    onStar?: () => void;
+    onConstellation?: () => void;
     onPin?: () => void;
     onForward?: () => void;
     onCopy?: () => void;
@@ -22,7 +22,7 @@ const MessageOptionsMenu: React.FC<MessageOptionsMenuProps> = ({
     isOpen,
     onClose,
     onReply,
-    onStar,
+    onConstellation,
     onPin,
     onForward,
     onCopy,
@@ -51,7 +51,7 @@ const MessageOptionsMenu: React.FC<MessageOptionsMenuProps> = ({
 
     const options = [
         { key: 'reply', label: 'Reply', icon: <Reply className="w-4 h-4" />, action: onReply },
-        { key: 'star', label: 'Star', icon: <Star className="w-4 h-4" />, action: onStar },
+        { key: 'constellation', label: 'Add to Constellation', icon: <Star className="w-4 h-4" />, action: onConstellation },
         { key: 'pin', label: 'Pin', icon: <Pin className="w-4 h-4" />, action: onPin },
         { key: 'forward', label: 'Forward', icon: <Forward className="w-4 h-4" />, action: onForward },
         { key: 'copy', label: 'Copy', icon: <Copy className="w-4 h-4" />, action: onCopy },

@@ -12,6 +12,7 @@ import pollHandler from './handlers/pollHandler';
 import reactionHandler from './handlers/reactionHandler';
 import callHandler from './handlers/callHandler';
 import e2eHandler from './handlers/e2eHandler';
+import constellationHandler from './handlers/constellationHandler';
 
 export interface AuthenticatedSocket extends Socket {
     userId: number;
@@ -164,6 +165,34 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             );
             socket.on('e2e:sender_key_ack', (data, callback) =>
                 e2eHandler.handleSenderKeyAck(authSocket, data, callback)
+            );
+
+            // ============================================
+            // Constellation Events (Message Collections)
+            // ============================================
+            socket.on('constellation:create', (data, callback) =>
+                constellationHandler.handleCreateConstellation(authSocket, data, callback)
+            );
+            socket.on('constellation:list', (data, callback) =>
+                constellationHandler.handleGetConstellations(authSocket, data, callback)
+            );
+            socket.on('constellation:update', (data, callback) =>
+                constellationHandler.handleUpdateConstellation(authSocket, data, callback)
+            );
+            socket.on('constellation:delete', (data, callback) =>
+                constellationHandler.handleDeleteConstellation(authSocket, data, callback)
+            );
+            socket.on('constellation:add_message', (data, callback) =>
+                constellationHandler.handleAddMessage(authSocket, data, callback)
+            );
+            socket.on('constellation:remove_message', (data, callback) =>
+                constellationHandler.handleRemoveMessage(authSocket, data, callback)
+            );
+            socket.on('constellation:get_messages', (data, callback) =>
+                constellationHandler.handleGetMessages(authSocket, data, callback)
+            );
+            socket.on('constellation:for_message', (data, callback) =>
+                constellationHandler.handleGetConstellationsForMessage(authSocket, data, callback)
             );
 
             // ============================================

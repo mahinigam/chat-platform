@@ -262,6 +262,94 @@ class SocketService {
         this.socket?.emit('message:get_pinned', { roomId }, callback);
     }
 
+    // ============================================
+    // CONSTELLATION METHODS (Message Collections)
+    // ============================================
+
+    /**
+     * Create a new constellation
+     */
+    createConstellation(
+        name: string,
+        description: string | undefined,
+        callback: (response: { success?: boolean; constellation?: any; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:create', { name, description }, callback);
+    }
+
+    /**
+     * Get all user's constellations
+     */
+    getConstellations(
+        callback: (response: { constellations?: any[]; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:list', {}, callback);
+    }
+
+    /**
+     * Update a constellation
+     */
+    updateConstellation(
+        constellationId: number,
+        updates: { name?: string; description?: string },
+        callback: (response: { success?: boolean; constellation?: any; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:update', { constellationId, ...updates }, callback);
+    }
+
+    /**
+     * Delete a constellation
+     */
+    deleteConstellation(
+        constellationId: number,
+        callback: (response: { success?: boolean; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:delete', { constellationId }, callback);
+    }
+
+    /**
+     * Add a message to a constellation
+     */
+    addToConstellation(
+        constellationId: number,
+        messageId: string,
+        roomId: number,
+        callback: (response: { success?: boolean; entry?: any; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:add_message', { constellationId, messageId, roomId }, callback);
+    }
+
+    /**
+     * Remove a message from a constellation
+     */
+    removeFromConstellation(
+        constellationId: number,
+        messageId: string,
+        callback: (response: { success?: boolean; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:remove_message', { constellationId, messageId }, callback);
+    }
+
+    /**
+     * Get all messages in a constellation
+     */
+    getConstellationMessages(
+        constellationId: number,
+        callback: (response: { messages?: any[]; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:get_messages', { constellationId }, callback);
+    }
+
+    /**
+     * Get which constellations contain a message
+     */
+    getConstellationsForMessage(
+        messageId: string,
+        callback: (response: { constellationIds?: number[]; error?: string }) => void
+    ): void {
+        this.socket?.emit('constellation:for_message', { messageId }, callback);
+    }
+
     /**
      * Listen to events
      */
