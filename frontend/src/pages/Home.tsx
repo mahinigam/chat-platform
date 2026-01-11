@@ -1332,6 +1332,7 @@ function Home() {
                                 roomId: m.roomId.toString()
                             }))}
                         isLoading={isLoadingMessages}
+                        roomId={selectedRoomId || undefined}
                         roomName={currentRoom?.name}
                         className="h-full"
                         searchQuery={activeSearchQuery}
