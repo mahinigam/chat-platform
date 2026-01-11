@@ -14,6 +14,7 @@ interface SpaceMember {
     display_name?: string;
     avatar_url?: string;
     role: string;
+    alias?: string;
 }
 
 interface SpaceSettingsModalProps {
@@ -55,6 +56,7 @@ const SpaceSettingsModal: React.FC<SpaceSettingsModalProps> = ({
     const [isSearching, setIsSearching] = useState(false);
     const [quietStart, setQuietStart] = useState(space.settings?.quietHours?.start || '22:00');
     const [quietEnd, setQuietEnd] = useState(space.settings?.quietHours?.end || '08:00');
+    const [myAlias, setMyAlias] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addToast } = useToast();
 
@@ -149,6 +151,16 @@ const SpaceSettingsModal: React.FC<SpaceSettingsModalProps> = ({
         });
     };
 
+    const handleSaveAlias = () => {
+        socketService.setMemberAlias(space.id, myAlias.trim() || null, (response) => {
+            if (response.error) {
+                addToast(response.error, 'error');
+            } else {
+                addToast(response.alias ? `Alias set to "${response.alias}"` : 'Alias removed', 'success');
+            }
+        });
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -238,6 +250,26 @@ const SpaceSettingsModal: React.FC<SpaceSettingsModalProps> = ({
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* My Alias - Optional */}
+                                <div className="pt-4 border-t border-mono-glass-border">
+                                    <label className="block text-xs text-mono-muted mb-1">My Alias (Optional)</label>
+                                    <p className="text-xs text-mono-muted/70 mb-2">Set a custom tag that appears below your name in messages</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={myAlias}
+                                            onChange={(e) => setMyAlias(e.target.value)}
+                                            placeholder="e.g. Team Lead, Designer, Night Owl..."
+                                            maxLength={50}
+                                            className="input-glass flex-1"
+                                        />
+                                        <ChromeButton onClick={handleSaveAlias} className="px-4">
+                                            Set
+                                        </ChromeButton>
+                                    </div>
+                                </div>
+
                                 <ChromeButton onClick={handleSaveGeneral} disabled={isLoading} className="w-full">
                                     {isLoading ? 'Saving...' : 'Save Changes'}
                                 </ChromeButton>

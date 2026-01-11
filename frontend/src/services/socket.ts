@@ -219,6 +219,17 @@ class SocketService {
     }
 
     /**
+     * Set your alias/tag in a space (optional, like WhatsApp member tags)
+     */
+    setMemberAlias(
+        spaceId: number,
+        alias: string | null,
+        callback: (response: { success?: boolean; alias?: string | null; error?: string }) => void
+    ): void {
+        this.socket?.emit('space:set_alias', { spaceId, alias }, callback);
+    }
+
+    /**
      * Toggle reaction on a message (add if not exists, remove if exists)
      */
     toggleReaction(
@@ -303,15 +314,15 @@ class SocketService {
      */
     requestSenderKeys(
         roomId: number,
-        callback: (response: { 
-            success: boolean; 
+        callback: (response: {
+            success: boolean;
             senderKeys?: Array<{
                 senderUserId: number;
                 distributionKeyPublic: string;
                 distributionKeyId: number;
                 chainIteration: number;
             }>;
-            error?: string 
+            error?: string
         }) => void
     ): void {
         this.socket?.emit('e2e:request_sender_keys', { roomId }, callback);

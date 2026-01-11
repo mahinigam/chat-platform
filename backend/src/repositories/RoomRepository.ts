@@ -17,6 +17,7 @@ interface RoomMember {
     room_id: number;
     user_id: number;
     role: string;
+    alias?: string;
     joined_at: Date;
 }
 
@@ -239,5 +240,33 @@ export class RoomRepository {
         await this.addUserToRoom(room.id, userId2, 'member');
 
         return room;
+    }
+
+    /**
+     * Set a member's alias in a room
+     */
+    static async setMemberAlias(
+        roomId: number,
+        userId: number,
+        alias: string | null
+    ): Promise<void> {
+        await Database.query(
+            `UPDATE room_members 
+             SET alias = $1
+             WHERE room_id = $2 AND user_id = $3 AND left_at IS NULL`,
+            [alias, roomId, userId]
+        );
+    }
+
+    /**
+     * Get a member's alias in a room
+     */
+    static async getMemberAlias(roomId: number, userId: number): Promise<string | null> {
+        const result = await Database.query(
+            `SELECT alias FROM room_members 
+             WHERE room_id = $1 AND user_id = $2 AND left_at IS NULL`,
+            [roomId, userId]
+        );
+        return result.rows[0]?.alias || null;
     }
 }

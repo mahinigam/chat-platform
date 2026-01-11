@@ -82,6 +82,7 @@ export function initializeSocket(httpServer: HTTPServer): Server {
             socket.on('space:leave', (data, callback) => roomHandler.handleLeaveSpace(authSocket, data, callback));
             socket.on('space:update', (data, callback) => roomHandler.handleUpdateSpace(authSocket, data, callback));
             socket.on('space:members', (data, callback) => roomHandler.handleGetSpaceMembers(authSocket, data, callback));
+            socket.on('space:set_alias', (data, callback) => roomHandler.handleSetMemberAlias(authSocket, data, callback));
 
             // Messaging
             socket.on('message:send', (data, callback) =>

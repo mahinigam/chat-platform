@@ -255,6 +255,47 @@ class RoomHandler {
             callback({ error: 'Failed to get members' });
         }
     }
+
+    /**
+     * Handle setting member alias (optional tag like WhatsApp)
+     */
+    async handleSetMemberAlias(
+        socket: AuthenticatedSocket,
+        data: { spaceId: number; alias: string | null },
+        callback: (response: any) => void
+    ): Promise<void> {
+        try {
+            const { userId, username } = socket;
+            const { spaceId, alias } = data;
+
+            // Verify user is a member
+            const isMember = await RoomRepository.isUserMemberOfRoom(userId, spaceId);
+            if (!isMember) {
+                callback({ error: 'You are not a member of this space.' });
+                return;
+            }
+
+            // Validate alias (max 50 chars, optional)
+            const trimmedAlias = alias?.trim() || null;
+            if (trimmedAlias && trimmedAlias.length > 50) {
+                callback({ error: 'Alias must be 50 characters or less.' });
+                return;
+            }
+
+            await RoomRepository.setMemberAlias(spaceId, userId, trimmedAlias);
+
+            // Notify all room members about the alias change
+            socket.emit('space:alias_updated', { spaceId, userId, alias: trimmedAlias, username });
+            socket.to(`room:${spaceId}`).emit('space:alias_updated', { spaceId, userId, alias: trimmedAlias, username });
+
+            callback({ success: true, alias: trimmedAlias });
+            console.log(`User ${username} set alias to "${trimmedAlias}" in space ${spaceId}`);
+
+        } catch (error) {
+            console.error('Error setting member alias:', error);
+            callback({ error: 'Failed to set alias' });
+        }
+    }
 }
 
 export default new RoomHandler();
