@@ -28,16 +28,17 @@ const LocationPicker = React.lazy(() => import('../components/LocationPicker'));
 const GifPicker = React.lazy(() => import('../components/GifPicker'));
 const OrbitSearch = React.lazy(() => import('../components/OrbitSearch'));
 const ChatSearch = React.lazy(() => import('../components/ChatSearch'));
+const SpaceSettingsModal = React.lazy(() => import('../components/SpaceSettingsModal'));
+const PinnedMessagesDrawer = React.lazy(() => import('../components/PinnedMessagesDrawer'));
+const AddToConstellationMenu = React.lazy(() => import('../components/AddToConstellationMenu'));
+const GroupCallScreen = React.lazy(() => import('../components/calls/GroupCallScreen'));
+const IncomingCallModal = React.lazy(() => import('../components/calls/IncomingCallModal'));
+
 import UndoToast from '../components/UndoToast';
 import ScheduleModal from '../components/ScheduleModal';
 import ChatLockModal from '../components/ChatLockModal';
 import RoomOptionsMenu from '../components/RoomOptionsMenu';
-import IncomingCallModal from '../components/calls/IncomingCallModal';
 import CallButton from '../components/calls/CallButton';
-import GroupCallScreen from '../components/calls/GroupCallScreen';
-import SpaceSettingsModal from '../components/SpaceSettingsModal';
-import PinnedMessagesDrawer from '../components/PinnedMessagesDrawer';
-import AddToConstellationMenu from '../components/AddToConstellationMenu';
 import webrtcService from '../services/webrtc';
 
 
@@ -1579,64 +1580,70 @@ function Home() {
                 isLoading={isScheduling}
             />
             {/* Call Modals */}
-            <IncomingCallModal
-                visible={!!incomingCall}
-                callerName={incomingCall?.callerName || 'Unknown'}
-                callType={incomingCall?.callType || 'voice'}
-                onAccept={handleAcceptCall}
-                onReject={handleRejectCall}
-            />
+            <Suspense fallback={null}>
+                <IncomingCallModal
+                    visible={!!incomingCall}
+                    callerName={incomingCall?.callerName || 'Unknown'}
+                    callType={incomingCall?.callType || 'voice'}
+                    onAccept={handleAcceptCall}
+                    onReject={handleRejectCall}
+                />
+            </Suspense>
 
             {groupCallVisible && selectedRoomId && (
-                <GroupCallScreen
-                    roomId={selectedRoomId}
-                    localStream={localStream}
-                    callType={activeCallType}
-                    onEndCall={handleEndGroupCall}
-                />
+                <Suspense fallback={<LazyFallback />}>
+                    <GroupCallScreen
+                        roomId={selectedRoomId}
+                        localStream={localStream}
+                        callType={activeCallType}
+                        onEndCall={handleEndGroupCall}
+                    />
+                </Suspense>
             )}
 
             {/* Space Settings Modal */}
-            {currentRoom && currentRoom.room_type === 'group' && (
-                <SpaceSettingsModal
-                    isOpen={isSpaceSettingsOpen}
-                    onClose={() => setIsSpaceSettingsOpen(false)}
-                    space={{
-                        id: currentRoom.id,
-                        name: currentRoom.name,
-                        description: currentRoom.description,
-                        tone: currentRoom.tone,
-                    }}
-                    currentUserId={currentUser?.id || 0}
-                    onSpaceUpdated={(updatedSpace) => {
-                        setRooms(prev => prev.map(r => r.id === updatedSpace.id ? { ...r, ...updatedSpace } : r));
-                    }}
-                    onSpaceLeft={() => {
-                        setRooms(prev => prev.filter(r => r.id !== currentRoom.id));
-                        setSelectedRoomId(null);
-                    }}
-                />
-            )}
+            <Suspense fallback={null}>
+                {currentRoom && currentRoom.room_type === 'group' && (
+                    <SpaceSettingsModal
+                        isOpen={isSpaceSettingsOpen}
+                        onClose={() => setIsSpaceSettingsOpen(false)}
+                        space={{
+                            id: currentRoom.id,
+                            name: currentRoom.name,
+                            description: currentRoom.description,
+                            tone: currentRoom.tone,
+                        }}
+                        currentUserId={currentUser?.id || 0}
+                        onSpaceUpdated={(updatedSpace) => {
+                            setRooms(prev => prev.map(r => r.id === updatedSpace.id ? { ...r, ...updatedSpace } : r));
+                        }}
+                        onSpaceLeft={() => {
+                            setRooms(prev => prev.filter(r => r.id !== currentRoom.id));
+                            setSelectedRoomId(null);
+                        }}
+                    />
+                )}
 
-            {/* Pinned Messages Drawer */}
-            {currentRoom && (
-                <PinnedMessagesDrawer
-                    isOpen={isPinnedDrawerOpen}
-                    onClose={() => setIsPinnedDrawerOpen(false)}
-                    roomId={currentRoom.id}
-                    roomType={currentRoom.room_type}
-                />
-            )}
+                {/* Pinned Messages Drawer */}
+                {currentRoom && (
+                    <PinnedMessagesDrawer
+                        isOpen={isPinnedDrawerOpen}
+                        onClose={() => setIsPinnedDrawerOpen(false)}
+                        roomId={currentRoom.id}
+                        roomType={currentRoom.room_type}
+                    />
+                )}
 
-            {/* Add to Constellation Menu */}
-            <AddToConstellationMenu
-                isOpen={!!constellationTarget}
-                onClose={() => setConstellationTarget(null)}
-                messageId={constellationTarget?.messageId || ''}
-                roomId={constellationTarget?.roomId || 0}
-                position={constellationTarget?.position || { x: 0, y: 0 }}
-                onSuccess={() => success('Added to constellation')}
-            />
+                {/* Add to Constellation Menu */}
+                <AddToConstellationMenu
+                    isOpen={!!constellationTarget}
+                    onClose={() => setConstellationTarget(null)}
+                    messageId={constellationTarget?.messageId || ''}
+                    roomId={constellationTarget?.roomId || 0}
+                    position={constellationTarget?.position || { x: 0, y: 0 }}
+                    onSuccess={() => success('Added to constellation')}
+                />
+            </Suspense>
         </div>
     );
 }
