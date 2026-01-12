@@ -4,9 +4,9 @@ import { Grid } from '@giphy/react-components';
 import { useDebounce } from 'use-debounce';
 import ChromeButton from './ChromeButton';
 
-// Use a demo key if not provided, but warn user
-const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY || 'sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh'; // Demo key
-const gf = new GiphyFetch(GIPHY_API_KEY); // TODO: Move to env
+// SECURITY: API key must come from environment variable only
+const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY;
+const gf = GIPHY_API_KEY ? new GiphyFetch(GIPHY_API_KEY) : null;
 
 interface GifPickerProps {
     onSelect: (gif: any) => void;
@@ -18,6 +18,18 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
     const [debouncedSearch] = useDebounce(search, 500);
     // const [width, setWidth] = useState(window.innerWidth < 400 ? window.innerWidth - 40 : 350);
     const width = window.innerWidth < 400 ? window.innerWidth - 40 : 350;
+
+    // Show error if no API key configured
+    if (!gf) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <div className="bg-mono-surface p-6 rounded-glass border border-mono-glass-border">
+                    <p className="text-mono-muted">GIF feature requires VITE_GIPHY_API_KEY</p>
+                    <ChromeButton onClick={onClose} className="mt-4">Close</ChromeButton>
+                </div>
+            </div>
+        );
+    }
 
     const fetchGifs = (offset: number) => {
         if (debouncedSearch) {
