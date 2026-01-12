@@ -6,7 +6,7 @@ interface ChromeButtonProps {
     onClick?: () => void;
     disabled?: boolean;
     className?: string;
-    variant?: 'default' | 'circle';
+    variant?: 'default' | 'circle' | 'danger';
     'aria-label'?: string;
     title?: string;
     type?: 'button' | 'submit' | 'reset';
@@ -29,6 +29,7 @@ const ChromeButton: React.FC<ChromeButtonProps> = ({
     type = 'button',
 }) => {
     const isCircle = variant === 'circle';
+    const isDanger = variant === 'danger';
 
     return (
         <button
@@ -43,36 +44,28 @@ const ChromeButton: React.FC<ChromeButtonProps> = ({
                 isCircle ? 'rounded-full aspect-square' : 'rounded-xl',
                 isCircle ? 'p-0' : 'px-4 py-2',
 
-                // 1. CORE MATERIAL IDENTITY (Default State)
-                // Glass-first, metallic undertone. Quiet.
-                'bg-mono-surface/5', // Very faint glass base
-                // P2: Removed backdrop-blur for performance - buttons don't need blur
-                'border border-white/5', // Faint edge memory
+                // 1. CORE MATERIAL IDENTITY
+                // Default vs Danger
+                !isDanger && 'bg-mono-surface/5 border-white/5 text-mono-text',
+                isDanger && 'bg-red-500/10 border-red-500/20 text-red-100', // Danger Base
 
-                // Text
-                'text-mono-text font-medium text-sm',
+                // Text Font
+                'font-medium text-sm',
 
                 // 5. TRANSITION TIMING
-                // Slow, smooth, restrained.
                 'transition-all duration-300 ease-out',
 
-                // 2. DEFAULT STATE (Continued)
-                // No strong shadows. Appears floating.
+                // 2. DEFAULT STATE
                 'shadow-sm',
 
                 // 3. HOVER (Space Bending)
-                // "Space bends slightly around the object"
-                // No scale. No bounce.
-                'hover:bg-mono-surface/10', // Slight opacity increase
-                'hover:border-white/10', // Edge catches slight light
-                'hover:shadow-md', // Very subtle depth increase
+                !isDanger && 'hover:bg-mono-surface/10 hover:border-white/10 hover:shadow-md',
+                isDanger && 'hover:bg-red-500/20 hover:border-red-500/30 hover:shadow-[0_0_15px_rgba(239,68,68,0.2)]',
 
                 // 4. CLICK / ACTIVE (Pressure)
-                // "Pressed into glass"
-                // No spring. No ripple.
-                'active:bg-mono-surface/15', // Darker/Denser
-                'active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]', // Inner shadow simulates pressure
-                'active:border-white/5', // Border dims slightly
+                !isDanger && 'active:bg-mono-surface/15 active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] active:border-white/5',
+                isDanger && 'active:bg-red-500/25 active:shadow-[inset_0_2px_4px_rgba(127,29,29,0.4)] active:border-red-500/20',
+
                 'active:translate-y-[0px]', // STRICTLY NO MOTION
 
                 // Disabled state
@@ -83,7 +76,6 @@ const ChromeButton: React.FC<ChromeButtonProps> = ({
         >
             {/* 
                Subtle Metallic Gradient Overlay (Static) 
-               Adds the "machined" feel without being "shiny".
             */}
             <div
                 className="absolute inset-0 z-[-1] opacity-5 pointer-events-none"
