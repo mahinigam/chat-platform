@@ -2,7 +2,7 @@
  * Hook tests for custom hooks
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useState, useCallback } from 'react';
 
@@ -23,7 +23,7 @@ const useCounter = (initialValue = 0) => {
 };
 
 // Simple useLocalStorage mock for testing
-const useLocalStorageMock = (key: string, initialValue: string) => {
+const useLocalStorageMock = (_key: string, initialValue: string) => {
     const [storedValue, setStoredValue] = useState(initialValue);
     const setValue = useCallback((value: string) => {
         setStoredValue(value);

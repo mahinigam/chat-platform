@@ -17,16 +17,17 @@ class WebRTCService {
     private currentRoomId: number | null = null; // For group call context
     private eventListeners: Map<CallEvent, EventHandler[]> = new Map();
 
-    // Google's free STUN servers + Local TURN
+    // SECURITY: ICE servers configuration - TURN credentials from env only
     private config: RTCConfiguration = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            {
-                urls: 'turn:localhost:3478',
-                username: 'user',
-                credential: 'password'
-            }
+            // TURN server only if credentials are configured via env
+            ...(import.meta.env.VITE_TURN_URL ? [{
+                urls: import.meta.env.VITE_TURN_URL,
+                username: import.meta.env.VITE_TURN_USERNAME || '',
+                credential: import.meta.env.VITE_TURN_PASSWORD || ''
+            }] : [])
         ]
     };
 
