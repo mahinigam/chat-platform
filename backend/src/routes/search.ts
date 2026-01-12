@@ -12,9 +12,16 @@ const authMiddleware = (req: Request, res: Response, next: any): void => {
         return;
     }
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+        console.error('SECURITY: JWT_SECRET not configured');
+        res.status(500).json({ error: 'Server configuration error' });
+        return;
+    }
+
     try {
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+        const decoded = jwt.verify(token, jwtSecret) as any;
         (req as any).userId = decoded.userId;
         next();
     } catch (error) {

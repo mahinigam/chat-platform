@@ -38,7 +38,11 @@ export class TokenService {
     private jwtSecret: string;
 
     constructor() {
-        this.jwtSecret = process.env.JWT_SECRET || 'default-secret-change-me';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            throw new Error('SECURITY: JWT_SECRET environment variable is required');
+        }
+        this.jwtSecret = secret;
     }
 
     /**

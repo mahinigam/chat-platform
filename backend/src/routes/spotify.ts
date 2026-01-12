@@ -58,6 +58,7 @@ router.get('/token', async (_req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Spotify token error:', error.response?.data || error.message);
         res.status(500).json({ error: 'Failed to get Spotify token' });
+        return;
     }
 });
 
@@ -94,6 +95,7 @@ router.get('/search', async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Spotify search error:', error.response?.data || error.message);
         res.status(500).json({ error: 'Spotify search failed' });
+        return;
     }
 });
 
