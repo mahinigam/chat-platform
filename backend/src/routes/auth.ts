@@ -533,4 +533,50 @@ router.post('/2fa/disable', authenticateTokenHTTP, async (req: Request, res: Res
     }
 });
 
+/**
+ * DELETE Account - GPDR / Privacy Requirement
+ * Permanently deletes user account and all associated data
+ */
+router.delete('/me', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ error: 'Password is required to delete account' });
+        }
+
+        // Verify password before deletion
+        const userRes = await Database.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+
+        const isValid = await bcrypt.compare(password, userRes.rows[0].password_hash);
+        if (!isValid) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        // Invalidate all sessions first
+        await tokenService.invalidateAllSessions(userId);
+
+        // Delete user (Cascading delete will handle messages, contacts, etc.)
+        // Note: For large datasets, this might timeout and should be a background job,
+        // but for this scale, a direct transaction is cleaner.
+        await Database.query('BEGIN');
+        try {
+            await Database.query('DELETE FROM users WHERE id = $1', [userId]);
+            await Database.query('COMMIT');
+
+            logInfo('User account deleted permanently', { userId });
+            return res.json({ success: true, message: 'Account deleted successfully' });
+        } catch (err) {
+            await Database.query('ROLLBACK');
+            throw err;
+        }
+
+    } catch (error) {
+        console.error('Delete account error:', error);
+        return res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
+
 export default router;
