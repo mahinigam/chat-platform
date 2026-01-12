@@ -8,6 +8,7 @@ import { authenticateTokenHTTP } from '../middleware/auth';
 import { logInfo, logWarn } from '../config/logger';
 import emailService from '../services/EmailService';
 import jwt from 'jsonwebtoken';
+import { MessageDeleteRepository } from '../repositories/MessageDeleteRepository';
 
 const router = Router();
 
@@ -558,9 +559,10 @@ router.delete('/me', authenticateTokenHTTP, async (req: Request, res: Response) 
         // Invalidate all sessions first
         await tokenService.invalidateAllSessions(userId);
 
-        // Delete user (Cascading delete will handle messages, contacts, etc.)
-        // Note: For large datasets, this might timeout and should be a background job,
-        // but for this scale, a direct transaction is cleaner.
+        // PRIVACY CRITICAL: Hard delete all messages (ES + SQL)
+        await MessageDeleteRepository.deleteAllMessagesForUser(userId);
+
+        // Delete user (Cascading delete will handle contacts, room memberships, etc.)
         await Database.query('BEGIN');
         try {
             await Database.query('DELETE FROM users WHERE id = $1', [userId]);

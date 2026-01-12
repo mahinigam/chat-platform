@@ -208,4 +208,29 @@ export class MessageDeleteRepository {
 
         return expired.length;
     }
+
+    /**
+     * Delete all messages for a user (Account Deletion)
+     * Purges from Elasticsearch and Database
+     */
+    static async deleteAllMessagesForUser(userId: number): Promise<void> {
+        // 1. Delete from Elasticsearch
+        try {
+            const es = getElasticsearchClient();
+            await es.deleteByQuery({
+                index: MESSAGES_INDEX,
+                query: {
+                    match: {
+                        sender_id: userId
+                    }
+                }
+            });
+        } catch (err) {
+            console.warn('ES user purge skipped:', (err as Error).message);
+        }
+
+        // 2. Delete from DB
+        // Note: We don't need to iterate individual messages if we just kill them all
+        await Database.query('DELETE FROM messages WHERE sender_id = $1', [userId]);
+    }
 }
