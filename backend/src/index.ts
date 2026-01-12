@@ -97,6 +97,10 @@ app.use('/api/search', searchLimiter, searchRoutes);
 app.use('/api', blocksRoutes);  // /api/users/:id/block, /api/blocked, /api/users/:id/mute, /api/muted, etc.
 app.use('/api/e2e', e2eRoutes);  // E2E encryption key management
 
+// Spotify integration (secure token generation)
+import spotifyRoutes from './routes/spotify';
+app.use('/api/spotify', spotifyRoutes);
+
 // Health check routes
 
 app.use('/health', healthRoutes);
