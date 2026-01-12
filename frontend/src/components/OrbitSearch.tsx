@@ -18,7 +18,7 @@ const OrbitSearch: React.FC<OrbitSearchProps> = ({ onSelect, onClose }) => {
     const [error, setError] = useState('');
 
     const YOUTUBE_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
-    const SPOTIFY_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+    // Note: Spotify credentials are now on backend, no frontend env var needed
 
     // Search Spotify when query changes
     useEffect(() => {
@@ -31,27 +31,24 @@ const OrbitSearch: React.FC<OrbitSearchProps> = ({ onSelect, onClose }) => {
             setIsSearching(true);
             setError('');
 
-            // Check for missing keys first
-            if (!SPOTIFY_ID) {
-                setError('Missing Spotify Client ID. Check .env');
-                setIsSearching(false);
-                return;
-            }
-
             try {
                 const tracks = await searchSpotifyTracks(debouncedQuery);
                 setResults(tracks);
-                if (tracks.length === 0) setError('No results found.');
-            } catch (err) {
+                if (tracks.length === 0) setError('No results found. Ensure Spotify is configured on server.');
+            } catch (err: any) {
                 console.error('Search failed', err);
-                setError('Failed to search Spotify.');
+                if (err.message?.includes('not configured')) {
+                    setError('Spotify not configured on server. Add SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to backend .env');
+                } else {
+                    setError('Failed to search Spotify.');
+                }
             } finally {
                 setIsSearching(false);
             }
         };
 
         search();
-    }, [debouncedQuery, SPOTIFY_ID]);
+    }, [debouncedQuery]);
 
     const handleSelect = async (track: SpotifyTrack) => {
         if (resolvingId || !YOUTUBE_KEY) return;
@@ -171,12 +168,11 @@ const OrbitSearch: React.FC<OrbitSearchProps> = ({ onSelect, onClose }) => {
                 </div>
             </div>
 
-            {/* Footer Warning */}
-            {(!YOUTUBE_KEY || !SPOTIFY_ID) && (
+            {/* Footer Warning - only show for YouTube since Spotify is on backend */}
+            {!YOUTUBE_KEY && (
                 <div className="p-3 bg-orange-500/10 border-t border-orange-500/20 text-orange-200 text-xs text-center flex flex-col text-pretty">
                     <span>Setup Required:</span>
-                    {!YOUTUBE_KEY && <span>• Missing VITE_YOUTUBE_API_KEY</span>}
-                    {!SPOTIFY_ID && <span>• Missing VITE_SPOTIFY_CLIENT_ID</span>}
+                    <span>• Missing VITE_YOUTUBE_API_KEY (needed to play audio)</span>
                 </div>
             )}
         </motion.div>
