@@ -3,7 +3,7 @@ import { cn, focusElement } from '../utils/theme';
 import AttachmentMenu from './AttachmentMenu';
 import ChromeButton from './ChromeButton';
 import EmojiPickerWrapper from './EmojiPickerWrapper';
-import { X, Reply } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export interface ReplyingTo {
   messageId: string;
@@ -140,18 +140,18 @@ const Composer: React.FC<ComposerProps> = ({
 
       {/* Reply Preview Bar */}
       {replyingTo && (
-        <div className="max-w-4xl mx-auto mb-2 flex items-center gap-2 px-3 py-2 bg-mono-surface/80 backdrop-blur-sm border border-mono-glass-border rounded-xl">
-          <Reply className="w-4 h-4 text-blue-400 flex-shrink-0" />
+        <div className="max-w-4xl mx-auto mb-2 flex items-center gap-3 px-4 py-2.5 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/50 rounded-xl">
+          <div className="w-1 h-8 bg-blue-500 rounded-full flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-xs text-blue-400 font-medium">{replyingTo.senderName}</div>
-            <div className="text-xs text-mono-muted truncate">{replyingTo.content}</div>
+            <div className="text-xs text-zinc-400 truncate">{replyingTo.content}</div>
           </div>
           <button
             onClick={onCancelReply}
-            className="p-1 hover:bg-mono-surface-2 rounded-full transition-colors"
+            className="p-1.5 hover:bg-zinc-700 rounded-full transition-colors"
             aria-label="Cancel reply"
           >
-            <X className="w-4 h-4 text-mono-muted hover:text-mono-text" />
+            <X className="w-4 h-4 text-zinc-400 hover:text-white" />
           </button>
         </div>
       )}

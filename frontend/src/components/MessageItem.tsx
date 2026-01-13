@@ -204,12 +204,27 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId,
             thumbnailUrl={message.metadata?.thumbnail}
           />
         );
-      default:
+      default: {
+        // Check if this is a forwarded message
+        const isForwarded = message.metadata?.forwarded || message.content.startsWith('[Forwarded]');
+        const displayContent = message.content.replace(/^\[Forwarded\]\s*/, '');
+
         return (
-          <p className="text-sm text-mono-text whitespace-pre-wrap break-words leading-normal">
-            {searchQuery ? highlightText(message.content, searchQuery) : message.content}
-          </p>
+          <div>
+            {isForwarded && (
+              <div className="flex items-center gap-1.5 mb-1 text-xs text-zinc-400">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+                <span className="italic">Forwarded</span>
+              </div>
+            )}
+            <p className="text-sm text-mono-text whitespace-pre-wrap break-words leading-normal">
+              {searchQuery ? highlightText(displayContent, searchQuery) : displayContent}
+            </p>
+          </div>
         );
+      }
     }
   };
 

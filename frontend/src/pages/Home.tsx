@@ -1435,12 +1435,33 @@ function Home() {
                 {currentRoom && !isAudioRecording && (
                     isSelectMode ? (
                         // Selection Action Bar
-                        <div className="flex-shrink-0 p-4 bg-mono-bg border-t border-mono-glass-border">
-                            <div className="max-w-4xl mx-auto flex items-center justify-between gap-4 px-4 py-3 bg-mono-surface/80 backdrop-blur-sm border border-mono-glass-border rounded-xl">
-                                <span className="text-sm text-mono-text">
+                        <div className="flex-shrink-0 p-4 bg-mono-bg border-t border-zinc-700/50">
+                            <div className="max-w-4xl mx-auto flex items-center justify-between gap-4 px-4 py-3 bg-zinc-800/90 backdrop-blur-sm border border-zinc-700/50 rounded-xl">
+                                <span className="text-sm text-white font-medium">
                                     {selectedMessageIds.length} message{selectedMessageIds.length !== 1 && 's'} selected
                                 </span>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 items-center">
+                                    {/* Forward Button */}
+                                    <ChromeButton
+                                        onClick={() => {
+                                            // Get first selected message content for preview
+                                            const firstMsg = messages.find(m => selectedMessageIds.includes(m.id));
+                                            const content = firstMsg
+                                                ? `${selectedMessageIds.length > 1 ? `[${selectedMessageIds.length} messages]` : firstMsg.content}`
+                                                : '';
+                                            setForwardingMessage({ id: selectedMessageIds.join(','), content });
+                                            setIsSelectMode(false);
+                                            setSelectedMessageIds([]);
+                                        }}
+                                        variant="circle"
+                                        className="text-blue-400 hover:text-blue-300"
+                                        disabled={selectedMessageIds.length === 0}
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                        </svg>
+                                    </ChromeButton>
+                                    {/* Delete Button */}
                                     <ChromeButton
                                         onClick={async () => {
                                             // Delete selected messages
@@ -1460,12 +1481,13 @@ function Home() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                     </ChromeButton>
+                                    {/* Cancel Button */}
                                     <ChromeButton
                                         onClick={() => {
                                             setIsSelectMode(false);
                                             setSelectedMessageIds([]);
                                         }}
-                                        className="px-4 py-2 text-sm"
+                                        className="px-4 py-2 text-sm text-zinc-300 hover:text-white"
                                     >
                                         Cancel
                                     </ChromeButton>
