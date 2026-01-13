@@ -581,4 +581,58 @@ router.delete('/me', authenticateTokenHTTP, async (req: Request, res: Response) 
     }
 });
 
+/**
+ * Update user profile
+ */
+router.put('/profile', authenticateTokenHTTP, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const { avatar_url, display_name } = req.body;
+
+        if (!avatar_url && !display_name) {
+            return res.status(400).json({ error: 'No fields to update' });
+        }
+
+        // Build query dynamically
+        const updates: string[] = [];
+        const values: any[] = [];
+        let paramCount = 1;
+
+        if (avatar_url !== undefined) {
+            updates.push(`avatar_url = $${paramCount}`);
+            values.push(avatar_url);
+            paramCount++;
+        }
+
+        if (display_name !== undefined) {
+            updates.push(`display_name = $${paramCount}`);
+            values.push(display_name);
+            paramCount++;
+        }
+
+        values.push(userId);
+        const query = `
+            UPDATE users 
+            SET ${updates.join(', ')} 
+            WHERE id = $${paramCount}
+            RETURNING id, username, email, display_name, avatar_url
+        `;
+
+        const result = await Database.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            user: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Profile update error:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
 export default router;

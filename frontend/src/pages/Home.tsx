@@ -1164,13 +1164,29 @@ function Home() {
                             setRooms(prev => [{
                                 id: space.id,
                                 name: space.name,
+                                avatar: space.avatar,
+                                unread: 0,
                                 room_type: 'group',
-                                description: space.description,
-                                tone: space.tone,
-                                settings: space.settings,
+                                settings: {
+                                    theme: space.theme,
+                                    tone: space.tone
+                                }
                             }, ...prev]);
-                            // Select the new space
                             setSelectedRoomId(space.id);
+                        }}
+                        onUpdateProfile={(updates) => {
+                            // Optimistically update current user
+                            setCurrentUser((prev: any) => ({ ...prev, ...updates }));
+                            // Update user in local storage if it exists
+                            const userStr = localStorage.getItem('user');
+                            if (userStr) {
+                                try {
+                                    const user = JSON.parse(userStr);
+                                    localStorage.setItem('user', JSON.stringify({ ...user, ...updates }));
+                                } catch (e) {
+                                    console.error('Failed to update local storage user', e);
+                                }
+                            }
                         }}
                     />
                 </div>

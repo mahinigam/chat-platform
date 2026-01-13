@@ -38,6 +38,7 @@ interface SidebarProps {
   onLockedRoomClick?: (roomId: string, roomName: string) => void;
   onToggleSidebar?: () => void;
   onSpaceCreated?: (space: any) => void;
+  onUpdateProfile?: (updates: any) => void;
   className?: string;
 }
 
@@ -50,6 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onLockedRoomClick,
   onToggleSidebar,
   onSpaceCreated,
+  onUpdateProfile,
   className,
 }) => {
   const [activeTab, setActiveTab] = useState<'chats' | 'search' | 'requests'>('chats');
@@ -313,6 +315,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               window.location.reload();
             }}
             onConstellations={() => setIsConstellationOpen(true)}
+            onUpdateProfile={onUpdateProfile}
           />
         </div>
       </div>

@@ -20,10 +20,11 @@ interface SettingsMenuProps {
     token?: string;
     onLogout: () => void;
     onConstellations?: () => void;
+    onUpdateProfile?: (updates: any) => void;
     className?: string;
 }
 
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onConstellations, className }) => {
+const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onConstellations, onUpdateProfile, className }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isBlockedUsersOpen, setIsBlockedUsersOpen] = useState(false);
     const [isDevicesOpen, setIsDevicesOpen] = useState(false);
@@ -263,17 +264,20 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ user, token, onLogout, onCo
             )}
 
             {/* My Details Modal */}
-            <MyDetailsModal
-                isOpen={isMyDetailsOpen}
-                onClose={() => setIsMyDetailsOpen(false)}
-                user={{
-                    name: user?.name || '',
-                    username: user?.username || '',
-                    email: user?.email,
-                    avatar: user?.avatar
-                }}
-            />
-
+            {user && (
+                <MyDetailsModal
+                    isOpen={isMyDetailsOpen}
+                    onClose={() => setIsMyDetailsOpen(false)}
+                    user={{
+                        name: user.name,
+                        username: user.username || '',
+                        email: user.email,
+                        avatar: user.avatar
+                    }}
+                    token={token || localStorage.getItem('token') || ''}
+                    onUpdateProfile={onUpdateProfile || (() => { })}
+                />
+            )}
             {/* 2FA Setup Modal */}
             <TwoFactorSetupModal
                 isOpen={isTwoFactorSetupOpen}
