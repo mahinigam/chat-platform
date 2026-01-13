@@ -214,9 +214,23 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId,
 
         return (
           <div>
-            {/* Reply-to preview */}
+            {/* Reply-to preview - clickable to jump to original */}
             {replyTo && (
-              <div className="flex items-start gap-2 mb-2 p-2 bg-zinc-700/40 rounded-lg border-l-2 border-blue-500">
+              <div
+                className="flex items-start gap-2 mb-2 p-2 bg-zinc-700/40 rounded-lg border-l-2 border-blue-500 cursor-pointer hover:bg-zinc-700/60 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const targetElement = document.getElementById(`message-${replyTo.messageId}`);
+                  if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Highlight effect
+                    targetElement.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-75');
+                    setTimeout(() => {
+                      targetElement.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-75');
+                    }, 2000);
+                  }
+                }}
+              >
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] text-blue-400 font-medium">{replyTo.senderName || 'Message'}</div>
                   <div className="text-xs text-zinc-400 truncate">{replyTo.content || '...'}</div>
@@ -243,6 +257,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId,
 
   return (
     <div
+      id={`message-${message.id}`}
       className={cn(
         'flex gap-2 group',
         message.isOwn && 'flex-row-reverse',

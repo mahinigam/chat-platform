@@ -809,7 +809,7 @@ function Home() {
                 }
             });
         },
-        [selectedRoomId, currentUser, rooms, isE2EReady, errorToast]
+        [selectedRoomId, currentUser, rooms, isE2EReady, errorToast, replyingTo]
     );
 
     const handleAttachmentSelect = (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music' | 'schedule') => {
