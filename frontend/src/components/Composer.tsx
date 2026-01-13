@@ -3,16 +3,26 @@ import { cn, focusElement } from '../utils/theme';
 import AttachmentMenu from './AttachmentMenu';
 import ChromeButton from './ChromeButton';
 import EmojiPickerWrapper from './EmojiPickerWrapper';
+import { X, Reply } from 'lucide-react';
+
+export interface ReplyingTo {
+  messageId: string;
+  senderName: string;
+  content: string;
+}
 
 interface ComposerProps {
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, replyToId?: string) => void;
   onAttachmentSelect: (type: 'image' | 'video' | 'file' | 'poll' | 'location' | 'gif' | 'music' | 'schedule') => void;
   onContentChange?: (content: string) => void;
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
   isSidebarOpen?: boolean;
+  replyingTo?: ReplyingTo | null;
+  onCancelReply?: () => void;
 }
+
 
 const Composer: React.FC<ComposerProps> = ({
   onSendMessage,
@@ -22,6 +32,8 @@ const Composer: React.FC<ComposerProps> = ({
   placeholder = 'Type a message...',
   className,
   isSidebarOpen = true,
+  replyingTo,
+  onCancelReply,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isCompact = !isSidebarOpen && !isExpanded;
@@ -46,8 +58,9 @@ const Composer: React.FC<ComposerProps> = ({
 
   const handleSubmit = () => {
     if (content.trim() && !isLoading) {
-      onSendMessage(content.trim());
+      onSendMessage(content.trim(), replyingTo?.messageId);
       setContent('');
+      onCancelReply?.(); // Clear reply state after sending
 
       // Cosmic Ripple Effect
       window.dispatchEvent(new CustomEvent('cosmic:input'));
@@ -124,6 +137,24 @@ const Composer: React.FC<ComposerProps> = ({
     >
       {/* Hint */}
       {/* Hint removed */}
+
+      {/* Reply Preview Bar */}
+      {replyingTo && (
+        <div className="max-w-4xl mx-auto mb-2 flex items-center gap-2 px-3 py-2 bg-mono-surface/80 backdrop-blur-sm border border-mono-glass-border rounded-xl">
+          <Reply className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-blue-400 font-medium">{replyingTo.senderName}</div>
+            <div className="text-xs text-mono-muted truncate">{replyingTo.content}</div>
+          </div>
+          <button
+            onClick={onCancelReply}
+            className="p-1 hover:bg-mono-surface-2 rounded-full transition-colors"
+            aria-label="Cancel reply"
+          >
+            <X className="w-4 h-4 text-mono-muted hover:text-mono-text" />
+          </button>
+        </div>
+      )}
 
       {/* Floating Composer Container */}
       <div

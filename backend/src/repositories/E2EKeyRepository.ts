@@ -29,6 +29,7 @@ export interface DeviceKeyBundle {
     signedPrekeySignature: Buffer;
     registrationId: number;
     isVerified: boolean;
+    lastSeenAt?: Date;
 }
 
 /**
@@ -426,7 +427,8 @@ export class E2EKeyRepository {
                 device_signed_prekey_id,
                 device_signed_prekey_signature,
                 device_registration_id,
-                is_verified
+                is_verified,
+                last_seen_at
             FROM device_keys
             WHERE user_id = $1
             ORDER BY last_seen_at DESC
@@ -441,6 +443,7 @@ export class E2EKeyRepository {
             signedPrekeySignature: row.device_signed_prekey_signature,
             registrationId: row.device_registration_id,
             isVerified: row.is_verified,
+            lastSeenAt: row.last_seen_at,
         }));
     }
 
@@ -588,6 +591,37 @@ export class E2EKeyRepository {
             'DELETE FROM group_sender_keys WHERE room_id = $1 AND sender_user_id = $2',
             [roomId, senderUserId]
         );
+    }
+
+    /**
+     * Store (Upsert) user key backup
+     */
+    static async saveBackup(userId: number, backupData: string): Promise<void> {
+        await Database.query(
+            `INSERT INTO user_key_backups (user_id, backup_data, updated_at)
+             VALUES ($1, $2, NOW())
+             ON CONFLICT (user_id) 
+             DO UPDATE SET backup_data = $2, updated_at = NOW(), version = user_key_backups.version + 1`,
+            [userId, backupData]
+        );
+    }
+
+    /**
+     * Get user key backup
+     */
+    static async getBackup(userId: number): Promise<{ backupData: string, version: number, updatedAt: Date } | null> {
+        const result = await Database.query(
+            'SELECT backup_data, version, updated_at FROM user_key_backups WHERE user_id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) return null;
+
+        return {
+            backupData: result.rows[0].backup_data,
+            version: result.rows[0].version,
+            updatedAt: result.rows[0].updated_at
+        };
     }
 }
 

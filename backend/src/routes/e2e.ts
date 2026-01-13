@@ -513,7 +513,8 @@ router.get('/devices/:userId', authenticateTokenHTTP, async (req: AuthenticatedR
                 signedPrekeyId: d.signedPrekeyId,
                 signedPrekeySignature: d.signedPrekeySignature.toString('base64'),
                 registrationId: d.registrationId,
-                isVerified: d.isVerified
+                isVerified: d.isVerified,
+                lastSeen: d.lastSeenAt
             }))
         });
 
@@ -658,6 +659,7 @@ const linkRequests: Map<string, {
     newDeviceName: string;
     newDevicePublicKey: string;
     createdAt: Date;
+    status: 'pending' | 'approved' | 'rejected';
 }> = new Map();
 
 /**
@@ -667,21 +669,21 @@ const linkRequests: Map<string, {
 router.post('/devices/linking-code', authenticateTokenHTTP, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user!.userId;
-        
+
         // Generate a 6-digit code
         const code = Math.random().toString(36).substring(2, 8).toUpperCase();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-        
+
         // Store the code
         linkingCodes.set(code, { userId, expiresAt });
-        
+
         // Clean up expired codes
         for (const [c, data] of linkingCodes.entries()) {
             if (data.expiresAt < new Date()) {
                 linkingCodes.delete(c);
             }
         }
-        
+
         return res.json({
             code,
             expiresAt: expiresAt.toISOString(),
@@ -701,26 +703,26 @@ router.post('/devices/link', authenticateTokenHTTP, async (req: AuthenticatedReq
     try {
         const userId = req.user!.userId;
         const { linkingCode, newDeviceId, newDeviceName, newDevicePublicKey } = req.body;
-        
+
         if (!linkingCode || !newDeviceId || !newDeviceName || !newDevicePublicKey) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
-        
+
         // Verify the linking code
         const codeData = linkingCodes.get(linkingCode);
         if (!codeData) {
             return res.status(400).json({ error: 'Invalid linking code' });
         }
-        
+
         if (codeData.expiresAt < new Date()) {
             linkingCodes.delete(linkingCode);
             return res.status(400).json({ error: 'Linking code expired' });
         }
-        
+
         if (codeData.userId !== userId) {
             return res.status(403).json({ error: 'Linking code belongs to another user' });
         }
-        
+
         // Create a link request for approval
         const requestId = Math.random().toString(36).substring(2, 15);
         linkRequests.set(requestId, {
@@ -729,11 +731,12 @@ router.post('/devices/link', authenticateTokenHTTP, async (req: AuthenticatedReq
             newDeviceName,
             newDevicePublicKey,
             createdAt: new Date(),
+            status: 'pending',
         });
-        
+
         // Delete the used code
         linkingCodes.delete(linkingCode);
-        
+
         return res.json({
             success: true,
             requestId,
@@ -747,13 +750,41 @@ router.post('/devices/link', authenticateTokenHTTP, async (req: AuthenticatedReq
 });
 
 /**
+ * GET /api/e2e/devices/link-requests/:requestId/status
+ * Check status of a link request (called by new device)
+ */
+router.get('/devices/link-requests/:requestId/status', authenticateTokenHTTP, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+        const { requestId } = req.params;
+
+        const request = linkRequests.get(requestId);
+        if (!request) {
+            return res.status(404).json({ error: 'Link request not found' });
+        }
+
+        if (request.userId !== userId) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        return res.json({
+            status: request.status,
+        });
+
+    } catch (error) {
+        console.error('Get link request status error:', error);
+        return res.status(500).json({ error: 'Failed to get link request status' });
+    }
+});
+
+/**
  * GET /api/e2e/devices/link-requests
  * Get pending device link requests
  */
 router.get('/devices/link-requests', authenticateTokenHTTP, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const userId = req.user!.userId;
-        
+
         const requests: Array<{
             requestId: string;
             newDeviceId: string;
@@ -761,12 +792,12 @@ router.get('/devices/link-requests', authenticateTokenHTTP, async (req: Authenti
             newDeviceFingerprint: string;
             createdAt: string;
         }> = [];
-        
+
         for (const [requestId, data] of linkRequests.entries()) {
             if (data.userId === userId) {
                 // Generate fingerprint from public key
                 const fingerprint = data.newDevicePublicKey.substring(0, 16).toUpperCase();
-                
+
                 requests.push({
                     requestId,
                     newDeviceId: data.newDeviceId,
@@ -776,7 +807,7 @@ router.get('/devices/link-requests', authenticateTokenHTTP, async (req: Authenti
                 });
             }
         }
-        
+
         return res.json({ requests });
 
     } catch (error) {
@@ -794,26 +825,27 @@ router.post('/devices/link-requests/:requestId/respond', authenticateTokenHTTP, 
         const userId = req.user!.userId;
         const { requestId } = req.params;
         const { approved } = req.body;
-        
+
         const request = linkRequests.get(requestId);
         if (!request) {
             return res.status(404).json({ error: 'Link request not found' });
         }
-        
+
         if (request.userId !== userId) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
-        
-        // Delete the request
-        linkRequests.delete(requestId);
-        
+
         if (approved) {
+            request.status = 'approved';
             // The device will complete registration on its own
             return res.json({
                 success: true,
                 message: 'Device link approved',
             });
         } else {
+            request.status = 'rejected';
+            // We can keep rejected requests for a bit so client knows, or delete immediately
+            // Let's keep for polling client to see rejection
             return res.json({
                 success: true,
                 message: 'Device link rejected',
@@ -833,14 +865,14 @@ router.post('/devices/link-requests/:requestId/respond', authenticateTokenHTTP, 
 router.get('/keys/user/:userId/devices', authenticateTokenHTTP, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const targetUserId = parseInt(req.params.userId, 10);
-        
+
         if (isNaN(targetUserId)) {
             return res.status(400).json({ error: 'Invalid user ID' });
         }
-        
+
         // Get all devices for the user
         const devices = await E2EKeyRepository.getUserDevices(targetUserId);
-        
+
         return res.json({
             userId: targetUserId,
             devices: devices.map(d => ({
@@ -858,6 +890,49 @@ router.get('/keys/user/:userId/devices', authenticateTokenHTTP, async (req: Auth
     } catch (error) {
         console.error('Get user devices error:', error);
         return res.status(500).json({ error: 'Failed to get user devices' });
+    }
+});
+
+/**
+ * POST /api/e2e/backup
+ * Upload encrypted key backup
+ */
+router.post('/backup', authenticateTokenHTTP, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+        const { backupData } = req.body;
+
+        if (!backupData || typeof backupData !== 'string') {
+            return res.status(400).json({ error: 'Invalid backup data' });
+        }
+
+        await E2EKeyRepository.saveBackup(userId, backupData);
+
+        return res.json({ success: true, message: 'Backup uploaded' });
+    } catch (error) {
+        console.error('Upload backup error:', error);
+        return res.status(500).json({ error: 'Failed to upload backup' });
+    }
+});
+
+/**
+ * GET /api/e2e/backup
+ * Retrieve encrypted key backup
+ */
+router.get('/backup', authenticateTokenHTTP, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+
+        const backup = await E2EKeyRepository.getBackup(userId);
+
+        if (!backup) {
+            return res.status(404).json({ error: 'No backup found' });
+        }
+
+        return res.json(backup);
+    } catch (error) {
+        console.error('Get backup error:', error);
+        return res.status(500).json({ error: 'Failed to retrieve backup' });
     }
 });
 

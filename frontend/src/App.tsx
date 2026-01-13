@@ -61,6 +61,50 @@ function App() {
         if (!hasSeenIntro) {
             setShowIntro(true);
         }
+
+        // Initialize Multi-Device Service
+        const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+
+        if (token && userStr) {
+            import('./crypto/MultiDeviceService').then(({ multiDeviceService }) => {
+                try {
+                    const user = JSON.parse(userStr);
+                    // Handle cases where user object structure might vary (e.g. user.user.id vs user.id)
+                    const userId = user.id || (user.user && user.user.id);
+
+                    if (!userId) return;
+
+                    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+                    multiDeviceService.initialize({
+                        apiUrl: API_URL,
+                        token: token,
+                        userId: userId
+                    }).then(async () => {
+                        // Check server state
+                        try {
+                            const devices = await multiDeviceService.getDevices();
+                            const currentDeviceId = multiDeviceService.getDeviceId();
+
+                            const isRegisteredOnServer = devices.some(d => d.deviceId === currentDeviceId);
+
+                            if (!isRegisteredOnServer) {
+                                console.log('Device not found on server, registering...');
+                                // Clear local registration artifact if it exists to ensure clean slate
+                                localStorage.removeItem('e2e_device_registration');
+                                await multiDeviceService.registerDevice();
+                                console.log('Device registered successfully');
+                            }
+                        } catch (err) {
+                            console.error('Failed to verify/register device:', err);
+                        }
+                    }).catch(console.error);
+                } catch (e) {
+                    console.error('Failed to init multi-device service', e);
+                }
+            });
+        }
     }, []);
 
     const handleIntroComplete = () => {

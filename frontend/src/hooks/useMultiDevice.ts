@@ -18,17 +18,21 @@ interface UseDevicesReturn {
     refresh: () => Promise<void>;
     removeDevice: (deviceId: string) => Promise<void>;
     verifyDevice: (deviceId: string) => Promise<void>;
+    currentDeviceId: string | null;
 }
 
 export function useDevices(): UseDevicesReturn {
     const [devices, setDevices] = useState<DeviceInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
+    // Debug: Get current device ID
+    const currentDeviceId = multiDeviceService.getDeviceId();
+
     const refresh = useCallback(async () => {
         setLoading(true);
         setError(null);
-        
+
         try {
             const deviceList = await multiDeviceService.getDevices();
             setDevices(deviceList);
@@ -38,7 +42,7 @@ export function useDevices(): UseDevicesReturn {
             setLoading(false);
         }
     }, []);
-    
+
     const removeDevice = useCallback(async (deviceId: string) => {
         try {
             await multiDeviceService.removeDevice(deviceId);
@@ -48,11 +52,11 @@ export function useDevices(): UseDevicesReturn {
             throw err;
         }
     }, []);
-    
+
     const verifyDevice = useCallback(async (deviceId: string) => {
         try {
             await multiDeviceService.verifyDevice(deviceId);
-            setDevices(prev => prev.map(d => 
+            setDevices(prev => prev.map(d =>
                 d.deviceId === deviceId ? { ...d, isVerified: true } : d
             ));
         } catch (err) {
@@ -60,12 +64,20 @@ export function useDevices(): UseDevicesReturn {
             throw err;
         }
     }, []);
-    
+
     useEffect(() => {
         refresh();
     }, [refresh]);
-    
-    return { devices, loading, error, refresh, removeDevice, verifyDevice };
+
+    return {
+        devices,
+        loading,
+        error,
+        refresh,
+        removeDevice,
+        verifyDevice,
+        currentDeviceId,
+    };
 }
 
 // ============================================
@@ -77,10 +89,10 @@ interface UseDeviceLinkingReturn {
     linkingCode: string | null;
     codeExpiresAt: Date | null;
     generateCode: () => Promise<void>;
-    
+
     // For new device (using code)
     linkWithCode: (code: string) => Promise<boolean>;
-    
+
     // Link requests
     pendingRequests: Array<{
         requestId: string;
@@ -91,7 +103,7 @@ interface UseDeviceLinkingReturn {
     refreshRequests: () => Promise<void>;
     approveRequest: (requestId: string) => Promise<void>;
     rejectRequest: (requestId: string) => Promise<void>;
-    
+
     loading: boolean;
     error: string | null;
 }
@@ -102,11 +114,11 @@ export function useDeviceLinking(): UseDeviceLinkingReturn {
     const [pendingRequests, setPendingRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
     const generateCode = useCallback(async () => {
         setLoading(true);
         setError(null);
-        
+
         try {
             const { code, expiresAt } = await multiDeviceService.generateLinkingCode();
             setLinkingCode(code);
@@ -117,11 +129,11 @@ export function useDeviceLinking(): UseDeviceLinkingReturn {
             setLoading(false);
         }
     }, []);
-    
+
     const linkWithCode = useCallback(async (code: string): Promise<boolean> => {
         setLoading(true);
         setError(null);
-        
+
         try {
             const success = await multiDeviceService.linkWithCode(code);
             return success;
@@ -132,7 +144,7 @@ export function useDeviceLinking(): UseDeviceLinkingReturn {
             setLoading(false);
         }
     }, []);
-    
+
     const refreshRequests = useCallback(async () => {
         try {
             const requests = await multiDeviceService.getPendingLinkRequests();
@@ -141,7 +153,7 @@ export function useDeviceLinking(): UseDeviceLinkingReturn {
             console.error('Failed to refresh link requests:', err);
         }
     }, []);
-    
+
     const approveRequest = useCallback(async (requestId: string) => {
         setLoading(true);
         try {
@@ -153,7 +165,7 @@ export function useDeviceLinking(): UseDeviceLinkingReturn {
             setLoading(false);
         }
     }, []);
-    
+
     const rejectRequest = useCallback(async (requestId: string) => {
         setLoading(true);
         try {
@@ -165,14 +177,14 @@ export function useDeviceLinking(): UseDeviceLinkingReturn {
             setLoading(false);
         }
     }, []);
-    
+
     useEffect(() => {
         refreshRequests();
         // Poll for requests every 5 seconds
         const interval = setInterval(refreshRequests, 5000);
         return () => clearInterval(interval);
     }, [refreshRequests]);
-    
+
     return {
         linkingCode,
         codeExpiresAt,
@@ -192,19 +204,21 @@ export function useDeviceLinking(): UseDeviceLinkingReturn {
 // ============================================
 
 interface UseKeyBackupReturn {
-    hasBackup: boolean;
+    hasLocalBackup: boolean;
+    hasCloudBackup: boolean;
     backup: KeyBackup | null;
     createBackup: (password: string) => Promise<KeyBackup>;
-    restoreBackup: (backup: KeyBackup, password: string) => Promise<boolean>;
+    restoreBackup: (password: string, backup?: KeyBackup) => Promise<boolean>;
     loading: boolean;
     error: string | null;
 }
 
 export function useKeyBackup(): UseKeyBackupReturn {
     const [backup, setBackup] = useState<KeyBackup | null>(null);
+    const [hasCloudBackup, setHasCloudBackup] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
     useEffect(() => {
         // Check for existing backup in localStorage
         const storedBackup = localStorage.getItem('e2e_key_backup');
@@ -215,15 +229,21 @@ export function useKeyBackup(): UseKeyBackupReturn {
                 // Invalid backup data
             }
         }
+
+        // Check for cloud backup
+        multiDeviceService.checkCloudBackup().then(exists => {
+            setHasCloudBackup(exists);
+        });
     }, []);
-    
+
     const createBackup = useCallback(async (password: string): Promise<KeyBackup> => {
         setLoading(true);
         setError(null);
-        
+
         try {
             const newBackup = await multiDeviceService.createKeyBackup(password);
             setBackup(newBackup);
+            setHasCloudBackup(true); // Assuming upload success
             return newBackup;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to create backup';
@@ -233,15 +253,22 @@ export function useKeyBackup(): UseKeyBackupReturn {
             setLoading(false);
         }
     }, []);
-    
-    const restoreBackup = useCallback(async (backupToRestore: KeyBackup, password: string): Promise<boolean> => {
+
+    const restoreBackup = useCallback(async (password: string, backupToRestore?: KeyBackup): Promise<boolean> => {
         setLoading(true);
         setError(null);
-        
+
         try {
-            const success = await multiDeviceService.restoreKeyBackup(backupToRestore, password);
-            if (success) {
+            // Note: Update service to accept password first
+            const success = await multiDeviceService.restoreKeyBackup(password, backupToRestore);
+            if (success && backupToRestore) {
                 setBackup(backupToRestore);
+            } else if (success) {
+                // Fetched from cloud, so update local state might require fetching data again 
+                // or `restoreKeyBackup` saving to localStorage is enough.
+                // We can reload from localStorage to update state.
+                // So we don't necessarily update `backup` state unless we fetched the backup object.
+                setHasCloudBackup(true);
             }
             return success;
         } catch (err) {
@@ -251,9 +278,10 @@ export function useKeyBackup(): UseKeyBackupReturn {
             setLoading(false);
         }
     }, []);
-    
+
     return {
-        hasBackup: backup !== null,
+        hasLocalBackup: backup !== null,
+        hasCloudBackup,
         backup,
         createBackup,
         restoreBackup,
@@ -276,7 +304,7 @@ interface UseDeviceVerificationReturn {
 export function useDeviceVerification(): UseDeviceVerificationReturn {
     const [qrData, setQrData] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    
+
     const generateQR = useCallback(async () => {
         setLoading(true);
         try {
@@ -288,7 +316,7 @@ export function useDeviceVerification(): UseDeviceVerificationReturn {
             setLoading(false);
         }
     }, []);
-    
+
     const verifyByQR = useCallback(async (data: string) => {
         setLoading(true);
         try {
@@ -297,6 +325,6 @@ export function useDeviceVerification(): UseDeviceVerificationReturn {
             setLoading(false);
         }
     }, []);
-    
+
     return { qrData, generateQR, verifyByQR, loading };
 }

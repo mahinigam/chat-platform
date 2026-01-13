@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, Loader2, Lock } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import MessageList from '../components/MessageList';
-import Composer from '../components/Composer';
+import Composer, { ReplyingTo } from '../components/Composer';
 import Modal from '../components/Modal';
 import AudioRecorder from '../components/AudioRecorder';
 import { useToast } from '../hooks/useToast';
@@ -33,6 +33,7 @@ const PinnedMessagesDrawer = React.lazy(() => import('../components/PinnedMessag
 const AddToConstellationMenu = React.lazy(() => import('../components/AddToConstellationMenu'));
 const GroupCallScreen = React.lazy(() => import('../components/calls/GroupCallScreen'));
 const IncomingCallModal = React.lazy(() => import('../components/calls/IncomingCallModal'));
+const ForwardModal = React.lazy(() => import('../components/ForwardModal'));
 
 import UndoToast from '../components/UndoToast';
 import ScheduleModal from '../components/ScheduleModal';
@@ -138,6 +139,10 @@ function Home() {
     const [blockedUserIds, setBlockedUserIds] = useState<number[]>([]);
     const [isSpaceSettingsOpen, setIsSpaceSettingsOpen] = useState(false);
     const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
+    const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
+    const [forwardingMessage, setForwardingMessage] = useState<{ id: string; content: string } | null>(null);
+    const [isSelectMode, setIsSelectMode] = useState(false);
+    const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
     const [constellationTarget, setConstellationTarget] = useState<{
         messageId: string;
         roomId: number;
@@ -665,10 +670,15 @@ function Home() {
 
 
     const handleSendMessage = useCallback(
-        async (content: string, type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker' | 'youtube' = 'text', metadata?: any) => {
+        async (content: string, type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'poll' | 'location' | 'gif' | 'sticker' | 'youtube' = 'text', metadata?: any, replyToId?: string) => {
             if (!selectedRoomId || !currentUser) return;
 
             const tempId = Date.now().toString();
+
+            // Include replyToId in metadata if present
+            const messageMetadata = replyToId
+                ? { ...metadata, replyTo: { messageId: replyToId } }
+                : metadata;
 
             const optimisticMessage: Message = {
                 id: tempId,
@@ -676,7 +686,7 @@ function Home() {
                 sender: { id: currentUser.id, name: currentUser.username },
                 content,
                 messageType: type,
-                metadata,
+                metadata: messageMetadata,
                 timestamp: new Date(),
                 status: 'sending',
                 isOwn: true,
@@ -1235,20 +1245,21 @@ function Home() {
                             )}
 
 
+                            {/* Pinned Messages - ALL CHAT TYPES */}
+                            <ChromeButton
+                                variant="circle"
+                                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-amber-400/70 hover:text-amber-400"
+                                aria-label="Pinned Messages"
+                                onClick={() => setIsPinnedDrawerOpen(true)}
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                </svg>
+                            </ChromeButton>
+
                             {/* Space Settings - GROUP ONLY */}
                             {currentRoom.room_type === 'group' && (
                                 <>
-                                    {/* Pinned Messages / Space Memory */}
-                                    <ChromeButton
-                                        variant="circle"
-                                        className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-amber-400/70 hover:text-amber-400"
-                                        aria-label="Pinned Messages"
-                                        onClick={() => setIsPinnedDrawerOpen(true)}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                                        </svg>
-                                    </ChromeButton>
                                     {/* Settings Gear */}
                                     <ChromeButton
                                         variant="circle"
@@ -1263,6 +1274,7 @@ function Home() {
                                     </ChromeButton>
                                 </>
                             )}
+
 
                             <ChromeButton
                                 variant="circle"
@@ -1386,6 +1398,26 @@ function Home() {
                                 }
                             });
                         }}
+                        onReply={(messageId: string, senderName: string, content: string) => {
+                            setReplyingTo({ messageId, senderName, content });
+                        }}
+                        onForward={(messageId: string, content: string) => {
+                            setForwardingMessage({ id: messageId, content });
+                        }}
+                        onSelect={(messageId: string) => {
+                            // Enter select mode and select this message
+                            setIsSelectMode(true);
+                            setSelectedMessageIds([messageId]);
+                        }}
+                        isSelectMode={isSelectMode}
+                        selectedMessageIds={selectedMessageIds}
+                        onToggleSelect={(messageId: string) => {
+                            setSelectedMessageIds(prev =>
+                                prev.includes(messageId)
+                                    ? prev.filter(id => id !== messageId)
+                                    : [...prev, messageId]
+                            );
+                        }}
                     />
 
                     {/* Audio Recorder Overlay */}
@@ -1399,17 +1431,60 @@ function Home() {
                     )}
                 </div>
 
-                {/* Composer */}
+                {/* Composer OR Select Mode Action Bar */}
                 {currentRoom && !isAudioRecording && (
-                    <Composer
-                        onSendMessage={(content) => {
-                            handleSendMessage(content); // type defaults to 'text'
-                        }}
-                        onContentChange={(content) => setScheduleContent(content)}
-                        onAttachmentSelect={handleAttachmentSelect}
-                        placeholder="Type a message..."
-                        isSidebarOpen={isSidebarOpen}
-                    />
+                    isSelectMode ? (
+                        // Selection Action Bar
+                        <div className="flex-shrink-0 p-4 bg-mono-bg border-t border-mono-glass-border">
+                            <div className="max-w-4xl mx-auto flex items-center justify-between gap-4 px-4 py-3 bg-mono-surface/80 backdrop-blur-sm border border-mono-glass-border rounded-xl">
+                                <span className="text-sm text-mono-text">
+                                    {selectedMessageIds.length} message{selectedMessageIds.length !== 1 && 's'} selected
+                                </span>
+                                <div className="flex gap-2">
+                                    <ChromeButton
+                                        onClick={async () => {
+                                            // Delete selected messages
+                                            for (const msgId of selectedMessageIds) {
+                                                await deleteForMe(msgId, selectedRoomId!);
+                                                setMessages(prev => prev.filter(m => m.id !== msgId));
+                                            }
+                                            success(`Deleted ${selectedMessageIds.length} message${selectedMessageIds.length !== 1 ? 's' : ''}`);
+                                            setIsSelectMode(false);
+                                            setSelectedMessageIds([]);
+                                        }}
+                                        variant="circle"
+                                        className="text-red-400 hover:text-red-300"
+                                        disabled={selectedMessageIds.length === 0}
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </ChromeButton>
+                                    <ChromeButton
+                                        onClick={() => {
+                                            setIsSelectMode(false);
+                                            setSelectedMessageIds([]);
+                                        }}
+                                        className="px-4 py-2 text-sm"
+                                    >
+                                        Cancel
+                                    </ChromeButton>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <Composer
+                            onSendMessage={(content, replyToId) => {
+                                handleSendMessage(content, 'text', undefined, replyToId);
+                            }}
+                            onContentChange={(content) => setScheduleContent(content)}
+                            onAttachmentSelect={handleAttachmentSelect}
+                            placeholder="Type a message..."
+                            isSidebarOpen={isSidebarOpen}
+                            replyingTo={replyingTo}
+                            onCancelReply={() => setReplyingTo(null)}
+                        />
+                    )
                 )}
             </div>
 
@@ -1642,6 +1717,30 @@ function Home() {
                     roomId={constellationTarget?.roomId || 0}
                     position={constellationTarget?.position || { x: 0, y: 0 }}
                     onSuccess={() => success('Added to constellation')}
+                />
+
+                {/* Forward Modal */}
+                <ForwardModal
+                    isOpen={!!forwardingMessage}
+                    onClose={() => setForwardingMessage(null)}
+                    messagePreview={forwardingMessage?.content || ''}
+                    rooms={rooms.map(r => ({ id: r.id, name: r.name, room_type: r.room_type }))}
+                    onForward={async (roomIds) => {
+                        if (!forwardingMessage) return;
+                        // Forward to each selected room
+                        for (const targetRoomId of roomIds) {
+                            // For now, send to the current room - in a full implementation,
+                            // we'd switch rooms or use a different socket emit
+                            socketService.emit('message:send', {
+                                roomId: targetRoomId,
+                                content: `[Forwarded] ${forwardingMessage.content}`,
+                                messageType: 'text',
+                                metadata: { forwarded: true, originalMessageId: forwardingMessage.id }
+                            });
+                        }
+                        success(`Forwarded to ${roomIds.length} chat${roomIds.length > 1 ? 's' : ''}`);
+                        setForwardingMessage(null);
+                    }}
                 />
             </Suspense>
         </div>

@@ -112,34 +112,34 @@ class MultiDeviceService {
     private config: MultiDeviceConfig | null = null;
     private deviceId: string | null = null;
     private deviceName: string | null = null;
-    
+
     // ============================================
     // INITIALIZATION
     // ============================================
-    
+
     /**
      * Initialize the multi-device service
      */
     async initialize(config: MultiDeviceConfig): Promise<void> {
         this.config = config;
-        
+
         // Load device ID from storage
         this.deviceId = localStorage.getItem(DEVICE_ID_KEY);
         this.deviceName = localStorage.getItem(DEVICE_NAME_KEY);
-        
+
         // If no device ID, this is a new device
         if (!this.deviceId) {
             this.deviceId = this.generateDeviceId();
             localStorage.setItem(DEVICE_ID_KEY, this.deviceId);
         }
-        
+
         // Set default device name if not set
         if (!this.deviceName) {
             this.deviceName = this.generateDefaultDeviceName();
             localStorage.setItem(DEVICE_NAME_KEY, this.deviceName);
         }
     }
-    
+
     /**
      * Generate a unique device ID
      */
@@ -148,7 +148,7 @@ class MultiDeviceService {
         crypto.getRandomValues(array);
         return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
     }
-    
+
     /**
      * Generate a default device name based on browser/platform
      */
@@ -156,21 +156,21 @@ class MultiDeviceService {
         const userAgent = navigator.userAgent;
         let platform = 'Unknown';
         let browser = 'Browser';
-        
+
         if (userAgent.includes('Mac')) platform = 'Mac';
         else if (userAgent.includes('Windows')) platform = 'Windows';
         else if (userAgent.includes('Linux')) platform = 'Linux';
         else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) platform = 'iOS';
         else if (userAgent.includes('Android')) platform = 'Android';
-        
+
         if (userAgent.includes('Chrome')) browser = 'Chrome';
         else if (userAgent.includes('Firefox')) browser = 'Firefox';
         else if (userAgent.includes('Safari')) browser = 'Safari';
         else if (userAgent.includes('Edge')) browser = 'Edge';
-        
+
         return `${platform} ${browser}`;
     }
-    
+
     /**
      * Get current platform type
      */
@@ -181,11 +181,11 @@ class MultiDeviceService {
         if (userAgent.includes('Electron')) return 'desktop';
         return 'web';
     }
-    
+
     // ============================================
     // DEVICE REGISTRATION
     // ============================================
-    
+
     /**
      * Register this device with E2E encryption
      */
@@ -193,17 +193,17 @@ class MultiDeviceService {
         if (!this.config || !this.deviceId) {
             throw new Error('Service not initialized');
         }
-        
+
         // Generate key bundle for this device
         const identityKeyPair = await generateIdentityKeyPair();
         const registrationId = generateRegistrationId();
         const signedPreKey = await generateSignedPreKey(identityKeyPair.signingPrivateKey, generateKeyId());
         const startKeyId = generateKeyId();
         const oneTimePreKeys = await generateOneTimePreKeys(startKeyId, 100);
-        
+
         // Store keys locally (through e2eCryptoService)
         // The actual storage is handled by the main E2E service
-        
+
         const registrationData: DeviceRegistrationData = {
             deviceId: this.deviceId,
             deviceName: this.deviceName || this.generateDefaultDeviceName(),
@@ -218,74 +218,89 @@ class MultiDeviceService {
                 publicKey: toBase64(pk.publicKey),
             })),
         };
-        
+
         // Register with server
         await axios.post(
-            `${this.config.apiUrl}/e2e/devices/register`,
+            `${this.config.apiUrl}/e2e/devices`,
             registrationData,
             {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
         // Store registration info
         localStorage.setItem(DEVICE_REGISTRATION_KEY, JSON.stringify({
             deviceId: this.deviceId,
             registrationId,
             timestamp: new Date().toISOString(),
         }));
-        
+
         return registrationData;
     }
-    
+
+    /**
+     * Get platform from device name
+     */
+    private getPlatformFromName(name: string): 'web' | 'ios' | 'android' | 'desktop' {
+        const lower = (name || '').toLowerCase();
+        if (lower.includes('iphone') || lower.includes('ipad')) return 'ios';
+        if (lower.includes('android')) return 'android';
+        // Only classify as desktop if explicitly Electron or Desktop app
+        if (lower.includes('electron') || lower.includes('desktop_app')) return 'desktop';
+        return 'web';
+    }
+
     /**
      * Get all registered devices for the current user
      */
     async getDevices(): Promise<DeviceInfo[]> {
         if (!this.config) throw new Error('Service not initialized');
-        
+
         const response = await axios.get(
-            `${this.config.apiUrl}/e2e/devices`,
+            `${this.config.apiUrl}/e2e/devices/${this.config.userId}`,
             {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
+        // Backend returns cameCase
         const devices = response.data.devices as Array<{
-            device_id: string;
-            device_name: string;
-            platform: string;
-            last_seen: string;
-            is_verified: boolean;
-            identity_fingerprint: string;
-            registration_id: number;
+            deviceId: string;
+            deviceName: string;
+            lastSeen: string;
+            isVerified: boolean;
+            identityPublicKey: string;
+            registrationId: number;
         }>;
-        
+
         return devices.map(d => ({
-            deviceId: d.device_id,
-            deviceName: d.device_name,
-            platform: d.platform as 'web' | 'ios' | 'android' | 'desktop',
-            lastSeen: new Date(d.last_seen),
-            isCurrentDevice: d.device_id === this.deviceId,
-            isVerified: d.is_verified,
-            identityKeyFingerprint: d.identity_fingerprint,
-            registrationId: d.registration_id,
+            deviceId: d.deviceId,
+            deviceName: d.deviceName || 'Unknown Device',
+            platform: this.getPlatformFromName(d.deviceName),
+            lastSeen: d.lastSeen ? new Date(d.lastSeen) : new Date(), // Fallback to now if missing
+            isCurrentDevice: d.deviceId.replace(/-/g, '').toLowerCase() === (this.deviceId || '').replace(/-/g, '').toLowerCase(),
+            isVerified: d.isVerified,
+            // Create a pseudo-fingerprint from the public key (using first 16 chars)
+            identityKeyFingerprint: d.identityPublicKey ?
+                d.identityPublicKey.substring(0, 16).match(/.{1,4}/g)?.join(' ') || d.identityPublicKey.substring(0, 16)
+                : 'Unknown',
+            registrationId: d.registrationId,
         }));
     }
-    
+
     /**
      * Remove a device from the user's account
      */
     async removeDevice(deviceId: string): Promise<void> {
         if (!this.config) throw new Error('Service not initialized');
-        
+
         await axios.delete(
             `${this.config.apiUrl}/e2e/devices/${deviceId}`,
             {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
         // If removing current device, clear local data
         if (deviceId === this.deviceId) {
             localStorage.removeItem(DEVICE_ID_KEY);
@@ -293,13 +308,13 @@ class MultiDeviceService {
             localStorage.removeItem(DEVICE_REGISTRATION_KEY);
         }
     }
-    
+
     /**
      * Update device name
      */
     async updateDeviceName(newName: string): Promise<void> {
         if (!this.config || !this.deviceId) throw new Error('Service not initialized');
-        
+
         await axios.put(
             `${this.config.apiUrl}/e2e/devices/${this.deviceId}`,
             { deviceName: newName },
@@ -307,22 +322,22 @@ class MultiDeviceService {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
         this.deviceName = newName;
         localStorage.setItem(DEVICE_NAME_KEY, newName);
     }
-    
+
     // ============================================
     // DEVICE LINKING
     // ============================================
-    
+
     /**
      * Generate a linking code for adding a new device
      * This code should be displayed on the existing device
      */
     async generateLinkingCode(): Promise<{ code: string; expiresAt: Date }> {
         if (!this.config) throw new Error('Service not initialized');
-        
+
         const response = await axios.post(
             `${this.config.apiUrl}/e2e/devices/linking-code`,
             {},
@@ -330,30 +345,30 @@ class MultiDeviceService {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
         return {
             code: response.data.code,
             expiresAt: new Date(response.data.expiresAt),
         };
     }
-    
+
     /**
      * Link a new device using a linking code
      * Called from the new device
      */
     async linkWithCode(linkingCode: string): Promise<boolean> {
         if (!this.config || !this.deviceId) throw new Error('Service not initialized');
-        
+
         // Generate keys for the new device
         const identityKeyPair = await generateIdentityKeyPair();
-        
+
         const linkRequest: DeviceLinkRequest = {
             linkingCode,
             newDeviceId: this.deviceId,
             newDeviceName: this.deviceName || this.generateDefaultDeviceName(),
             newDevicePublicKey: toBase64(identityKeyPair.publicKey),
         };
-        
+
         const response = await axios.post(
             `${this.config.apiUrl}/e2e/devices/link`,
             linkRequest,
@@ -361,32 +376,57 @@ class MultiDeviceService {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
         if (response.data.success) {
-            // Complete device registration
-            await this.registerDevice();
-            return true;
+            // Poll for approval
+            const requestId = response.data.requestId;
+            let attempts = 0;
+            const maxAttempts = 150; // 5 minutes (2s interval)
+
+            while (attempts < maxAttempts) {
+                await new Promise(r => setTimeout(r, 2000));
+
+                try {
+                    const statusRes = await axios.get(
+                        `${this.config.apiUrl}/e2e/devices/link-requests/${requestId}/status`,
+                        {
+                            headers: { Authorization: `Bearer ${this.config.token}` },
+                        }
+                    );
+
+                    if (statusRes.data.status === 'approved') {
+                        // Complete device registration
+                        await this.registerDevice();
+                        return true;
+                    } else if (statusRes.data.status === 'rejected') {
+                        return false;
+                    }
+                } catch (e) {
+                    // Ignore transient errors during polling
+                }
+                attempts++;
+            }
         }
-        
+
         return false;
     }
-    
+
     /**
      * Get pending device link requests (for approval on existing device)
      */
     async getPendingLinkRequests(): Promise<DeviceLinkApproval[]> {
         if (!this.config) throw new Error('Service not initialized');
-        
+
         const response = await axios.get(
             `${this.config.apiUrl}/e2e/devices/link-requests`,
             {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
         return response.data.requests;
     }
-    
+
     /**
      * Approve or reject a device link request
      */
@@ -395,7 +435,7 @@ class MultiDeviceService {
         approved: boolean
     ): Promise<void> {
         if (!this.config) throw new Error('Service not initialized');
-        
+
         await axios.post(
             `${this.config.apiUrl}/e2e/devices/link-requests/${requestId}/respond`,
             { approved },
@@ -404,17 +444,17 @@ class MultiDeviceService {
             }
         );
     }
-    
+
     // ============================================
     // DEVICE VERIFICATION
     // ============================================
-    
+
     /**
      * Verify another device (from this device)
      */
     async verifyDevice(targetDeviceId: string): Promise<void> {
         if (!this.config || !this.deviceId) throw new Error('Service not initialized');
-        
+
         await axios.post(
             `${this.config.apiUrl}/e2e/devices/${targetDeviceId}/verify`,
             { verifyingDeviceId: this.deviceId },
@@ -423,16 +463,16 @@ class MultiDeviceService {
             }
         );
     }
-    
+
     /**
      * Get verification QR code data for this device
      */
     async getVerificationQRData(): Promise<string> {
         if (!this.config || !this.deviceId) throw new Error('Service not initialized');
-        
+
         // Get this device's fingerprint
         const ownFingerprint = await e2eCryptoService.getOwnFingerprint();
-        
+
         // Create QR code data
         const qrData = JSON.stringify({
             userId: this.config.userId,
@@ -440,10 +480,10 @@ class MultiDeviceService {
             fingerprint: ownFingerprint,
             timestamp: Date.now(),
         });
-        
+
         return btoa(qrData);
     }
-    
+
     /**
      * Verify a device by scanning its QR code
      */
@@ -454,61 +494,61 @@ class MultiDeviceService {
     }> {
         try {
             const data = JSON.parse(atob(qrData));
-            
+
             // Verify the QR code is for the same user
             if (data.userId !== this.config?.userId) {
                 return { success: false, error: 'QR code is for a different user' };
             }
-            
+
             // Verify the fingerprint matches
             const devices = await this.getDevices();
             const targetDevice = devices.find(d => d.deviceId === data.deviceId);
-            
+
             if (!targetDevice) {
                 return { success: false, error: 'Device not found' };
             }
-            
+
             if (targetDevice.identityKeyFingerprint !== data.fingerprint) {
                 return { success: false, error: 'Fingerprint mismatch - possible security issue!' };
             }
-            
+
             // Mark as verified
             await this.verifyDevice(data.deviceId);
-            
+
             return { success: true, deviceId: data.deviceId };
         } catch (error) {
             return { success: false, error: 'Invalid QR code' };
         }
     }
-    
+
     // ============================================
     // KEY BACKUP & RESTORE
     // ============================================
-    
+
     /**
-     * Create an encrypted backup of the identity keys
+     * Create an encrypted backup of the identity keys and upload to server
      * The backup is encrypted with a user-provided password
      */
     async createKeyBackup(password: string): Promise<KeyBackup> {
         if (!this.config) throw new Error('Service not initialized');
-        
+
         // Get the identity key from the E2E service
         const identityKey = await e2eCryptoService.getOwnFingerprint();
         if (!identityKey) {
             throw new Error('No identity key to backup');
         }
-        
+
         // Derive encryption key from password
         const salt = crypto.getRandomValues(new Uint8Array(16));
         const passwordKey = await this.deriveKeyFromPassword(password, salt);
-        
+
         // Get the raw key data (this would need to be exposed from keyStore)
         // For now, we'll backup the registration data
         const registrationData = localStorage.getItem(DEVICE_REGISTRATION_KEY);
         if (!registrationData) {
             throw new Error('No registration data to backup');
         }
-        
+
         // Encrypt the data
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const encryptedData = await crypto.subtle.encrypt(
@@ -516,7 +556,7 @@ class MultiDeviceService {
             passwordKey,
             new TextEncoder().encode(registrationData)
         );
-        
+
         const backup: KeyBackup = {
             version: 1,
             encryptedIdentityKey: toBase64(new Uint8Array(encryptedData)),
@@ -526,44 +566,100 @@ class MultiDeviceService {
             iv: toBase64(iv),
             timestamp: new Date().toISOString(),
         };
-        
-        // Store backup locally and optionally upload to server
+
+        // Store backup locally
         localStorage.setItem(KEY_BACKUP_KEY, JSON.stringify(backup));
-        
+
+        // Upload to server
+        await axios.post(
+            `${this.config.apiUrl}/e2e/backup`,
+            { backupData: JSON.stringify(backup) },
+            {
+                headers: { Authorization: `Bearer ${this.config.token}` },
+            }
+        );
+
         return backup;
     }
-    
+
     /**
-     * Restore keys from an encrypted backup
+     * Check if a cloud backup exists
      */
-    async restoreKeyBackup(backup: KeyBackup, password: string): Promise<boolean> {
+    async checkCloudBackup(): Promise<boolean> {
+        if (!this.config) return false;
         try {
+            await axios.get(
+                `${this.config.apiUrl}/e2e/backup`,
+                {
+                    headers: { Authorization: `Bearer ${this.config.token}` },
+                }
+            );
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
+     * Fetch cloud backup
+     */
+    async fetchCloudBackup(): Promise<KeyBackup | null> {
+        if (!this.config) return null;
+        try {
+            const response = await axios.get(
+                `${this.config.apiUrl}/e2e/backup`,
+                {
+                    headers: { Authorization: `Bearer ${this.config.token}` },
+                }
+            );
+            return JSON.parse(response.data.backupData);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    /**
+     * Restore keys from an encrypted backup (local or cloud)
+     */
+    async restoreKeyBackup(password: string, backupData?: KeyBackup): Promise<boolean> {
+        try {
+            let backup = backupData;
+
+            // If no backup provided, try to fetch from cloud
+            if (!backup) {
+                backup = await this.fetchCloudBackup() || undefined;
+            }
+
+            if (!backup) {
+                throw new Error('No backup found');
+            }
+
             // Derive decryption key from password
             const salt = fromBase64(backup.salt);
             const passwordKey = await this.deriveKeyFromPassword(password, salt);
-            
+
             // Decrypt the data
             const iv = fromBase64(backup.iv);
             const encryptedData = fromBase64(backup.encryptedIdentityKey);
-            
+
             const decryptedData = await crypto.subtle.decrypt(
                 { name: 'AES-GCM', iv: new Uint8Array(iv) },
                 passwordKey,
                 new Uint8Array(encryptedData)
             );
-            
+
             const registrationData = new TextDecoder().decode(decryptedData);
-            
+
             // Restore the data
             localStorage.setItem(DEVICE_REGISTRATION_KEY, registrationData);
-            
+
             return true;
         } catch (error) {
             console.error('Failed to restore key backup:', error);
             return false;
         }
     }
-    
+
     /**
      * Derive an encryption key from a password using PBKDF2
      */
@@ -578,7 +674,7 @@ class MultiDeviceService {
             false,
             ['deriveBits', 'deriveKey']
         );
-        
+
         return crypto.subtle.deriveKey(
             {
                 name: 'PBKDF2',
@@ -592,24 +688,24 @@ class MultiDeviceService {
             ['encrypt', 'decrypt']
         );
     }
-    
+
     // ============================================
     // MULTI-DEVICE MESSAGING
     // ============================================
-    
+
     /**
      * Get all device key bundles for a user (for encrypting to all their devices)
      */
     async getUserDeviceKeyBundles(userId: number): Promise<DeviceKeyBundle[]> {
         if (!this.config) throw new Error('Service not initialized');
-        
+
         const response = await axios.get(
             `${this.config.apiUrl}/e2e/keys/user/${userId}/devices`,
             {
                 headers: { Authorization: `Bearer ${this.config.token}` },
             }
         );
-        
+
         return response.data.devices.map((d: any) => ({
             deviceId: d.device_id,
             identityPublicKey: fromBase64(d.identity_public_key),
@@ -623,25 +719,25 @@ class MultiDeviceService {
             } : undefined,
         }));
     }
-    
+
     // ============================================
     // GETTERS
     // ============================================
-    
+
     /**
      * Get current device ID
      */
     getDeviceId(): string | null {
         return this.deviceId;
     }
-    
+
     /**
      * Get current device name
      */
     getDeviceName(): string | null {
         return this.deviceName;
     }
-    
+
     /**
      * Check if device is registered
      */

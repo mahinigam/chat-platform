@@ -17,6 +17,12 @@ interface MessageListProps {
   onDelete?: (messageId: string, mode: 'me' | 'everyone') => void;
   onPin?: (messageId: string) => void;
   onConstellation?: (messageId: string, roomId: number) => void;
+  onReply?: (messageId: string, senderName: string, content: string) => void;
+  onForward?: (messageId: string, content: string) => void;
+  onSelect?: (messageId: string) => void;
+  isSelectMode?: boolean;
+  selectedMessageIds?: string[];
+  onToggleSelect?: (messageId: string) => void;
 }
 
 const LOAD_MORE_THRESHOLD = 200; // pixels from top
@@ -35,6 +41,12 @@ const MessageList: React.FC<MessageListProps> = ({
   onDelete,
   onPin,
   onConstellation,
+  onReply,
+  onForward,
+  onSelect,
+  isSelectMode = false,
+  selectedMessageIds = [],
+  onToggleSelect,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLUListElement>(null);
@@ -173,7 +185,7 @@ const MessageList: React.FC<MessageListProps> = ({
               transition={{ duration: 0.3, ease: [0.2, 0.9, 0.2, 1] }}
               className="transition-colors duration-500"
             >
-              <MessageItem message={message} searchQuery={searchQuery} roomId={roomId} onPollVote={onPollVote} onReaction={onReaction} onDelete={onDelete} onPin={onPin} onConstellation={onConstellation} />
+              <MessageItem message={message} searchQuery={searchQuery} roomId={roomId} onPollVote={onPollVote} onReaction={onReaction} onDelete={onDelete} onPin={onPin} onConstellation={onConstellation} onReply={onReply} onForward={onForward} onSelect={onSelect} isSelectMode={isSelectMode} isSelected={selectedMessageIds.includes(message.id)} onToggleSelect={onToggleSelect} />
             </motion.li>
           ))}
         </AnimatePresence>

@@ -52,9 +52,15 @@ interface MessageItemProps {
   onDelete?: (messageId: string, mode: 'me' | 'everyone') => void;
   onPin?: (messageId: string) => void;
   onConstellation?: (messageId: string, roomId: number) => void;
+  onReply?: (messageId: string, senderName: string, content: string) => void;
+  onForward?: (messageId: string, content: string) => void;
+  onSelect?: (messageId: string) => void;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (messageId: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId, onPollVote, onReaction, onDelete: _onDelete, onPin, onConstellation }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId, onPollVote, onReaction, onDelete: _onDelete, onPin, onConstellation, onReply, onForward, onSelect, isSelectMode = false, isSelected = false, onToggleSelect }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [recentEmojis, setRecentEmojis] = useState<string[]>(getRecentEmojis());
@@ -211,7 +217,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId,
     <div
       className={cn(
         'flex gap-2 group',
-        message.isOwn && 'flex-row-reverse'
+        message.isOwn && 'flex-row-reverse',
+        isSelectMode && 'cursor-pointer'
       )}
       role="article"
       aria-label={getAriaLabel(
@@ -219,7 +226,28 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId,
         timestamp,
         message.messageType === 'text' ? message.content : `Sent a ${message.messageType}`
       )}
+      onClick={isSelectMode ? () => onToggleSelect?.(message.id) : undefined}
     >
+      {/* Selection Checkbox - Only in select mode */}
+      {isSelectMode && (
+        <div className="flex-shrink-0 flex items-center justify-center w-6">
+          <div
+            className={cn(
+              'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors',
+              isSelected
+                ? 'bg-blue-500 border-blue-500'
+                : 'border-mono-muted bg-transparent hover:border-blue-400'
+            )}
+          >
+            {isSelected && (
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Avatar */}
       <div className="flex-shrink-0 w-8 h-8">
         {message.sender.avatar ? (
@@ -409,17 +437,17 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId,
               isOpen={showOptions}
               onClose={() => setShowOptions(false)}
               isOwn={message.isOwn}
-              onReply={() => console.log('Reply to', message.id)}
+              onReply={() => onReply?.(message.id, message.sender.name, message.content)}
               onConstellation={() => onConstellation?.(message.id, roomId || 0)}
               onPin={() => onPin?.(message.id)}
-              onForward={() => console.log('Forward', message.id)}
+              onForward={() => onForward?.(message.id, message.content)}
               onCopy={() => {
                 navigator.clipboard.writeText(message.content);
                 console.log('Copied', message.id);
               }}
               onDeleteForMe={() => _onDelete?.(message.id, 'me')}
               onDeleteForEveryone={() => _onDelete?.(message.id, 'everyone')}
-              onSelect={() => console.log('Select messages', message.id)}
+              onSelect={() => onSelect?.(message.id)}
             />
           </div>
         </div>
