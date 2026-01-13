@@ -209,12 +209,25 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, searchQuery, roomId,
         const isForwarded = message.metadata?.forwarded || message.content.startsWith('[Forwarded]');
         const displayContent = message.content.replace(/^\[Forwarded\]\s*/, '');
 
+        // Check if this is a reply to another message
+        const replyTo = message.metadata?.replyTo;
+
         return (
           <div>
+            {/* Reply-to preview */}
+            {replyTo && (
+              <div className="flex items-start gap-2 mb-2 p-2 bg-zinc-700/40 rounded-lg border-l-2 border-blue-500">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] text-blue-400 font-medium">{replyTo.senderName || 'Message'}</div>
+                  <div className="text-xs text-zinc-400 truncate">{replyTo.content || '...'}</div>
+                </div>
+              </div>
+            )}
+            {/* Forwarded label */}
             {isForwarded && (
               <div className="flex items-center gap-1.5 mb-1 text-xs text-zinc-400">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
                 </svg>
                 <span className="italic">Forwarded</span>
               </div>

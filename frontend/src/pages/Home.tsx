@@ -675,9 +675,9 @@ function Home() {
 
             const tempId = Date.now().toString();
 
-            // Include replyToId in metadata if present
+            // Include replyTo info in metadata if present (with senderName and content for display)
             const messageMetadata = replyToId
-                ? { ...metadata, replyTo: { messageId: replyToId } }
+                ? { ...metadata, replyTo: { messageId: replyToId, senderName: replyingTo?.senderName, content: replyingTo?.content } }
                 : metadata;
 
             const optimisticMessage: Message = {
@@ -1458,7 +1458,7 @@ function Home() {
                                         disabled={selectedMessageIds.length === 0}
                                     >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
                                         </svg>
                                     </ChromeButton>
                                     {/* Delete Button */}
