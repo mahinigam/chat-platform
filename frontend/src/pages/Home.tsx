@@ -137,6 +137,8 @@ function Home() {
     const [isScheduling, setIsScheduling] = useState(false);
     const [scheduleContent, setScheduleContent] = useState('');
     const [blockedUserIds, setBlockedUserIds] = useState<number[]>([]);
+    const [mutedUserIds, setMutedUserIds] = useState<number[]>([]);
+    const [mutedRoomIds, setMutedRoomIds] = useState<number[]>([]);
     const [isSpaceSettingsOpen, setIsSpaceSettingsOpen] = useState(false);
     const [isPinnedDrawerOpen, setIsPinnedDrawerOpen] = useState(false);
     const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
@@ -430,6 +432,7 @@ function Home() {
     }, [token, isConnected, API_URL, errorToast]);
 
     // Fetch blocked users
+    // Fetch blocked and muted users
     useEffect(() => {
         if (!token || !isConnected) return;
 
@@ -444,7 +447,27 @@ function Home() {
             }
         };
 
+        const fetchMutedList = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/muted`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const mutedUsers = response.data
+                    .filter((m: any) => m.muted_user_id)
+                    .map((m: any) => m.muted_user_id);
+                const mutedRooms = response.data
+                    .filter((m: any) => m.muted_room_id)
+                    .map((m: any) => m.muted_room_id);
+
+                setMutedUserIds(mutedUsers);
+                setMutedRoomIds(mutedRooms);
+            } catch (err) {
+                console.error('Failed to fetch muted list', err);
+            }
+        };
+
         fetchBlockedUsers();
+        fetchMutedList();
     }, [token, isConnected, API_URL]);
 
     // Fetch messages
@@ -549,10 +572,15 @@ function Home() {
 
             setRooms(prev => prev.map(room => {
                 if (room.id === message.room_id) {
-                    // Play notification sound if it's not our own message and not in quiet hours
+                    // Play notification sound if it's not our own message and not from a muted user/room and not in quiet hours
                     if (message.sender.id !== currentUser?.id) {
+                        const isMutedUser = mutedUserIds.includes(message.sender.id);
+                        const isMutedRoom = mutedRoomIds.includes(message.room_id);
                         const isQuiet = room.room_type === 'group' && isQuietHoursActive(room.settings);
-                        playNotificationSound(isQuiet);
+
+                        if (!isMutedUser && !isMutedRoom) {
+                            playNotificationSound(isQuiet);
+                        }
                     }
                     return {
                         ...room,
@@ -1288,10 +1316,18 @@ function Home() {
                                 roomId={selectedRoomId!}
                                 userId={currentRoom?.other_user_id}
                                 roomName={currentRoom?.name || 'Chat'}
-                                isMuted={rooms.find(r => r.id === selectedRoomId)?.settings?.quietHours !== undefined}
+                                isMuted={selectedRoomId ? mutedRoomIds.includes(selectedRoomId) : false}
                                 isLocked={selectedRoomId ? lockedRoomIds.includes(selectedRoomId) : false}
                                 token={token!}
-                                onMuteChange={() => { /* Handle mute refresh */ }}
+                                onMuteChange={(muted) => {
+                                    if (selectedRoomId) {
+                                        if (muted) {
+                                            setMutedRoomIds(prev => [...prev, selectedRoomId]);
+                                        } else {
+                                            setMutedRoomIds(prev => prev.filter(id => id !== selectedRoomId));
+                                        }
+                                    }
+                                }}
                                 onLockChange={handleLockToggled}
                                 onBlockChange={(blocked) => {
                                     if (currentRoom?.other_user_id) {
