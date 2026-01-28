@@ -1167,10 +1167,8 @@ function Home() {
                                 avatar: space.avatar,
                                 unread: 0,
                                 room_type: 'group',
-                                settings: {
-                                    theme: space.theme,
-                                    tone: space.tone
-                                }
+                                tone: space.tone,
+                                settings: space.settings
                             }, ...prev]);
                             setSelectedRoomId(space.id);
                         }}
